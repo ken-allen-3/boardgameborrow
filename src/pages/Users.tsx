@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getDatabase, ref, get, set, remove } from 'firebase/database';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import { updateUserProfile } from '../services/userService';
 import { useAuth } from '../contexts/AuthContext';
 import { AlertCircle, Trash2, UserPlus, Users as UsersIcon } from 'lucide-react';
 import ErrorMessage from '../components/ErrorMessage';
@@ -9,14 +10,16 @@ import SuccessMessage from '../components/SuccessMessage';
 
 interface User {
   email: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   isAdmin: boolean;
 }
 
 function Users() {
   const [users, setUsers] = useState<Record<string, User>>({});
   const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserName, setNewUserName] = useState('');
+  const [newUserFirstName, setNewUserFirstName] = useState('');
+  const [newUserLastName, setNewUserLastName] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -71,7 +74,8 @@ function Users() {
       // Add user to database
       await set(userRef, {
         email: newUserEmail,
-        name: newUserName,
+        firstName: newUserFirstName,
+        lastName: newUserLastName,
         isAdmin: false,
         createdAt: new Date().toISOString()
       });
@@ -83,7 +87,8 @@ function Users() {
 
       setSuccess(`User ${newUserName} (${newUserEmail}) has been added successfully!`);
       setNewUserEmail('');
-      setNewUserName('');
+      setNewUserFirstName('');
+      setNewUserLastName('');
       setNewUserPassword('');
       await loadUsers();
     } catch (err: any) {
@@ -145,12 +150,25 @@ function Users() {
         <div className="grid gap-4 mb-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Name
+              First Name
             </label>
             <input
               type="text"
-              value={newUserName}
-              onChange={(e) => setNewUserName(e.target.value)}
+              value={newUserFirstName}
+              onChange={(e) => setNewUserFirstName(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Last Name
+            </label>
+            <input
+              type="text"
+              value={newUserLastName}
+              onChange={(e) => setNewUserLastName(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               required
             />
@@ -200,7 +218,7 @@ function Users() {
             {Object.entries(users).map(([key, user]) => (
               <div key={key} className="py-4 flex items-center justify-between">
                 <div>
-                  <h3 className="font-medium">{user.name}</h3>
+                  <h3 className="font-medium">{user.firstName} {user.lastName}</h3>
                   <p className="text-sm text-gray-600">{user.email}</p>
                   {user.isAdmin && (
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">

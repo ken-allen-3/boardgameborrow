@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Dice6, Library, PlayCircle, Users, LogOut, Bug } from 'lucide-react';
+import { Dice6, Library, PlayCircle, Users, LogOut, Bug, Menu, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useBugReport } from '../contexts/BugReportContext';
 
@@ -19,6 +19,62 @@ function Navbar() {
       console.error('Failed to sign out:', error);
     }
   };
+
+  const NavLinks = () => (
+    <>
+      <Link
+        to="/my-games"
+        className="nav-link"
+        data-tutorial="my-games-link"
+        onClick={() => setIsOpen(false)}
+      >
+        <Library className="h-5 w-5" />
+        <span className="md:hidden ml-3">My Games</span>
+      </Link>
+      
+      <Link
+        to="/borrow"
+        className="nav-link"
+        data-tutorial="borrow-link"
+        onClick={() => setIsOpen(false)}
+      >
+        <PlayCircle className="h-5 w-5" />
+        <span className="md:hidden ml-3">Borrow Games</span>
+      </Link>
+      
+      <Link
+        to="/groups"
+        className="nav-link"
+        data-tutorial="groups-link"
+        onClick={() => setIsOpen(false)}
+      >
+        <Users className="h-5 w-5" />
+        <span className="md:hidden ml-3">Groups</span>
+      </Link>
+
+      <button
+        onClick={() => {
+          reportBug();
+          setIsOpen(false);
+        }}
+        className="nav-link text-brand-gray-500 hover:text-brand-gray-700"
+      >
+        <Bug className="h-5 w-5" />
+        <span className="md:hidden ml-3">Report Bug</span>
+      </button>
+
+      <button
+        onClick={() => {
+          handleSignOut();
+          setIsOpen(false);
+        }}
+        className="nav-link text-brand-gray-500 hover:text-brand-gray-700"
+      >
+        <LogOut className="h-5 w-5" />
+        <span className="md:hidden ml-3">Sign Out</span>
+      </button>
+    </>
+  );
 
   return (
     <nav className="bg-white border-b border-brand-gray-200 relative z-30">
@@ -40,47 +96,39 @@ function Navbar() {
           )}
 
           {currentUser && (
-            <div className="hidden md:flex items-center space-x-6">
-              <Link
-                to="/my-games"
-                className="nav-link"
-                data-tutorial="my-games-link"
-              >
-                <Library className="h-5 w-5" />
-              </Link>
-              
-              <Link
-                to="/borrow"
-                className="nav-link"
-                data-tutorial="borrow-link"
-              >
-                <PlayCircle className="h-5 w-5" />
-              </Link>
-              
-              <Link
-                to="/groups"
-                className="nav-link"
-                data-tutorial="groups-link"
-              >
-                <Users className="h-5 w-5" />
-              </Link>
+            <>
+              {/* Desktop Navigation */}
+              <div className="hidden md:flex items-center space-x-6">
+                <NavLinks />
+              </div>
 
-              <button
-                onClick={() => reportBug()}
-                className="nav-link text-brand-gray-500 hover:text-brand-gray-700"
-              >
-                <Bug className="h-5 w-5" />
-              </button>
-
-              <button
-                onClick={handleSignOut}
-                className="nav-link text-brand-gray-500 hover:text-brand-gray-700"
-              >
-                <LogOut className="h-5 w-5" />
-              </button>
-            </div>
+              {/* Mobile Menu Button */}
+              <div className="md:hidden">
+                <button
+                  onClick={() => setIsOpen(!isOpen)}
+                  className="p-2 rounded-lg text-brand-gray-500 hover:bg-brand-gray-100"
+                >
+                  {isOpen ? (
+                    <X className="h-6 w-6" />
+                  ) : (
+                    <Menu className="h-6 w-6" />
+                  )}
+                </button>
+              </div>
+            </>
           )}
         </div>
+
+        {/* Mobile Navigation */}
+        {isOpen && currentUser && (
+          <div className="md:hidden border-t border-brand-gray-200">
+            <div className="py-2 space-y-1">
+              <div className="flex flex-col space-y-2 p-2">
+                <NavLinks />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   );

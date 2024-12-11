@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { getDatabase, ref, get } from 'firebase/database';
 import { useAuth } from '../contexts/AuthContext';
+import { createBorrowRequest, getUserBorrowRequests, BorrowRequest } from '../services/borrowRequestService';
 import { sendBorrowRequestEmail } from '../services/email';
 import BorrowRequestModal from '../components/BorrowRequestModal';
 import ErrorMessage from '../components/ErrorMessage';
+import SuccessMessage from '../components/SuccessMessage';
 
 interface Game {
   id: string;
@@ -21,7 +23,7 @@ interface Game {
   maxPlaytime?: number;
 }
 
-interface BorrowRequest {
+interface BorrowRequestInput {
   gameId: string;
   startDate: string;
   duration: number;
@@ -32,14 +34,30 @@ function BorrowGames() {
   const [games, setGames] = useState<Game[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
-  const [requestStatus, setRequestStatus] = useState<Record<string, 'pending' | 'approved' | 'rejected'>>({});
+  const [borrowRequests, setBorrowRequests] = useState<BorrowRequest[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const { currentUser } = useAuth();
 
   useEffect(() => {
     if (!currentUser) return;
-    loadAllGames();
+    Promise.all([
+      loadAllGames(),
+      loadBorrowRequests()
+    ]);
   }, [currentUser]);
+
+  const loadBorrowRequests = async () => {
+    if (!currentUser?.email) return;
+    
+    try {
+      const requests = await getUserBorrowRequests(currentUser.email);
+      setBorrowRequests(requests);
+    } catch (err) {
+      console.error('Error loading borrow requests:', err);
+      setError('Failed to load your borrow requests');
+    }
+  };
 
   const loadAllGames = async () => {
     const db = getDatabase();
@@ -92,11 +110,23 @@ function BorrowGames() {
     }
   };
 
-  const handleBorrowRequest = async (request: BorrowRequest) => {
+  const handleBorrowRequest = async (request: BorrowRequestInput) => {
     const game = games.find(g => g.id === request.gameId);
     if (!game) return;
     
     try {
+      // Create borrow request in database
+      await createBorrowRequest({
+        gameId: game.id,
+        borrowerId: currentUser!.email!,
+        ownerId: game.owner.email,
+        gameName: game.title,
+        startDate: request.startDate,
+        duration: request.duration,
+        message: request.message,
+        status: 'pending'
+      });
+
       // Send email notification to game owner
       await sendBorrowRequestEmail({
         ownerEmail: game.owner.email,
@@ -107,11 +137,8 @@ function BorrowGames() {
         message: request.message
       });
 
-      // Update UI state
-      setRequestStatus(prev => ({
-        ...prev,
-        [request.gameId]: 'pending'
-      }));
+      await loadBorrowRequests();
+      setSuccess('Borrow request sent successfully!');
     } catch (err) {
       console.error('Failed to send borrow request:', err);
       setError('Failed to send borrow request. Please try again.');
@@ -124,6 +151,10 @@ function BorrowGames() {
       game.owner.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
   );
+
+  const getGameRequestStatus = (gameId: string) => {
+    return borrowRequests.find(req => req.gameId === gameId)?.status;
+  };
 
   const formatPlaytime = (min?: number, max?: number) => {
     if (!min && !max) return null;
@@ -158,7 +189,54 @@ function BorrowGames() {
       </div>
 
       {error && <ErrorMessage message={error} />}
+      {success && <SuccessMessage message={success} />}
 
+      {/* Active Requests Section */}
+      {borrowRequests.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">My Borrow Requests</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {borrowRequests.map((request) => {
+              const game = games.find(g => g.id === request.gameId);
+              if (!game) return null;
+
+              return (
+                <div key={request.id} className="bg-white rounded-xl shadow-md overflow-hidden opacity-75">
+                  <div className="relative aspect-square">
+                    <img
+                      src={game.image}
+                      alt={game.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = '/board-game-placeholder.png';
+                      }}
+                    />
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold mb-2 line-clamp-1" title={game.title}>
+                      {game.title}
+                    </h3>
+                    <p className="text-gray-600 mb-4 line-clamp-1">Owned by {game.owner.name}</p>
+                    
+                    <div className={`text-center py-2 rounded-lg ${
+                      request.status === 'pending'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : request.status === 'approved'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      Request {request.status}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Available Games Section */}
+      <h2 className="text-xl font-semibold mb-4">Available Games</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredGames.map((game) => (
           <div key={game.id} className="bg-white rounded-xl shadow-md overflow-hidden">
@@ -187,15 +265,15 @@ function BorrowGames() {
                 )}
               </div>
               
-              {requestStatus[game.id] ? (
+              {getGameRequestStatus(game.id) ? (
                 <div className={`text-center py-2 rounded-lg ${
-                  requestStatus[game.id] === 'pending'
+                  getGameRequestStatus(game.id) === 'pending'
                     ? 'bg-yellow-100 text-yellow-800'
-                    : requestStatus[game.id] === 'approved'
+                    : getGameRequestStatus(game.id) === 'approved'
                     ? 'bg-green-100 text-green-800'
                     : 'bg-red-100 text-red-800'
                 }`}>
-                  Request {requestStatus[game.id]}
+                  Request {getGameRequestStatus(game.id)}
                 </div>
               ) : (
                 <button

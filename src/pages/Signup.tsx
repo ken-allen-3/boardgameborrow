@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, AlertCircle, Eye, EyeOff, Wand2 } from 'lucide-react';
+import { Mail, Lock, User, AlertCircle, Eye, EyeOff, Wand2, Chrome, Facebook } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import ErrorMessage from '../components/ErrorMessage';
 
@@ -11,8 +11,22 @@ function Signup() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { signUp } = useAuth();
+  const { signUp, signInWithGoogle, signInWithFacebook } = useAuth();
   const navigate = useNavigate();
+
+  const handleSocialSignIn = async (provider: 'google' | 'facebook') => {
+    try {
+      setError('');
+      setLoading(true);
+      const signInMethod = provider === 'google' ? signInWithGoogle : signInWithFacebook;
+      await signInMethod();
+      navigate('/my-games');
+    } catch (err: any) {
+      setError(err.message || 'Failed to sign in with social provider');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,6 +70,36 @@ function Signup() {
       <div className="bg-white rounded-xl shadow-md p-8">
         <h2 className="text-2xl font-bold text-center text-gray-900 mb-8">Create Your Account</h2>
         
+        {/* Social Sign-In Buttons */}
+        <div className="space-y-3 mb-8">
+          <button
+            onClick={() => handleSocialSignIn('google')}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+          >
+            <Chrome className="h-5 w-5" />
+            <span>Continue with Google</span>
+          </button>
+
+          <button
+            onClick={() => handleSocialSignIn('facebook')}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 px-4 py-2 bg-[#1877F2] text-white rounded-lg hover:bg-[#1874EA] transition disabled:opacity-50"
+          >
+            <Facebook className="h-5 w-5" />
+            <span>Continue with Facebook</span>
+          </button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or continue with email</span>
+            </div>
+          </div>
+        </div>
+
         {error && <ErrorMessage message={error} />}
         
         <form onSubmit={handleSubmit} className="space-y-6">

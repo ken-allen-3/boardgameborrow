@@ -15,12 +15,12 @@ import { getStorage } from 'firebase/storage';
 const firebaseConfig = {
   apiKey: "AIzaSyBUSeB59sbXrpfqNCKghgJMSZv5hjH57h0",
   authDomain: "boardgameshare-001.firebaseapp.com",
+  databaseURL: "https://boardgameshare-001-default-rtdb.firebaseio.com",
   projectId: "boardgameshare-001",
-  storageBucket: "boardgameshare-001.appspot.com",
+  storageBucket: "boardgameshare-001.firebasestorage.app",
   messagingSenderId: "1078704487346",
   appId: "1:1078704487346:web:e620e65a73920c9a96c2ab",
-  measurementId: "G-XZW0HFPH6Y",
-  databaseURL: "https://boardgameshare-001-default-rtdb.firebaseio.com"
+  measurementId: "G-XZW0HFPH6Y"
 };
 
 // Initialize Firebase

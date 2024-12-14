@@ -1,16 +1,25 @@
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
-  setPersistence, 
-  browserLocalPersistence,
   GoogleAuthProvider,
   FacebookAuthProvider,
+  setPersistence, 
+  browserLocalPersistence,
   signInWithPopup,
   updateProfile,
   sendEmailVerification
 } from 'firebase/auth';
 import { getDatabase, ref, get } from 'firebase/database';
 import { getStorage } from 'firebase/storage';
+
+// Initialize Firebase providers
+const googleProvider = new GoogleAuthProvider();
+googleProvider.addScope('https://www.googleapis.com/auth/userinfo.profile');
+googleProvider.addScope('https://www.googleapis.com/auth/userinfo.email');
+
+const facebookProvider = new FacebookAuthProvider();
+facebookProvider.addScope('email');
+facebookProvider.addScope('public_profile');
 
 const firebaseConfig = {
   apiKey: "AIzaSyBUSeB59sbXrpfqNCKghgJMSZv5hjH57h0",
@@ -39,8 +48,7 @@ setPersistence(auth, browserLocalPersistence).catch(console.error);
 export const database = getDatabase(app);
 
 // Export auth providers
-export const googleProvider = new GoogleAuthProvider();
-export const facebookProvider = new FacebookAuthProvider();
+export { googleProvider, facebookProvider };
 
 // Initialize database structure for a user
 export async function ensureDatabaseStructure(userEmail: string) {

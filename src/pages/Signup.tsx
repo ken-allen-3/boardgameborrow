@@ -18,11 +18,24 @@ function Signup() {
     try {
       setError('');
       setLoading(true);
+      
+      // Inform user about popup
+      const message = `Please allow the ${provider} login popup. If you don't see it, check if it was blocked by your browser.`;
+      setError(message);
+      
       const signInMethod = provider === 'google' ? signInWithGoogle : signInWithFacebook;
       await signInMethod();
       navigate('/my-games');
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in with social provider');
+      if (err.code === 'auth/popup-blocked') {
+        setError(
+          'The login popup was blocked by your browser. Please allow popups for this site and try again.'
+        );
+      } else if (err.code === 'auth/popup-closed-by-user') {
+        setError('You closed the login popup. Please try again.');
+      } else {
+        setError(err.message || 'Failed to sign in. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

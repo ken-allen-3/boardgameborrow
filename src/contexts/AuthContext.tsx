@@ -5,11 +5,19 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
   setPersistence,
-  browserLocalPersistence,
-  createUserWithEmailAndPassword
+  browserLocalPersistence, 
+  createUserWithEmailAndPassword,
+  signInWithPopup
 } from 'firebase/auth';
 import { ref, set, get } from 'firebase/database';
-import { auth, database, ensureDatabaseStructure, validateDatabaseAccess } from '../config/firebase';
+import { 
+  auth, 
+  database, 
+  ensureDatabaseStructure, 
+  validateDatabaseAccess,
+  googleProvider,
+  facebookProvider 
+} from '../config/firebase';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -156,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(null);
       const { user } = await createUserWithEmailAndPassword(auth, data.email, data.password);
       
-      const userRef = ref(db, `users/${data.email.replace(/\./g, ',')}`);
+      const userRef = ref(database, `users/${data.email.replace(/\./g, ',')}`);
       await set(userRef, {
         email: data.email,
         firstName: data.firstName,
@@ -212,18 +220,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signInWithGoogle() {
-    const provider = new GoogleAuthProvider();
-    provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
-    return signInWithPopup(auth, provider);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      
+      if (result.user) {
+        const userRef = ref(database, `users/${result.user.email?.replace(/\./g, ',')}`);
+        const snapshot = await get(userRef);
+        
+        if (!snapshot.exists()) {
+          // New user - set up their profile
+          await set(userRef, {
+            email: result.user.email,
+            firstName: result.user.displayName?.split(' ')[0] || '',
+            lastName: result.user.displayName?.split(' ').slice(1).join(' ') || '',
+            photoUrl: result.user.photoURL,
+            isAdmin: result.user.email === 'kenny@springwavestudios.com',
+            hasCompletedOnboarding: false,
+            createdAt: new Date().toISOString(),
+            lastLogin: new Date().toISOString()
+          });
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      throw error;
+    }
   }
 
   async function signInWithFacebook() {
-    const provider = new FacebookAuthProvider();
-    provider.addScope('email');
-    provider.addScope('public_profile');
-    provider.addScope('user_friends');
-    provider.addScope('user_location');
-    return signInWithPopup(auth, provider);
+    try {
+      const result = await signInWithPopup(auth, facebookProvider);
+      
+      if (result.user) {
+        const userRef = ref(database, `users/${result.user.email?.replace(/\./g, ',')}`);
+        const snapshot = await get(userRef);
+        
+        if (!snapshot.exists()) {
+          // New user - set up their profile
+          await set(userRef, {
+            email: result.user.email,
+            firstName: result.user.displayName?.split(' ')[0] || '',
+            lastName: result.user.displayName?.split(' ').slice(1).join(' ') || '',
+            photoUrl: result.user.photoURL,
+            isAdmin: false,
+            hasCompletedOnboarding: false,
+            createdAt: new Date().toISOString(),
+            lastLogin: new Date().toISOString()
+          });
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Facebook sign in error:', error);
+      throw error;
+    }
   }
 
   const value = {

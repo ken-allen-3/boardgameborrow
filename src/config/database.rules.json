@@ -1,0 +1,12 @@
+@@ .. @@
+   "rules": {
+     "users": {
+       "$uid": {
+-        ".read": "auth != null",
+-        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isAdmin').val() === true)"
++        ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isAdmin').val() === true)",
++        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isAdmin').val() === true)",
++        ".validate": "newData.hasChildren(['email', 'firstName', 'lastName', 'photoUrl', 'location'])"
+       }
+     },
+     "games": {

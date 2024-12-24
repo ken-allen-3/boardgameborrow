@@ -1,31 +1,16 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Dice6, Users, Share2, Calendar, Wand2, ArrowRight, Mail } from 'lucide-react';
+import { Dice6, Users, Share2, Calendar, ArrowRight, Mail } from 'lucide-react';
 import { sendWaitlistEmail } from '../services/email';
 import { useAuth } from '../contexts/AuthContext';
 
 function Home() {
-  const { signUp } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
   const [waitlistSuccess, setWaitlistSuccess] = useState(false);
-
-  const handleQuickSignup = async () => {
-    const randomId = Math.random().toString(36).substring(2, 8);
-    const randomName = `Test User ${randomId}`;
-    const randomEmail = `test.user.${randomId}@example.com`;
-    const defaultPassword = 'password123';
-
-    try {
-      await signUp(randomEmail, defaultPassword, randomName);
-      navigate('/my-games');
-    } catch (err) {
-      console.error('Quick signup failed:', err);
-    }
-  };
 
   const handleWaitlistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,14 +32,14 @@ function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-blue-50 to-white py-12">
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-brand-blue-50 to-white py-8 sm:py-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
         {/* Hero Section */}
-        <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-brand-gray-900 mb-6">
+        <div className="text-center mb-12 sm:mb-16">
+          <h1 className="text-4xl sm:text-5xl font-bold text-brand-gray-900 mb-4 sm:mb-6">
             Game Nights, Made Easy with BoardGameBorrow
           </h1>
-          <p className="text-xl text-brand-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-brand-gray-600 max-w-2xl mx-auto px-2">
             Create your game inventory, share with friends, and enjoy new games without the hassle.
           </p>
           <div className="mt-12 max-w-md mx-auto">
@@ -116,8 +101,8 @@ function Home() {
         </div>
 
         {/* How It Works Section */}
-        <div className="mb-24">
-          <h2 className="text-3xl font-bold text-center mb-12">
+        <div className="mb-16 sm:mb-24">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">
             Sharing Games Has Never Been Easier
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -152,8 +137,8 @@ function Home() {
         </div>
 
         {/* Why You'll Love It Section */}
-        <div className="mb-24">
-          <h2 className="text-3xl font-bold text-center mb-12">
+        <div className="mb-16 sm:mb-24">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">
             More Games, Less Spending
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -185,7 +170,7 @@ function Home() {
         </div>
 
         {/* Testimonials Section */}
-        <div className="mb-24">
+        <div className="mb-16 sm:mb-24">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <blockquote className="card p-6">
               <p className="text-lg text-brand-gray-600 mb-4">
@@ -208,16 +193,7 @@ function Home() {
           <p className="text-xl text-brand-gray-600 mb-8">
             Start sharing, borrowing, and enjoying your favorite games today.
           </p>
-          {process.env.NODE_ENV === 'development' && (
-            <button
-              onClick={handleQuickSignup}
-              className="btn-primary mb-4 w-full max-w-md mx-auto"
-            >
-              <Wand2 className="h-5 w-5 mr-2" />
-              <span>Quick Test Account (Dev Only)</span>
-            </button>
-          )}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
             <Link to="/signup" className="btn-primary">
               Sign Up Now
               <ArrowRight className="ml-2 h-4 w-4" />

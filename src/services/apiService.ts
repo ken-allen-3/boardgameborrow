@@ -1,10 +1,14 @@
 import { BOARD_GAME_API } from '../config/constants';
 import { createAppError } from '../utils/errorUtils';
 
-const MAX_RETRIES = 5;
-const BASE_RETRY_DELAY = 1000;
-const MAX_RETRY_DELAY = 10000;
-const CORS_PROXY = 'https://corsproxy.io/?';
+const MAX_RETRIES = 3;
+const BASE_RETRY_DELAY = 2000;
+const MAX_RETRY_DELAY = 30000;
+
+// Rate limiting queue
+let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 1000; // Minimum 1 second between requests
+const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
 
 interface RateLimitConfig {
   maxAttempts: number;
@@ -40,7 +44,7 @@ interface CacheEntry<T> {
 }
 
 const cache = new Map<string, CacheEntry<any>>();
-const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours - BGG data doesn't change frequently
 const requestQueue = new Map<string, Promise<any>>();
 
 export async function makeApiRequest(endpoint: string, params: Record<string, string> = {}): Promise<string> {
@@ -50,8 +54,8 @@ export async function makeApiRequest(endpoint: string, params: Record<string, st
     bggUrl.searchParams.append(key, value);
   });
   
-  // Then encode it for the CORS proxy
-  const proxyUrl = CORS_PROXY + encodeURIComponent(bggUrl.toString());
+  // Construct the proxied URL
+  const proxyUrl = CORS_PROXY + bggUrl.toString();
   const cacheKey = bggUrl.toString();
 
   console.log('[API] Making request:', {
@@ -107,11 +111,24 @@ export async function makeApiRequest(endpoint: string, params: Record<string, st
   return request;
 }
 
+async function waitForRateLimit() {
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastRequestTime;
+  
+  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+    const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+    await delay(waitTime);
+  }
+  
+  lastRequestTime = Date.now();
+}
+
 async function retryRequest(
   url: string,
   options: RequestInit,
   retriesLeft: number = MAX_RETRIES
 ): Promise<string> {
+  await waitForRateLimit();
   try {
     const response = await fetch(url, {
       ...options,
@@ -139,6 +156,14 @@ async function retryRequest(
       throw new RateLimitError('Rate limit exceeded');
     }
 
+    // Check for CORS Anywhere permission error
+    if (response.status === 403 && url.includes('cors-anywhere.herokuapp.com')) {
+      throw createAppError(
+        'Please enable CORS Anywhere by visiting https://cors-anywhere.herokuapp.com/corsdemo and clicking "Request temporary access to the demo server"',
+        'CORS_ERROR'
+      );
+    }
+    
     // Check for other error responses
     if (!response.ok) {
       throw createAppError(

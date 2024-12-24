@@ -52,10 +52,10 @@ function WelcomeModal({ onClose }: WelcomeModalProps) {
 
           <div className="p-8">
             <h2 className="text-2xl font-bold text-center text-indigo-900 mb-2">
-              Welcome to BoardShare!
+              Welcome to BoardGameBorrow!
             </h2>
             <p className="text-center text-indigo-600 mb-8">
-              Your board game library at your fingertips
+              Share and borrow board games with friends
             </p>
 
             <div className="space-y-6 mb-8">

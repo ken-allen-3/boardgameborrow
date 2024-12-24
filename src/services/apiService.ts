@@ -1,42 +1,12 @@
-import { BOARD_GAME_API } from '../config/constants';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { app } from '../config/firebase';
 import { createAppError } from '../utils/errorUtils';
 
-const MAX_RETRIES = 3;
-const BASE_RETRY_DELAY = 2000;
-const MAX_RETRY_DELAY = 30000;
+const functions = getFunctions(app);
+const bggSearch = httpsCallable(functions, 'bggSearch');
+const bggGameDetails = httpsCallable(functions, 'bggGameDetails');
 
-// Rate limiting queue
-let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 1000; // Minimum 1 second between requests
-const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
-
-interface RateLimitConfig {
-  maxAttempts: number;
-  baseDelay: number;
-  maxDelay: number;
-}
-
-const defaultConfig: RateLimitConfig = {
-  maxAttempts: 3,
-  baseDelay: BASE_RETRY_DELAY,
-  maxDelay: MAX_RETRY_DELAY
-};
-
-class RateLimitError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'RateLimitError';
-  }
-}
-
-async function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function getRetryDelay(attempt: number): number {
-  const delay = BASE_RETRY_DELAY * Math.pow(2, attempt - 1);
-  return Math.min(delay, MAX_RETRY_DELAY);
-}
+// Cache configuration
 
 interface CacheEntry<T> {
   data: T;
@@ -44,24 +14,11 @@ interface CacheEntry<T> {
 }
 
 const cache = new Map<string, CacheEntry<any>>();
-const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours - BGG data doesn't change frequently
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 const requestQueue = new Map<string, Promise<any>>();
 
 export async function makeApiRequest(endpoint: string, params: Record<string, string> = {}): Promise<string> {
-  // Build the BGG API URL first
-  const bggUrl = new URL(BOARD_GAME_API.BASE_URL + endpoint.replace(/^\//, ''));
-  Object.entries(params).forEach(([key, value]) => {
-    bggUrl.searchParams.append(key, value);
-  });
-  
-  // Construct the proxied URL
-  const proxyUrl = CORS_PROXY + bggUrl.toString();
-  const cacheKey = bggUrl.toString();
-
-  console.log('[API] Making request:', {
-    originalUrl: bggUrl.toString(),
-    proxyUrl
-  });
+  const cacheKey = `${endpoint}:${JSON.stringify(params)}`;
 
   // Check cache first
   const cached = cache.get(cacheKey);
@@ -75,32 +32,34 @@ export async function makeApiRequest(endpoint: string, params: Record<string, st
     return requestQueue.get(cacheKey);
   }
 
-  const request = retryRequest(proxyUrl, {}, MAX_RETRIES)
+  console.log('[API] Making request:', { endpoint, params });
+
+  const request = (endpoint === '/search' ? bggSearch(params) : bggGameDetails(params))
     .then(response => {
+      const xmlData = response.data as string;
+      
       // Cache successful response
       cache.set(cacheKey, {
-        data: response,
+        data: xmlData,
         timestamp: Date.now()
       });
-      return response;
+      
+      return xmlData;
     })
     .catch(error => {
-      if (error instanceof RateLimitError) {
+      console.error('[API] Request failed:', error);
+      
+      if (error.code === 'functions/resource-exhausted') {
         throw createAppError(
           'Too many requests. Please try again in a few minutes.',
           'RATE_LIMIT_ERROR'
         );
       }
       
-      if (error.message.includes('Failed to fetch')) {
-        throw createAppError(
-          'Unable to connect to BoardGameGeek. Please check your internet connection.',
-          'NETWORK_ERROR'
-        );
-      }
       throw createAppError(
-        'An error occurred while fetching game data. Please try again.',
-        'API_ERROR'
+        'Failed to fetch game data. Please try again.',
+        'API_ERROR',
+        { originalError: error }
       );
     })
     .finally(() => {
@@ -109,108 +68,4 @@ export async function makeApiRequest(endpoint: string, params: Record<string, st
 
   requestQueue.set(cacheKey, request);
   return request;
-}
-
-async function waitForRateLimit() {
-  const now = Date.now();
-  const timeSinceLastRequest = now - lastRequestTime;
-  
-  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-    const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
-    await delay(waitTime);
-  }
-  
-  lastRequestTime = Date.now();
-}
-
-async function retryRequest(
-  url: string,
-  options: RequestInit,
-  retriesLeft: number = MAX_RETRIES
-): Promise<string> {
-  await waitForRateLimit();
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...options.headers,
-        'Accept': 'application/xml',
-        'Origin': window.location.origin
-      }
-    });
-
-    // Log response status for debugging
-    console.log('[API] Response status:', {
-      url,
-      status: response.status,
-      statusText: response.statusText
-    });
-
-    // Check for rate limiting response
-    if (response.status === 429) {
-      const retryDelay = getRetryDelay(MAX_RETRIES - retriesLeft + 1);
-      if (retriesLeft > 0) {
-        await delay(retryDelay);
-        return retryRequest(url, options, retriesLeft - 1);
-      }
-      throw new RateLimitError('Rate limit exceeded');
-    }
-
-    // Check for CORS Anywhere permission error
-    if (response.status === 403 && url.includes('cors-anywhere.herokuapp.com')) {
-      throw createAppError(
-        'Please enable CORS Anywhere by visiting https://cors-anywhere.herokuapp.com/corsdemo and clicking "Request temporary access to the demo server"',
-        'CORS_ERROR'
-      );
-    }
-    
-    // Check for other error responses
-    if (!response.ok) {
-      throw createAppError(
-        'Failed to fetch game data',
-        'API_ERROR',
-        { status: response.status }
-      );
-    }
-
-    const text = await response.text();
-    
-    // Log response length for debugging
-    console.log('[API] Response length:', text.length);
-
-    if (!text.trim()) {
-      throw createAppError(
-        'Received empty response from API',
-        'EMPTY_RESPONSE'
-      );
-    }
-
-    // Validate XML response
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(text, 'text/xml');
-    if (doc.querySelector('parsererror')) {
-      throw createAppError(
-        'Invalid XML response from API',
-        'INVALID_RESPONSE'
-      );
-    }
-
-    return text;
-  } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('Failed to fetch')) {
-        throw createAppError(
-          'Unable to connect to BoardGameGeek. Please check your internet connection.',
-          'NETWORK_ERROR',
-          { originalError: error }
-        );
-      }
-      throw error;
-    }
-    throw createAppError(
-      'An unexpected error occurred',
-      'UNKNOWN_ERROR',
-      { originalError: error }
-    );
-  }
 }

@@ -47,8 +47,8 @@ setPersistence(auth, browserLocalPersistence).catch(console.error);
 // Initialize Realtime Database and get a reference to the service
 export const database = getDatabase(app);
 
-// Export auth providers
-export { googleProvider, facebookProvider };
+// Export Firebase instances and providers
+export { app, googleProvider, facebookProvider };
 
 // Initialize database structure for a user
 export async function ensureDatabaseStructure(userEmail: string) {

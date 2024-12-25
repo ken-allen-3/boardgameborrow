@@ -14,7 +14,8 @@ interface Game {
   image: string;
   owner: {
     email: string;
-    name: string;
+    firstName: string;
+    lastName: string;
   };
   available: boolean;
   minPlayers?: number;
@@ -74,34 +75,35 @@ function BorrowGames() {
       const users = usersSnapshot.val() || {};
       
       if (gamesSnapshot.exists()) {
+        // Convert the games object to an array of entries and iterate
         Object.entries(gamesSnapshot.val()).forEach(([userKey, userGames]) => {
           const userEmail = userKey.replace(/,/g, '.');
-          if (userEmail === currentUser.email) return;
+          if (userEmail === currentUser?.email) return; // Skip current user's games
 
           const games = userGames as any[];
           const userInfo = users[userKey] || {};
           
-          // Skip games owned by current user
-          if (userEmail === currentUser.email) return;
-
-          games.forEach((game, index) => {
-            if (game.status === 'available') {
-              allGames.push({
-                id: `${userKey}-${index}`,
-                title: game.title,
-                image: game.image || '/board-game-placeholder.png',
-                owner: {
-                  email: userEmail,
-                  name: `${userInfo.firstName || ''} ${userInfo.lastName || userEmail.split('@')[0]}`.trim()
-                },
-                available: true,
-                minPlayers: game.minPlayers,
-                maxPlayers: game.maxPlayers,
-                minPlaytime: game.minPlaytime,
-                maxPlaytime: game.maxPlaytime
-              });
-            }
-          });
+          if (Array.isArray(games)) {
+            games.forEach((game, index) => {
+              if (game.status === 'available') {
+                allGames.push({
+                  id: `${userKey}-${index}`,
+                  title: game.title,
+                  image: game.image || '/board-game-placeholder.png',
+                  owner: {
+                    email: userEmail,
+                    firstName: userInfo.firstName || '',
+                    lastName: userInfo.lastName || userEmail.split('@')[0]
+                  },
+                  available: true,
+                  minPlayers: game.minPlayers,
+                  maxPlayers: game.maxPlayers,
+                  minPlaytime: game.minPlaytime,
+                  maxPlaytime: game.maxPlaytime
+                });
+              }
+            });
+          }
         });
       }
       
@@ -126,7 +128,7 @@ function BorrowGames() {
       // Create borrow request in database
       await createBorrowRequest({
         gameId: game.id,
-        borrowerId: currentUser!.email!,
+        borrowerId: currentUser.email,
         ownerId: game.owner.email,
         gameName: game.title,
         startDate: request.startDate,
@@ -138,7 +140,7 @@ function BorrowGames() {
       // Send email notification to game owner
       const emailSent = await sendBorrowRequestEmail({
         ownerEmail: game.owner.email,
-        borrowerName: currentUser?.email?.split('@')[0] || 'A user',
+        borrowerName: currentUser.email.split('@')[0],
         gameName: game.title,
         startDate: request.startDate,
         duration: request.duration,
@@ -151,6 +153,7 @@ function BorrowGames() {
 
       await loadBorrowRequests();
       setSuccess('Borrow request sent successfully!');
+      setSelectedGame(null);
       
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000);
@@ -163,7 +166,7 @@ function BorrowGames() {
   const filteredGames = games.filter(game => 
     game.available && (
       game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      game.owner.name.toLowerCase().includes(searchQuery.toLowerCase())
+      `${game.owner.firstName} ${game.owner.lastName}`.toLowerCase().includes(searchQuery.toLowerCase())
     )
   );
 
@@ -231,7 +234,9 @@ function BorrowGames() {
                     <h3 className="text-lg font-semibold mb-2 line-clamp-1" title={game.title}>
                       {game.title}
                     </h3>
-                    <p className="text-gray-600 mb-4 line-clamp-1">Owned by {game.owner.name}</p>
+                    <p className="text-gray-600 mb-4 line-clamp-1">
+                      Owned by {game.owner.firstName} {game.owner.lastName}
+                    </p>
                     
                     <div className={`text-center py-2 rounded-lg ${
                       request.status === 'pending'
@@ -269,7 +274,9 @@ function BorrowGames() {
               <h3 className="text-lg font-semibold mb-2 line-clamp-1" title={game.title}>
                 {game.title}
               </h3>
-              <p className="text-gray-600 mb-4 line-clamp-1">Owned by {game.owner.name}</p>
+              <p className="text-gray-600 mb-4 line-clamp-1">
+                Owned by {game.owner.firstName} {game.owner.lastName}
+              </p>
               
               <div className="flex flex-wrap gap-2 mb-4 text-sm text-gray-600">
                 {formatPlayers(game.minPlayers, game.maxPlayers) && (

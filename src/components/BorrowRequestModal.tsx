@@ -8,7 +8,8 @@ interface BorrowRequestModalProps {
     title: string;
     owner: {
       email: string;
-      name: string;
+      firstName: string;
+      lastName: string;
     };
   };
   onClose: () => void;
@@ -81,7 +82,9 @@ function BorrowRequestModal({ game, onClose, onSubmit }: BorrowRequestModalProps
           <div>
             <div className="font-medium mb-1">Game</div>
             <div className="text-gray-600">{game.title}</div>
-            <div className="text-sm text-gray-500">Owned by {game.owner.name}</div>
+            <div className="text-sm text-gray-500">
+              Owned by {game.owner.firstName} {game.owner.lastName}
+            </div>
           </div>
 
           <div>

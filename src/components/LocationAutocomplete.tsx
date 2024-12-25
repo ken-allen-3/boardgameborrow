@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search } from 'lucide-react';
+import { MapPin } from 'lucide-react'; // Removed unused Search import
 import { useDebounce } from '../hooks/useDebounce';
 
 export interface GeocodingResult {
   id: string;
   place_name: string;
   center: [number, number];
+  text: string; // Added missing property
+  context?: {
+    id: string;
+    text: string;
+    short_code?: string;
+  }[];
 }
 
 interface LocationAutocompleteProps {
@@ -13,22 +19,31 @@ interface LocationAutocompleteProps {
   onChange: (location: string) => void;
   className?: string;
   required?: boolean;
+  placeholder?: string;
 }
 
-export function LocationAutocomplete({ value, onChange, className, required }: LocationAutocompleteProps) {
+const MAPBOX_API_KEY = import.meta.env.VITE_MAPBOX_API_KEY;
+
+export function LocationAutocomplete({ 
+  value, 
+  onChange, 
+  className = '', 
+  required = false,
+  placeholder = 'Enter your location'
+}: LocationAutocompleteProps) {
   const [suggestions, setSuggestions] = useState<GeocodingResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const debouncedValue = useDebounce(value, 300);
-  const MAPBOX_API_KEY = import.meta.env.VITE_MAPBOX_API_KEY;
 
   async function searchLocations(query: string): Promise<GeocodingResult[]> {
     if (!query?.trim() || !MAPBOX_API_KEY) return [];
 
     try {
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_API_KEY}&types=place,locality,neighborhood`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_API_KEY}&types=place,locality,neighborhood,postcode&country=US`
       );
 
       if (!response.ok) {
@@ -36,13 +51,10 @@ export function LocationAutocomplete({ value, onChange, className, required }: L
       }
 
       const data = await response.json();
-      return data.features.map((feature: any) => ({
-        id: feature.id,
-        place_name: feature.place_name,
-        center: feature.center
-      }));
+      return data.features;
     } catch (error) {
       console.error('Geocoding error:', error);
+      setError('Failed to load location suggestions');
       return [];
     }
   }
@@ -55,6 +67,7 @@ export function LocationAutocomplete({ value, onChange, className, required }: L
       }
 
       setLoading(true);
+      setError(null);
       try {
         const results = await searchLocations(debouncedValue);
         setSuggestions(results);
@@ -80,45 +93,54 @@ export function LocationAutocomplete({ value, onChange, className, required }: L
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    onChange(newValue);
-    setShowSuggestions(true);
-  };
-
-  const handleSuggestionClick = (suggestion: GeocodingResult) => {
-    onChange(suggestion.place_name);
-    setSuggestions([]);
-    setShowSuggestions(false);
+  const formatSuggestion = (suggestion: GeocodingResult): string => {
+    const city = suggestion.text;
+    const state = suggestion.context?.find(ctx => ctx.short_code?.startsWith('US-'))?.short_code?.replace('US-', '');
+    return state ? `${city}, ${state}` : city;
   };
 
   return (
     <div ref={wrapperRef} className="relative">
-      <input
-        type="text"
-        value={value}
-        onChange={handleInputChange}
-        onFocus={() => value && setShowSuggestions(true)}
-        placeholder="Enter your location"
-        className={className}
-        required={required}
-      />
+      <div className="relative">
+        <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => {
+            onChange(e.target.value);
+            setShowSuggestions(true);
+          }}
+          onFocus={() => value && setShowSuggestions(true)}
+          placeholder={placeholder}
+          className={`pl-10 ${className}`}
+          required={required}
+        />
+        {loading && (
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-indigo-500 border-t-transparent"></div>
+          </div>
+        )}
+      </div>
 
-      {loading && (
-        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-          <div className="animate-spin rounded-full h-4 w-4 border-2 border-indigo-500 border-t-transparent"></div>
+      {error && (
+        <div className="absolute w-full mt-1 text-sm text-red-600">
+          {error}
         </div>
       )}
 
       {showSuggestions && suggestions.length > 0 && (
         <ul className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto">
-          {suggestions.map((suggestion, index) => (
+          {suggestions.map((suggestion) => (
             <li
               key={suggestion.id}
-              onClick={() => handleSuggestionClick(suggestion)}
+              onClick={() => {
+                onChange(formatSuggestion(suggestion));
+                setShowSuggestions(false);
+              }}
               className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
             >
-              {suggestion.place_name}
+              <div className="font-medium">{formatSuggestion(suggestion)}</div>
+              <div className="text-sm text-gray-500">{suggestion.place_name}</div>
             </li>
           ))}
         </ul>

@@ -52,7 +52,8 @@ const GameList: React.FC<GameListProps> = ({ games, onDeleteGame, onRateGame }) 
             <div className="absolute top-2 right-2">
               <button 
                 onClick={() => onDeleteGame(game.id)}
-                className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition"
+                className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition shadow-lg"
+                title="Delete game"
               >
                 <Trash2 className="h-4 w-4" />
               </button>

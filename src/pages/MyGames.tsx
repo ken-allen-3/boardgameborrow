@@ -13,7 +13,7 @@ import GameList from '../components/GameList';
 import AddGameButton from '../components/AddGameButton';
 import ErrorMessage from '../components/ErrorMessage';
 
-const MyGames: React.FC = () => {
+const MyGames = () => {  // Removed React.FC type
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +91,7 @@ const MyGames: React.FC = () => {
 
     try {
       await rateGame(currentUser.email, gameId, rating);
-      await loadGames();
+      await loadGames(); // Reload games to get updated ratings
       setError(null);
     } catch (err) {
       setError('Failed to rate game. Please try again.');
@@ -157,4 +157,4 @@ const MyGames: React.FC = () => {
   );
 };
 
-export default MyGames;
+export default MyGames;  // Added default export

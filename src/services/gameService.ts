@@ -12,6 +12,12 @@ export interface Game {
   maxPlayers?: number;
   minPlaytime?: number;
   maxPlaytime?: number;
+  ratings?: {
+    [gameId: string]: {
+      rating: number;
+      updatedAt: string;
+    }
+  };
 }
 
 export async function loadUserGames(userEmail: string): Promise<Game[]> {
@@ -29,7 +35,6 @@ export async function loadUserGames(userEmail: string): Promise<Game[]> {
     }
 
     const gamesData = snapshot.val();
-    const ratings = gamesData.ratings || {};
 
     return Array.isArray(gamesData) ? gamesData.map((game: any, index: number) => ({
       id: index.toString(),
@@ -37,7 +42,7 @@ export async function loadUserGames(userEmail: string): Promise<Game[]> {
       image: game.image || 'https://images.unsplash.com/photo-1606503153255-59d5e417dbf0?auto=format&fit=crop&q=80&w=400',
       status: game.status || 'available',
       borrower: game.borrower,
-      rating: ratings[index]?.rating,
+      rating: game.rating || 0, // Use the direct rating property
       minPlayers: game.minPlayers,
       maxPlayers: game.maxPlayers,
       minPlaytime: game.minPlaytime,
@@ -68,7 +73,8 @@ export async function addGame(userEmail: string, game: BoardGame): Promise<void>
       minPlayers: game.min_players,
       maxPlayers: game.max_players,
       minPlaytime: game.min_playtime,
-      maxPlaytime: game.max_playtime
+      maxPlaytime: game.max_playtime,
+      ratings: {}
     };
 
     await set(gamesRef, Array.isArray(currentGames) ? [...currentGames, newGame] : [newGame]);

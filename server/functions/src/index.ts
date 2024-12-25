@@ -3,7 +3,10 @@ import cors = require("cors");
 import axios from "axios";
 import { Request, Response } from "express";
 
-const corsHandler = cors({ origin: true });
+const corsHandler = cors({ 
+  origin: ["https://boardgameborrow.com", "http://localhost:5173"],
+  methods: ["GET"]
+});
 const BGG_BASE_URL = "https://boardgamegeek.com/xmlapi2";
 const CACHE_DURATION = 24 * 60 * 60; // 24 hours in seconds
 
@@ -50,7 +53,11 @@ export const searchGames = functions.region("us-central1").https.onRequest((requ
         return;
       }
 
-      const { query, type = "boardgame", exact } = request.query;
+      const { query, type = "boardgame", exact } = request.query as { 
+        query?: string; 
+        type?: string; 
+        exact?: string;
+      };
       
       if (!query) {
         response.status(400).json({ error: "Query parameter is required" });
@@ -99,7 +106,7 @@ export const getGameDetails = functions.region("us-central1").https.onRequest((r
         return;
       }
 
-      const { id } = request.query;
+      const { id } = request.query as { id?: string };
       
       if (!id) {
         response.status(400).json({ error: "Game ID is required" });

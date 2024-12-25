@@ -1,13 +1,9 @@
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { app } from '../config/firebase';
+import axios, { AxiosResponse, AxiosError } from 'axios';
 import { createAppError } from '../utils/errorUtils';
 
-const functions = getFunctions(app);
-const bggSearch = httpsCallable(functions, 'bggSearch');
-const bggGameDetails = httpsCallable(functions, 'bggGameDetails');
+const FUNCTIONS_BASE_URL = 'https://us-central1-boardgameshare-001.cloudfunctions.net';
 
 // Cache configuration
-
 interface CacheEntry<T> {
   data: T;
   timestamp: number;
@@ -34,9 +30,12 @@ export async function makeApiRequest(endpoint: string, params: Record<string, st
 
   console.log('[API] Making request:', { endpoint, params });
 
-  const request = (endpoint === '/search' ? bggSearch(params) : bggGameDetails(params))
-    .then(response => {
-      const xmlData = response.data as string;
+  const functionName = endpoint === '/search' ? 'searchGames' : 'getGameDetails';
+  const url = `${FUNCTIONS_BASE_URL}/${functionName}`;
+
+  const request = axios.get(url, { params })
+    .then((response: AxiosResponse) => {
+      const xmlData = response.data;
       
       // Cache successful response
       cache.set(cacheKey, {
@@ -46,10 +45,10 @@ export async function makeApiRequest(endpoint: string, params: Record<string, st
       
       return xmlData;
     })
-    .catch(error => {
+    .catch((error: AxiosError) => {
       console.error('[API] Request failed:', error);
       
-      if (error.code === 'functions/resource-exhausted') {
+      if (error.response?.status === 429) {
         throw createAppError(
           'Too many requests. Please try again in a few minutes.',
           'RATE_LIMIT_ERROR'

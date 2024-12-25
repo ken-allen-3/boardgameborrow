@@ -39,7 +39,10 @@ exports.getGameDetails = exports.searchGames = void 0;
 const functions = __importStar(require("firebase-functions/v1"));
 const cors = require("cors");
 const axios_1 = __importDefault(require("axios"));
-const corsHandler = cors({ origin: true });
+const corsHandler = cors({
+    origin: ["https://boardgameborrow.com", "http://localhost:5173"],
+    methods: ["GET"]
+});
 const BGG_BASE_URL = "https://boardgamegeek.com/xmlapi2";
 const CACHE_DURATION = 24 * 60 * 60; // 24 hours in seconds
 // Rate limiting configuration

@@ -39,6 +39,16 @@ function checkRateLimit(ip: string): boolean {
 export const searchGames = functions.region("us-central1").https.onRequest((request: Request, response: Response) => {
   return corsHandler(request, response, async () => {
     try {
+      console.log("Request origin:", request.headers.origin); // Debugging
+
+      // Handle preflight requests
+      if (request.method === "OPTIONS") {
+        response.set("Access-Control-Allow-Methods", "GET");
+        response.set("Access-Control-Allow-Headers", "Content-Type");
+        response.status(204).send('');
+        return;
+      }
+
       if (request.method !== "GET") {
         response.status(405).json({ error: "Method not allowed" });
         return;
@@ -66,11 +76,7 @@ export const searchGames = functions.region("us-central1").https.onRequest((requ
 
       // Make request to BGG API
       const bggResponse = await axios.get(`${BGG_BASE_URL}/search`, {
-        params: {
-          query,
-          type,
-          exact
-        }
+        params: { query, type, exact }
       });
 
       // Set cache headers
@@ -88,6 +94,7 @@ export const searchGames = functions.region("us-central1").https.onRequest((requ
     }
   });
 });
+
 
 export const getGameDetails = functions.region("us-central1").https.onRequest((request: Request, response: Response) => {
   return corsHandler(request, response, async () => {

@@ -3,6 +3,7 @@ import { BoardGame } from '../types/boardgame';
 import { makeApiRequest } from './apiService';
 
 import { logError, createAppError, AppError } from '../utils/errorUtils';
+import { measurePerformance, trackCacheOperation } from '../utils/performanceUtils';
 
 // Cache configuration
 const CACHE_VERSION = '1.0';
@@ -47,22 +48,27 @@ class PersistentCache<T> {
     }
   }
 
-  get(key: string): T | null {
+  get(key: string, cacheName: string): T | null {
     const entry = this.cache.get(key);
-    if (!entry) return null;
+    if (!entry) {
+      trackCacheOperation(cacheName, 'miss', { key });
+      return null;
+    }
 
     // Check version and TTL
     if (entry.version !== CACHE_VERSION || 
         Date.now() - entry.timestamp > CACHE_TTL) {
       this.cache.delete(key);
       this.saveToStorage();
+      trackCacheOperation(cacheName, 'evict', { key, reason: 'expired' });
       return null;
     }
 
+    trackCacheOperation(cacheName, 'hit', { key });
     return entry.data;
   }
 
-  set(key: string, data: T) {
+  set(key: string, data: T, cacheName: string) {
     // Enforce cache size limit
     if (this.cache.size >= MAX_CACHE_SIZE) {
       // Remove oldest entries
@@ -71,9 +77,13 @@ class PersistentCache<T> {
         .sort((a, b) => a[1].timestamp - b[1].timestamp)
         .slice(0, Math.ceil(MAX_CACHE_SIZE * 0.2)); // Remove 20% of oldest entries
 
-      oldestEntries.forEach(([key]) => this.cache.delete(key));
+      oldestEntries.forEach(([key]) => {
+        this.cache.delete(key);
+        trackCacheOperation(cacheName, 'evict', { key, reason: 'size_limit' });
+      });
     }
 
+    trackCacheOperation(cacheName, 'set', { key });
     this.cache.set(key, {
       version: CACHE_VERSION,
       timestamp: Date.now(),
@@ -106,29 +116,6 @@ const POPULAR_GAMES_IDS = [
   '162886', // Viticulture
   '220308'  // Root
 ];
-
-export async function getPopularGames(): Promise<BoardGame[]> {
-  const cached = popularGamesCache.get('popular');
-  if (cached) {
-    return cached;
-  }
-
-  try {
-    const games = await processBatch(
-      POPULAR_GAMES_IDS,
-      id => getGameById(id)
-    );
-    
-    // Sort by rank
-    const sortedGames = games.sort((a, b) => (a.rank || 999999) - (b.rank || 999999));
-    popularGamesCache.set('popular', sortedGames);
-    
-    return sortedGames;
-  } catch (error) {
-    console.error('Failed to fetch popular games:', error);
-    return [];
-  }
-}
 
 const BATCH_DELAY = 1000; // 1 second delay between batches
 
@@ -165,20 +152,165 @@ async function processBatch<T>(
   return results;
 }
 
-export async function searchGames(query: string, page: number = 1): Promise<SearchResults> {
-  // Check cache first
-  const cacheKey = `${query.toLowerCase()}-${page}`;
-  const cachedSearch = searchCache.get(cacheKey);
-  if (cachedSearch) {
-    return {
-      items: cachedSearch,
-      hasMore: page < 3 // Limit to 3 pages total
-    };
-  }
+export async function getGameById(id: string): Promise<BoardGame> {
+  return measurePerformance('get-game-details', async () => {
+    // Check cache first
+    const cachedGame = gameCache.get(id, 'game-details');
+    if (cachedGame) {
+      console.log('[BGG] Returning cached game details:', id);
+      return cachedGame;
+    }
 
-  try {
-    // Try exact match first
-    const xmlText = await makeApiRequest(BOARD_GAME_API.SEARCH_ENDPOINT, {
+    try {
+      const xmlText = await makeApiRequest(BOARD_GAME_API.THING_ENDPOINT, {
+        id,
+        stats: '1',
+        versions: '0'  // Exclude version info to reduce response size
+      });
+      
+      const doc = await parseXML(xmlText);
+      const item = doc.querySelector('item');
+
+      if (!item) {
+        throw createAppError('Game not found', 'NOT_FOUND_ERROR', { id });
+      }
+
+      const name = item.querySelector('name[type="primary"]')?.getAttribute('value') || '';
+      const yearPublished = item.querySelector('yearpublished')?.getAttribute('value');
+      const image = item.querySelector('image')?.textContent || '/board-game-placeholder.png';
+      const thumbnail = item.querySelector('thumbnail')?.textContent || '/board-game-placeholder.png';
+      const description = item.querySelector('description')?.textContent || '';
+      const minPlayers = item.querySelector('minplayers')?.getAttribute('value');
+      const maxPlayers = item.querySelector('maxplayers')?.getAttribute('value');
+      const minPlaytime = item.querySelector('minplaytime')?.getAttribute('value');
+      const maxPlaytime = item.querySelector('maxplaytime')?.getAttribute('value');
+      const minAge = item.querySelector('minage')?.getAttribute('value');
+      
+      // Get ranking information
+      const rankNode = item.querySelector('rank[type="subtype"][name="boardgame"]');
+      const rank = rankNode?.getAttribute('value');
+      const numericRank = rank && rank !== 'Not Ranked' ? parseInt(rank) : 0;
+
+      // Get rating information
+      const ratingNode = item.querySelector('ratings average');
+      const rating = ratingNode?.getAttribute('value');
+      const numericRating = rating ? parseFloat(rating) : 0;
+
+      const game: BoardGame = {
+        id,
+        name,
+        year_published: yearPublished ? parseInt(yearPublished) : 0,
+        min_players: minPlayers ? parseInt(minPlayers) : 1,
+        min_age: minAge ? parseInt(minAge) : 0,
+        max_players: maxPlayers ? parseInt(maxPlayers) : 4,
+        min_playtime: minPlaytime ? parseInt(minPlaytime) : 0,
+        max_playtime: maxPlaytime ? parseInt(maxPlaytime) : 0,
+        thumb_url: thumbnail,
+        image_url: image,
+        description,
+        rank: numericRank,
+        average_user_rating: numericRating,
+        mechanics: [],
+        categories: [],
+        publishers: [],
+        designers: [],
+        developers: [],
+        artists: [],
+        names: [],
+        num_user_ratings: 0,
+        historical_low_prices: [],
+        primary_publisher: { id: "", score: 0, url: "" },
+        primary_designer: { id: "", score: 0, url: "" },
+        related_to: [],
+        related_as: [],
+        weight_amount: 0,
+        weight_units: "",
+        size_height: 0,
+        size_depth: 0,
+        size_units: "",
+        active: true,
+        num_user_complexity_votes: 0,
+        average_learning_complexity: 0,
+        average_strategy_complexity: 0,
+        visits: 0,
+        lists: 0,
+        mentions: 0,
+        links: 0,
+        plays: 0,
+        type: "boardgame",
+        sku: "",
+        upc: "",
+        price: "",
+        price_ca: "",
+        price_uk: "",
+        price_au: "",
+        msrp: 0,
+        discount: "",
+        handle: "",
+        url: `https://boardgamegeek.com/boardgame/${id}`,
+        rules_url: "",
+        official_url: "",
+        commentary: "",
+        faq: ""
+      };
+
+      gameCache.set(id, game, 'game-details');
+      return game;
+    } catch (error: any) {
+      const appError = new Error('Error fetching game details') as AppError;
+      appError.name = 'AppError';
+      appError.code = 'GAME_FETCH_ERROR';
+      appError.context = {
+        id,
+        error: error.message,
+        originalError: error
+      };
+      logError(appError);
+      throw createAppError('Failed to fetch game details', 'GAME_FETCH_ERROR', { id });
+    }
+  });
+}
+
+export async function getPopularGames(): Promise<BoardGame[]> {
+  return measurePerformance('get-popular-games', async () => {
+    const cached = popularGamesCache.get('popular', 'popular-games');
+    if (cached) {
+      return cached;
+    }
+
+    try {
+      const games = await processBatch(
+        POPULAR_GAMES_IDS,
+        id => getGameById(id)
+      );
+      
+      // Sort by rank
+      const sortedGames = games.sort((a, b) => (a.rank || 999999) - (b.rank || 999999));
+      popularGamesCache.set('popular', sortedGames, 'popular-games');
+      
+      return sortedGames;
+    } catch (error) {
+      console.error('Failed to fetch popular games:', error);
+      return [];
+    }
+  });
+}
+
+export async function searchGames(query: string, page: number = 1): Promise<SearchResults> {
+  return measurePerformance('search-games', async () => {
+    // Check cache first
+    const cacheKey = `${query.toLowerCase()}-${page}`;
+    const cachedSearch = searchCache.get(cacheKey, 'search-results');
+    if (cachedSearch) {
+      return {
+        items: cachedSearch,
+        hasMore: page < 3 // Limit to 3 pages total
+      };
+    }
+
+    try {
+      // Try exact match first
+      const xmlText = await makeApiRequest(BOARD_GAME_API.SEARCH_ENDPOINT, {
       query,
       type: 'boardgame',
       exact: '1'
@@ -244,11 +376,11 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
     const pageResults = sortedGames.slice(startIdx, endIdx);
     
     // Cache the page results
-    searchCache.set(cacheKey, pageResults);
+    searchCache.set(cacheKey, pageResults, 'search-results');
     
     // Cache individual games for faster retrieval
     pageResults.forEach(game => {
-      gameCache.set(game.id, game);
+      gameCache.set(game.id, game, 'game-details');
     });
     
     return {
@@ -266,127 +398,11 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
     };
     logError(appError);
     
-    throw createAppError(
-      'An error occurred while fetching game data. Please try again.',
-      'SEARCH_ERROR',
-      { query }
-    );
-  }
-}
-
-export async function getGameById(id: string): Promise<BoardGame> {
-  // Check cache first
-  const cachedGame = gameCache.get(id);
-  if (cachedGame) {
-    console.log('[BGG] Returning cached game details:', id);
-    return cachedGame;
-  }
-
-  try {
-    const xmlText = await makeApiRequest(BOARD_GAME_API.THING_ENDPOINT, {
-      id,
-      stats: '1',
-      versions: '0'  // Exclude version info to reduce response size
-    });
-    
-    const doc = await parseXML(xmlText);
-    const item = doc.querySelector('item');
-
-    if (!item) {
-      throw createAppError('Game not found', 'NOT_FOUND_ERROR', { id });
+      throw createAppError(
+        'An error occurred while fetching game data. Please try again.',
+        'SEARCH_ERROR',
+        { query }
+      );
     }
-
-    const name = item.querySelector('name[type="primary"]')?.getAttribute('value') || '';
-    const yearPublished = item.querySelector('yearpublished')?.getAttribute('value');
-    const image = item.querySelector('image')?.textContent || '/board-game-placeholder.png';
-    const thumbnail = item.querySelector('thumbnail')?.textContent || '/board-game-placeholder.png';
-    const description = item.querySelector('description')?.textContent || '';
-    const minPlayers = item.querySelector('minplayers')?.getAttribute('value');
-    const maxPlayers = item.querySelector('maxplayers')?.getAttribute('value');
-    const minPlaytime = item.querySelector('minplaytime')?.getAttribute('value');
-    const maxPlaytime = item.querySelector('maxplaytime')?.getAttribute('value');
-    const minAge = item.querySelector('minage')?.getAttribute('value');
-    
-    // Get ranking information
-    const rankNode = item.querySelector('rank[type="subtype"][name="boardgame"]');
-    const rank = rankNode?.getAttribute('value');
-    const numericRank = rank && rank !== 'Not Ranked' ? parseInt(rank) : 0;
-
-    // Get rating information
-    const ratingNode = item.querySelector('ratings average');
-    const rating = ratingNode?.getAttribute('value');
-    const numericRating = rating ? parseFloat(rating) : 0;
-
-    const game: BoardGame = {
-      id,
-      name,
-      year_published: yearPublished ? parseInt(yearPublished) : 0,
-      min_players: minPlayers ? parseInt(minPlayers) : 1,
-      min_age: minAge ? parseInt(minAge) : 0,
-      max_players: maxPlayers ? parseInt(maxPlayers) : 4,
-      min_playtime: minPlaytime ? parseInt(minPlaytime) : 0,
-      max_playtime: maxPlaytime ? parseInt(maxPlaytime) : 0,
-      thumb_url: thumbnail,
-      image_url: image,
-      description,
-      rank: numericRank,
-      average_user_rating: numericRating,
-      mechanics: [],
-      categories: [],
-      publishers: [],
-      designers: [],
-      developers: [],
-      artists: [],
-      names: [],
-      num_user_ratings: 0,
-      historical_low_prices: [],
-      primary_publisher: { id: "", score: 0, url: "" },
-      primary_designer: { id: "", score: 0, url: "" },
-      related_to: [],
-      related_as: [],
-      weight_amount: 0,
-      weight_units: "",
-      size_height: 0,
-      size_depth: 0,
-      size_units: "",
-      active: true,
-      num_user_complexity_votes: 0,
-      average_learning_complexity: 0,
-      average_strategy_complexity: 0,
-      visits: 0,
-      lists: 0,
-      mentions: 0,
-      links: 0,
-      plays: 0,
-      type: "boardgame",
-      sku: "",
-      upc: "",
-      price: "",
-      price_ca: "",
-      price_uk: "",
-      price_au: "",
-      msrp: 0,
-      discount: "",
-      handle: "",
-      url: `https://boardgamegeek.com/boardgame/${id}`,
-      rules_url: "",
-      official_url: "",
-      commentary: "",
-      faq: ""
-    };
-
-    gameCache.set(id, game);
-    return game;
-  } catch (error: any) {
-    const appError = new Error('Error fetching game details') as AppError;
-    appError.name = 'AppError';
-    appError.code = 'GAME_FETCH_ERROR';
-    appError.context = {
-      id,
-      error: error.message,
-      originalError: error
-    };
-    logError(appError);
-    throw createAppError('Failed to fetch game details', 'GAME_FETCH_ERROR', { id });
-  }
+  });
 }

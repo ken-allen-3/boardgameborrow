@@ -21,6 +21,7 @@ import Users from './pages/Users';
 import { useAuth } from './contexts/AuthContext';
 import WelcomeModal from './components/onboarding/WelcomeModal';
 import VisionDebug from './pages/VisionDebug';
+import PerformanceMonitor from './pages/PerformanceMonitor';
 
 function AppRoutes() {
   const { currentUser, showWelcome, setShowWelcome } = useAuth();
@@ -34,6 +35,7 @@ function AppRoutes() {
           <Route path="/login" element={!currentUser ? <Login /> : <Navigate to="/my-games" />} />
           <Route path="/signup" element={!currentUser ? <Signup /> : <Navigate to="/my-games" />} />
           <Route path="/vision-debug" element={<VisionDebug />} />
+          <Route path="/performance" element={<PerformanceMonitor />} />
           
           {/* Protected Routes */}
           <Route path="/my-games" element={currentUser ? <MyGames /> : <Navigate to="/login" />} />

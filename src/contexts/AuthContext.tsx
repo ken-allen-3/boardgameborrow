@@ -68,6 +68,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isNewUser, setIsNewUser] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
+  const updateShowWelcome = async (show: boolean) => {
+    setShowWelcome(show);
+    if (!show && currentUser?.email) {
+      const userRef = ref(database, `users/${currentUser.email.replace(/\./g, ',')}`);
+      await update(userRef, {
+        hasSeenWelcome: true,
+        updatedAt: new Date().toISOString()
+      });
+    }
+  };
+
   // Auth functions
   const signIn = async (email: string, password: string): Promise<void> => {
     try {
@@ -91,6 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         location: data.location || '',
         isAdmin: data.email === 'kenny@springwavestudios.com',
         hasCompletedOnboarding: false,
+        hasSeenWelcome: false,
         createdAt: new Date().toISOString(),
         lastLogin: new Date().toISOString()
       });
@@ -120,6 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             location: '',
             isAdmin: result.user.email === 'kenny@springwavestudios.com',
             hasCompletedOnboarding: false,
+            hasSeenWelcome: false,
             createdAt: new Date().toISOString(),
             lastLogin: new Date().toISOString()
           });
@@ -148,6 +161,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             location: '',
             isAdmin: false,
             hasCompletedOnboarding: false,
+            hasSeenWelcome: false,
             createdAt: new Date().toISOString(),
             lastLogin: new Date().toISOString()
           });
@@ -211,8 +225,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const userData = snapshot.val();
           
           const isFirstTimeUser = !userData?.hasCompletedOnboarding;
+          const hasSeenWelcome = userData?.hasSeenWelcome ?? false;
           setIsNewUser(isFirstTimeUser);
-          setShowWelcome(isFirstTimeUser);
+          setShowWelcome(!hasSeenWelcome);
           setNeedsOnboarding(isFirstTimeUser && !userData?.location);
           
           setError(null);
@@ -245,7 +260,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     error,
     isAdmin,
     showWelcome,
-    setShowWelcome,
+    setShowWelcome: updateShowWelcome,
     isNewUser,
     needsOnboarding,
     completeOnboarding

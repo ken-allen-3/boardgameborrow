@@ -6,9 +6,11 @@ import { OnboardingProgress } from '../../types/user';
 interface OnboardingBoxProps {
   onDismiss: () => void;
   progress: OnboardingProgress;
+  onCameraClick: () => void;
+  onSearchClick: () => void;
 }
 
-function OnboardingBox({ onDismiss, progress }: OnboardingBoxProps) {
+function OnboardingBox({ onDismiss, progress, onCameraClick, onSearchClick }: OnboardingBoxProps) {
   // Calculate completion percentage
   const steps = [
     progress.hasGames,
@@ -19,13 +21,15 @@ function OnboardingBox({ onDismiss, progress }: OnboardingBoxProps) {
   const progressPercentage = (completedSteps / steps.length) * 100;
 
   const StepNumber = ({ number, completed }: { number: number; completed: boolean }) => (
-    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-      completed ? 'bg-green-100' : 'bg-gray-100'
+    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+      completed 
+        ? 'bg-green-100 ring-2 ring-green-400 ring-offset-2' 
+        : 'bg-white shadow-sm ring-2 ring-indigo-100'
     }`}>
       {completed ? (
-        <Check className="h-4 w-4 text-green-600" />
+        <Check className="h-5 w-5 text-green-600" />
       ) : (
-        <span className="text-gray-600 font-semibold">{number}</span>
+        <span className="text-indigo-600 font-semibold text-lg">{number}</span>
       )}
     </div>
   );
@@ -41,10 +45,10 @@ function OnboardingBox({ onDismiss, progress }: OnboardingBoxProps) {
       </div>
 
       <div className="p-6">
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start justify-between mb-6">
           <div>
-            <h2 className="text-xl font-semibold">Welcome! Let's get started</h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <h2 className="text-2xl font-semibold text-gray-900">Welcome! Let's get started</h2>
+            <p className="text-sm text-gray-500 mt-2">
               {completedSteps === steps.length 
                 ? "You're all set! Enjoy playing games with friends." 
                 : `${completedSteps} of ${steps.length} steps completed`}
@@ -58,22 +62,30 @@ function OnboardingBox({ onDismiss, progress }: OnboardingBoxProps) {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Build */}
-          <div className={`rounded-lg p-4 ${
-            progress.hasGames ? 'bg-green-50' : 'bg-indigo-50'
+          <div className={`rounded-lg p-6 transition-all duration-200 ${
+            progress.hasGames 
+              ? 'bg-green-50 ring-1 ring-green-100' 
+              : 'bg-white ring-1 ring-indigo-100 hover:ring-indigo-200'
           }`}>
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-4 mb-4">
               <StepNumber number={1} completed={progress.hasGames} />
-              <h3 className="font-semibold text-gray-900">Build</h3>
+              <div>
+                <h3 className="font-semibold text-gray-900 text-lg mb-1">Build</h3>
+                <p className="text-sm text-gray-600">
+                  {progress.hasGames 
+                    ? `You've added your first game!`
+                    : 'Start by adding games to your collection'}
+                </p>
+              </div>
             </div>
-            <p className="text-sm text-gray-600 mb-4">
-              {progress.hasGames 
-                ? `You've added your first game!`
-                : 'Start by adding games to your collection'}
-            </p>
             {!progress.hasGames && (
-              <button className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700">
+              <button 
+                onClick={onSearchClick}
+                className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 mt-2 transition-colors"
+                data-tutorial="add-game-button"
+              >
                 <Plus className="h-4 w-4" />
                 <span>Add your first game</span>
               </button>
@@ -81,22 +93,26 @@ function OnboardingBox({ onDismiss, progress }: OnboardingBoxProps) {
           </div>
 
           {/* Borrow */}
-          <div className={`rounded-lg p-4 ${
-            progress.hasBorrowed ? 'bg-green-50' : 'bg-indigo-50'
+          <div className={`rounded-lg p-6 transition-all duration-200 ${
+            progress.hasBorrowed 
+              ? 'bg-green-50 ring-1 ring-green-100' 
+              : 'bg-white ring-1 ring-indigo-100 hover:ring-indigo-200'
           }`}>
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-4 mb-4">
               <StepNumber number={2} completed={progress.hasBorrowed} />
-              <h3 className="font-semibold text-gray-900">Borrow</h3>
+              <div>
+                <h3 className="font-semibold text-gray-900 text-lg mb-1">Borrow</h3>
+                <p className="text-sm text-gray-600">
+                  {progress.hasBorrowed
+                    ? `You've borrowed your first game!`
+                    : 'Request to borrow games from friends'}
+                </p>
+              </div>
             </div>
-            <p className="text-sm text-gray-600 mb-4">
-              {progress.hasBorrowed
-                ? `You've borrowed your first game!`
-                : 'Request to borrow games from friends'}
-            </p>
             {!progress.hasBorrowed && (
               <Link 
                 to="/borrow"
-                className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700"
+                className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 mt-2 transition-colors"
               >
                 <Dice6 className="h-4 w-4" />
                 <span>Browse available games</span>
@@ -106,29 +122,31 @@ function OnboardingBox({ onDismiss, progress }: OnboardingBoxProps) {
           </div>
 
           {/* Play */}
-          <div className={`rounded-lg p-4 ${
+          <div className={`rounded-lg p-6 transition-all duration-200 ${
             progress.hasJoinedGroup && progress.hasAttendedGameNight 
-              ? 'bg-green-50' 
-              : 'bg-indigo-50'
+              ? 'bg-green-50 ring-1 ring-green-100' 
+              : 'bg-white ring-1 ring-indigo-100 hover:ring-indigo-200'
           }`}>
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-4 mb-4">
               <StepNumber 
                 number={3} 
                 completed={progress.hasJoinedGroup && progress.hasAttendedGameNight} 
               />
-              <h3 className="font-semibold text-gray-900">Play</h3>
+              <div>
+                <h3 className="font-semibold text-gray-900 text-lg mb-1">Play</h3>
+                <p className="text-sm text-gray-600">
+                  {progress.hasJoinedGroup && progress.hasAttendedGameNight
+                    ? 'You\'re part of the community!'
+                    : 'Join groups and organize game nights'}
+                </p>
+              </div>
             </div>
-            <p className="text-sm text-gray-600 mb-4">
-              {progress.hasJoinedGroup && progress.hasAttendedGameNight
-                ? 'You\'re part of the community!'
-                : 'Join groups and organize game nights'}
-            </p>
             {(!progress.hasJoinedGroup || !progress.hasAttendedGameNight) && (
-              <div className="space-y-2">
+              <div className="space-y-3 mt-2">
                 {!progress.hasJoinedGroup && (
                   <Link 
                     to="/groups"
-                    className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700"
+                    className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
                   >
                     <Users className="h-4 w-4" />
                     <span>Join a group</span>
@@ -138,7 +156,7 @@ function OnboardingBox({ onDismiss, progress }: OnboardingBoxProps) {
                 {!progress.hasAttendedGameNight && (
                   <Link 
                     to="/game-nights"
-                    className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700"
+                    className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
                   >
                     <Calendar className="h-4 w-4" />
                     <span>Plan a game night</span>

@@ -189,6 +189,8 @@ const MyGames = () => {
         <OnboardingBox 
           onDismiss={handleDismissOnboarding}
           progress={onboardingProgress}
+          onCameraClick={() => setShowCamera(true)}
+          onSearchClick={() => setShowSearch(true)}
         />
       )}
 

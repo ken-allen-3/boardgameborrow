@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Dice6, Library, PlayCircle, Users, LogOut, Bug, Menu, X, UserCircle, Calendar } from 'lucide-react';
+import { Dice6, Library, PlayCircle, Users, LogOut, Bug, Menu, X, UserCircle, Calendar, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useBugReport } from '../contexts/BugReportContext';
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const auth = useAuth();
-  const { currentUser } = auth;
+  const { currentUser, isAdmin } = auth;
   const navigate = useNavigate();
   const { reportBug } = useBugReport();
 
@@ -69,6 +69,17 @@ function Navbar() {
         <UserCircle className="h-5 w-5" />
         <span>Profile</span>
       </Link>
+
+      {isAdmin && (
+        <Link
+          to="/admin"
+          className="nav-link gap-2"
+          onClick={() => setIsOpen(false)}
+        >
+          <Settings className="h-5 w-5" />
+          <span>Admin Dashboard</span>
+        </Link>
+      )}
 
       <button
         onClick={() => {

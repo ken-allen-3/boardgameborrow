@@ -22,9 +22,10 @@ import { useAuth } from './contexts/AuthContext';
 import WelcomeModal from './components/onboarding/WelcomeModal';
 import VisionDebug from './pages/VisionDebug';
 import PerformanceMonitor from './pages/PerformanceMonitor';
+import AdminDashboard from './pages/AdminDashboard';
 
 function AppRoutes() {
-  const { currentUser, showWelcome, setShowWelcome } = useAuth();
+  const { currentUser, showWelcome, setShowWelcome, isAdmin } = useAuth();
 
   return (
     <div className="min-h-screen bg-vintage-cream">
@@ -47,6 +48,12 @@ function AppRoutes() {
           <Route path="/email-test" element={<EmailTest />} />
           <Route path="/groups/invite/:inviteId" element={<GroupInvite />} />
           <Route path="/users" element={currentUser?.email === 'kenny@springwavestudios.com' ? <Users /> : <Navigate to="/" />} />
+          <Route 
+            path="/admin" 
+            element={
+              currentUser && isAdmin ? <AdminDashboard /> : <Navigate to="/" />
+            } 
+          />
         </Routes>
       </main>
 

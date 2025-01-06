@@ -13,6 +13,8 @@ interface OnboardingBoxProps {
 function OnboardingBox({ onDismiss, progress, onCameraClick, onSearchClick }: OnboardingBoxProps) {
   // Calculate completion percentage
   const steps = [
+    progress.hasLocation,
+    progress.hasFriends,
     progress.hasGames,
     progress.hasBorrowed,
     progress.hasJoinedGroup && progress.hasAttendedGameNight
@@ -63,6 +65,54 @@ function OnboardingBox({ onDismiss, progress, onCameraClick, onSearchClick }: On
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Location */}
+          <div className={`rounded-lg p-6 transition-all duration-200 ${
+            progress.hasLocation 
+              ? 'bg-green-50 ring-1 ring-green-100' 
+              : 'bg-white ring-1 ring-indigo-100 hover:ring-indigo-200'
+          }`}>
+            <div className="flex items-center gap-4 mb-4">
+              <StepNumber number={1} completed={progress.hasLocation} />
+              <div>
+                <h3 className="font-semibold text-gray-900 text-lg mb-1">Location</h3>
+                <p className="text-sm text-gray-600">
+                  {progress.hasLocation 
+                    ? `You've set your location!`
+                    : 'Set your location to find nearby players'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Friends */}
+          <div className={`rounded-lg p-6 transition-all duration-200 ${
+            progress.hasFriends 
+              ? 'bg-green-50 ring-1 ring-green-100' 
+              : 'bg-white ring-1 ring-indigo-100 hover:ring-indigo-200'
+          }`}>
+            <div className="flex items-center gap-4 mb-4">
+              <StepNumber number={2} completed={progress.hasFriends} />
+              <div>
+                <h3 className="font-semibold text-gray-900 text-lg mb-1">Connect</h3>
+                <p className="text-sm text-gray-600">
+                  {progress.hasFriends 
+                    ? `You've connected with friends!`
+                    : 'Add friends or invite new ones'}
+                </p>
+              </div>
+            </div>
+            {!progress.hasFriends && (
+              <Link 
+                to="/friends"
+                className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 mt-2 transition-colors"
+              >
+                <Users className="h-4 w-4" />
+                <span>Find and invite friends</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            )}
+          </div>
+
           {/* Build */}
           <div className={`rounded-lg p-6 transition-all duration-200 ${
             progress.hasGames 
@@ -70,7 +120,8 @@ function OnboardingBox({ onDismiss, progress, onCameraClick, onSearchClick }: On
               : 'bg-white ring-1 ring-indigo-100 hover:ring-indigo-200'
           }`}>
             <div className="flex items-center gap-4 mb-4">
-              <StepNumber number={1} completed={progress.hasGames} />
+              <StepNumber number={3} completed={progress.hasGames} />
+
               <div>
                 <h3 className="font-semibold text-gray-900 text-lg mb-1">Build</h3>
                 <p className="text-sm text-gray-600">
@@ -99,7 +150,7 @@ function OnboardingBox({ onDismiss, progress, onCameraClick, onSearchClick }: On
               : 'bg-white ring-1 ring-indigo-100 hover:ring-indigo-200'
           }`}>
             <div className="flex items-center gap-4 mb-4">
-              <StepNumber number={2} completed={progress.hasBorrowed} />
+              <StepNumber number={4} completed={progress.hasBorrowed} />
               <div>
                 <h3 className="font-semibold text-gray-900 text-lg mb-1">Borrow</h3>
                 <p className="text-sm text-gray-600">
@@ -129,7 +180,7 @@ function OnboardingBox({ onDismiss, progress, onCameraClick, onSearchClick }: On
           }`}>
             <div className="flex items-center gap-4 mb-4">
               <StepNumber 
-                number={3} 
+                number={5} 
                 completed={progress.hasJoinedGroup && progress.hasAttendedGameNight} 
               />
               <div>

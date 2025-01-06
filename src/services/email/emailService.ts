@@ -1,7 +1,7 @@
 import { smtpService } from './smtp';
 import { EMAIL_CONFIG } from './config';
-import { getBorrowRequestTemplate, getBugReportTemplate, getWaitlistTemplate } from './templates';
-import type { BorrowRequestDetails, BugReportDetails } from './types';
+import { getBorrowRequestTemplate, getBugReportTemplate, getWaitlistTemplate, getFriendInviteTemplate } from './templates';
+import type { BorrowRequestDetails, BugReportDetails, FriendInviteDetails } from './types';
 
 class EmailService {
   private async send(msg: any) {
@@ -89,6 +89,23 @@ export async function sendBugReport(details: BugReportDetails): Promise<boolean>
     return true;
   } catch (error) {
     console.error('Failed to send bug report:', error);
+    return false;
+  }
+}
+
+export async function sendFriendInvite(details: FriendInviteDetails): Promise<boolean> {
+  try {
+    const template = getFriendInviteTemplate(details);
+    await emailService.send({
+      to: {
+        email: details.inviteeEmail
+      },
+      from: EMAIL_CONFIG.from,
+      ...template
+    });
+    return true;
+  } catch (error) {
+    console.error('Failed to send friend invite:', error);
     return false;
   }
 }

@@ -16,7 +16,7 @@ export interface GeocodingResult {
 
 interface LocationAutocompleteProps {
   value: string;
-  onChange: (location: string) => void;
+  onChange: (location: string, coordinates?: [number, number]) => void;
   className?: string;
   required?: boolean;
   placeholder?: string;
@@ -134,7 +134,7 @@ export function LocationAutocomplete({
             <li
               key={suggestion.id}
               onClick={() => {
-                onChange(formatSuggestion(suggestion));
+                onChange(formatSuggestion(suggestion), suggestion.center);
                 setShowSuggestions(false);
               }}
               className="px-4 py-2 hover:bg-gray-100 cursor-pointer"

@@ -14,6 +14,7 @@ import BorrowGames from './pages/BorrowGames';
 import Groups from './pages/Groups';
 import GameNights from './pages/GameNights';
 import Profile from './pages/Profile';
+import Friends from './pages/Friends';
 import EmailTest from './pages/EmailTest';
 import ApiTest from './pages/ApiTest';
 import GroupInvite from './pages/GroupInvite';
@@ -44,6 +45,7 @@ function AppRoutes() {
           <Route path="/groups" element={currentUser ? <Groups /> : <Navigate to="/login" />} />
           <Route path="/game-nights" element={currentUser ? <GameNights /> : <Navigate to="/login" />} />
           <Route path="/profile" element={currentUser ? <Profile /> : <Navigate to="/login" />} />
+          <Route path="/friends" element={currentUser ? <Friends /> : <Navigate to="/login" />} />
           <Route path="/api-test" element={<ApiTest />} />
           <Route path="/email-test" element={<EmailTest />} />
           <Route path="/groups/invite/:inviteId" element={<GroupInvite />} />

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Dice6, Library, PlayCircle, Users, LogOut, Bug, Menu, X, UserCircle, Calendar, Settings } from 'lucide-react';
+import { Dice6, Library, PlayCircle, Users, LogOut, Bug, Menu, X, UserCircle, Calendar, Settings, UserPlus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useBugReport } from '../contexts/BugReportContext';
 
@@ -50,6 +50,15 @@ function Navbar() {
       >
         <Users className="h-5 w-5" />
         <span>Groups</span>
+      </Link>
+
+      <Link
+        to="/friends"
+        className="nav-link gap-2"
+        onClick={() => setIsOpen(false)}
+      >
+        <UserPlus className="h-5 w-5" />
+        <span>Friends</span>
       </Link>
       
       <Link

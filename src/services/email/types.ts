@@ -9,6 +9,13 @@ export interface EmailError extends Error {
   originalError?: any;
 }
 
+export interface FriendInviteDetails {
+  inviterName: string;
+  inviterEmail: string;
+  inviteeEmail: string;
+  signupUrl: string;
+}
+
 export interface BugReportDetails {
   steps: string;
   expected: string;

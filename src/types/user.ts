@@ -3,6 +3,8 @@ export interface OnboardingProgress {
     hasBorrowed: boolean;
     hasJoinedGroup: boolean;
     hasAttendedGameNight: boolean;
+    hasFriends: boolean;
+    hasLocation: boolean;
     onboardingDismissed: boolean;
   }
   
@@ -13,6 +15,10 @@ export interface UserProfile {
   lastName: string;
   photoUrl: string;
   location: string;
+  coordinates?: {
+    longitude: number;
+    latitude: number;
+  };
   isAdmin: boolean;
   hasCompletedOnboarding: boolean;
   createdAt: string;

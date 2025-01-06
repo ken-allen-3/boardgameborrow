@@ -6,6 +6,8 @@ const DEFAULT_ONBOARDING_PROGRESS: OnboardingProgress = {
   hasBorrowed: false,
   hasJoinedGroup: false,
   hasAttendedGameNight: false,
+  hasFriends: false,
+  hasLocation: false,
   onboardingDismissed: false
 };
 

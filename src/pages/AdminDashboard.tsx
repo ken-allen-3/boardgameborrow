@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getAllUsers, getAllGames, getActiveBorrows, getUpcomingGameNights } from '../services/adminService';
 import { UserProfile } from '../types/user';
+import UserManagement from '../components/admin/UserManagement';
 
 interface DashboardMetrics {
   totalUsers: number;
@@ -77,8 +78,8 @@ const AdminDashboard: React.FC = () => {
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
       
+      {/* Overview Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Metric Cards */}
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-gray-500 text-sm font-medium">Total Users</h3>
           <p className="text-3xl font-bold">{metrics.totalUsers}</p>
@@ -101,7 +102,7 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Recent Users Section */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow p-6 mb-8">
         <h2 className="text-xl font-bold mb-4">Recent Users</h2>
         <div className="overflow-x-auto">
           <table className="min-w-full">
@@ -123,6 +124,11 @@ const AdminDashboard: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* User Management Section */}
+      <div className="mt-8">
+        <UserManagement />
       </div>
     </div>
   );

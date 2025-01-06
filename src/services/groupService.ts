@@ -1,6 +1,7 @@
 import { getDatabase, ref, get, set, remove, push, update } from 'firebase/database';
 import { Group, GroupTheme, GroupVisibility } from '../types/group';
-import { validateUserEmail } from './userService';
+import { validateUserEmail, updateOnboardingProgress } from './userService';
+import { getInvite } from './inviteService';
 
 const VALID_THEMES: GroupTheme[] = ['family', 'strategy', 'party', 'regional', 'general'];
 
@@ -240,6 +241,11 @@ export async function handleJoinRequest(
         [`groups/${groupId}/joinRequests/${requesterId.replace(/\./g, ',')}`]: null,
         [`groups/${groupId}/updatedAt`]: now
       });
+
+      // Update onboarding progress when user joins their first group
+      await updateOnboardingProgress(requesterId, {
+        hasJoinedGroup: true
+      });
     } else {
       // Remove request
       await remove(ref(db, `groups/${groupId}/joinRequests/${requesterId.replace(/\./g, ',')}`));
@@ -247,6 +253,39 @@ export async function handleJoinRequest(
   } catch (err) {
     console.error('Error handling join request:', err);
     throw new Error(`Failed to ${approved ? 'approve' : 'reject'} join request`);
+  }
+}
+
+export async function claimInvite(inviteId: string, userEmail: string): Promise<void> {
+  const db = getDatabase();
+  const invite = await getInvite(inviteId);
+  
+  if (!invite) {
+    throw new Error('Invite not found or has expired');
+  }
+  
+  if (invite.claimed) {
+    throw new Error('This invite has already been used');
+  }
+
+  try {
+    // Add user to group
+    await update(ref(db), {
+      [`groups/${invite.groupId}/members/${userEmail.replace(/\./g, ',')}`]: {
+        role: 'member',
+        joinedAt: new Date().toISOString(),
+        canInviteOthers: false
+      },
+      [`invites/${inviteId}/claimed`]: true
+    });
+
+    // Update onboarding progress when user accepts their first group invite
+    await updateOnboardingProgress(userEmail, {
+      hasJoinedGroup: true
+    });
+  } catch (error) {
+    console.error('Failed to claim invite:', error);
+    throw new Error('Failed to join group. Please try again.');
   }
 }
 

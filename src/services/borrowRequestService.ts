@@ -1,4 +1,5 @@
-import { getDatabase, ref, set, get } from 'firebase/database';
+import { getDatabase, ref, set, get, update } from 'firebase/database';
+import { updateOnboardingProgress } from './userService';
 
 export interface BorrowRequest {
   id: string;
@@ -26,12 +27,17 @@ export async function createBorrowRequest(request: Omit<BorrowRequest, 'id' | 'c
 
   try {
     await set(requestRef, newRequest);
+    
+    // Update onboarding progress when user makes their first borrow request
+    await updateOnboardingProgress(request.borrowerId, {
+      hasBorrowed: true
+    });
+    
+    return requestId;
   } catch (error) {
     console.error('Failed to create borrow request:', error);
     throw new Error('Failed to send borrow request. Please try again.');
   }
-  
-  return requestId;
 }
 
 export async function getUserBorrowRequests(userId: string): Promise<BorrowRequest[]> {

@@ -1,22 +1,13 @@
 import { getDatabase, ref, update, get } from 'firebase/database';
+import { UserProfile, UserProfileUpdate, OnboardingProgress } from '../types/user';
 
-interface UserSearchResult {
-  email: string;
-  firstName: string;
-  lastName: string;
-}
-
-export interface UserProfile {
-  email: string;
-  firstName: string;
-  lastName: string;
-  photoUrl: string;
-  location: string;
-  isAdmin: boolean;
-  hasCompletedOnboarding: boolean;
-  createdAt: string;
-  lastLogin: string;
-}
+const DEFAULT_ONBOARDING_PROGRESS: OnboardingProgress = {
+  hasGames: false,
+  hasBorrowed: false,
+  hasJoinedGroup: false,
+  hasAttendedGameNight: false,
+  onboardingDismissed: false
+};
 
 export async function getUserProfile(email: string): Promise<UserProfile> {
   const db = getDatabase();
@@ -36,17 +27,26 @@ export async function getUserProfile(email: string): Promise<UserProfile> {
         isAdmin: false,
         hasCompletedOnboarding: false,
         createdAt: new Date().toISOString(),
-        lastLogin: new Date().toISOString()
+        lastLogin: new Date().toISOString(),
+        onboardingProgress: DEFAULT_ONBOARDING_PROGRESS
       };
     }
-    return snapshot.val();
+    
+    const userData = snapshot.val();
+    return {
+      ...userData,
+      onboardingProgress: {
+        ...DEFAULT_ONBOARDING_PROGRESS,
+        ...userData.onboardingProgress
+      }
+    };
   } catch (error) {
     console.error('Error getting user profile:', error);
     throw new Error('Failed to load user profile');
   }
 }
 
-export async function updateUserProfile(email: string, updates: Partial<UserProfile>): Promise<void> {
+export async function updateOnboardingProgress(email: string, progress: Partial<OnboardingProgress>): Promise<void> {
   const db = getDatabase();
   const userKey = email.replace(/\./g, ',');
   const userRef = ref(db, `users/${userKey}`);
@@ -55,31 +55,54 @@ export async function updateUserProfile(email: string, updates: Partial<UserProf
     const snapshot = await get(userRef);
     const currentData = snapshot.val() || {};
     
+    const currentProgress = currentData.onboardingProgress || DEFAULT_ONBOARDING_PROGRESS;
+    
+    // Merge the new progress with existing progress
+    const updatedProgress = {
+      ...currentProgress,
+      ...progress
+    };
+
+    // Only update if there are actual changes
+    if (JSON.stringify(currentProgress) !== JSON.stringify(updatedProgress)) {
+      await update(userRef, {
+        onboardingProgress: updatedProgress,
+        updatedAt: new Date().toISOString()
+      });
+    }
+  } catch (error) {
+    console.error('Error updating onboarding progress:', error);
+    throw new Error('Failed to update onboarding progress');
+  }
+}
+
+export async function updateUserProfile(email: string, updates: UserProfileUpdate): Promise<void> {
+  const db = getDatabase();
+  const userKey = email.replace(/\./g, ',');
+  const userRef = ref(db, `users/${userKey}`);
+
+  try {
+    const snapshot = await get(userRef);
+    const currentData = snapshot.val() || {};
+    
+    // If updating onboarding progress, merge with existing progress
+    if (updates.onboardingProgress) {
+      updates.onboardingProgress = {
+        ...DEFAULT_ONBOARDING_PROGRESS,
+        ...(currentData.onboardingProgress || {}),
+        ...updates.onboardingProgress
+      };
+    }
+
     await update(userRef, {
       ...currentData,
       ...updates,
-      email // Always ensure email is set
+      email, // Always ensure email is set
+      updatedAt: new Date().toISOString()
     });
   } catch (error) {
     console.error('Error updating user profile:', error);
     throw new Error('Failed to update user profile');
-  }
-}
-
-export async function updateExistingUsers(): Promise<void> {
-  const users = [
-    { email: 'max@springwavestudios.com', firstName: 'Max', lastName: 'Filippoff' },
-    { email: 'tiff@springwavestudios.com', firstName: 'Tiff', lastName: 'McGee' },
-    { email: 'jordan@springwavestudios.com', firstName: 'Jordan', lastName: 'Gohara' },
-    { email: 'veronica@springwavestudios.com', firstName: 'Veronica', lastName: 'Allen' },
-    { email: 'kenny@springwavestudios.com', firstName: 'Kenny', lastName: 'Allen' }
-  ];
-
-  for (const user of users) {
-    await updateUserProfile(user.email, {
-      firstName: user.firstName,
-      lastName: user.lastName
-    });
   }
 }
 
@@ -125,5 +148,26 @@ export async function getUsersByEmail(searchQuery: string): Promise<UserSearchRe
   } catch (error) {
     console.error('Error searching users:', error);
     throw new Error('Failed to search users');
+  }
+}
+
+interface UserSearchResult {
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
+export async function checkUserHasGames(email: string): Promise<boolean> {
+  const db = getDatabase();
+  const userKey = email.replace(/\./g, ',');
+  const gamesRef = ref(db, `games/${userKey}`);
+
+  try {
+    const snapshot = await get(gamesRef);
+    const games = snapshot.val();
+    return Array.isArray(games) && games.length > 0;
+  } catch (error) {
+    console.error('Error checking user games:', error);
+    return false;
   }
 }

@@ -1,6 +1,7 @@
 import { getDatabase, ref, push, get, set, remove, update } from 'firebase/database';
 import { GameNight } from '../types/gameNight';
 import { Game } from './gameService';
+import { updateOnboardingProgress } from './userService';
 
 export async function createGameNight(
   hostEmail: string,
@@ -29,8 +30,19 @@ export async function createGameNight(
     updatedAt: now
   };
 
-  await set(newGameNightRef, gameNight);
-  return gameNight.id;
+  try {
+    await set(newGameNightRef, gameNight);
+    
+    // Update onboarding progress when user creates their first game night
+    await updateOnboardingProgress(hostEmail, {
+      hasAttendedGameNight: true
+    });
+    
+    return gameNight.id;
+  } catch (error) {
+    console.error('Failed to create game night:', error);
+    throw error;
+  }
 }
 
 export async function getGameNight(id: string): Promise<GameNight | null> {
@@ -72,11 +84,23 @@ export async function updateAttendance(
     `gameNights/${gameNightId}/attendees/${userEmail.replace(/\./g, ',')}`
   );
 
-  await set(attendeeRef, {
-    status,
-    response,
-    gamesTheyBring
-  });
+  try {
+    await set(attendeeRef, {
+      status,
+      response,
+      gamesTheyBring
+    });
+
+    // Update onboarding progress when user accepts a game night invite
+    if (status === 'going') {
+      await updateOnboardingProgress(userEmail, {
+        hasAttendedGameNight: true
+      });
+    }
+  } catch (error) {
+    console.error('Failed to update attendance:', error);
+    throw error;
+  }
 }
 
 import { validateUserEmail } from './userService';
@@ -124,7 +148,7 @@ export async function inviteUsers(
 
   try {
     const gameNightRef = ref(db, `gameNights/${gameNightId}`);
-    const updates = {};
+    const updates: Record<string, unknown> = {};
     
     invitees.forEach(({ email, canInviteOthers }) => {
       const userKey = email.replace(/\./g, ',');
@@ -198,7 +222,7 @@ export async function getAvailableGamesForGameNight(gameNightId: string): Promis
 
   // Get all attendees who are "going"
   const attendeeEmails = Object.entries(gameNight.attendees)
-    .filter(([_, status]) => status.status === 'going')
+    .filter(([_, attendee]) => attendee.status === 'going')
     .map(([email]) => email.replace(/,/g, '.'));
 
   // Get games from all attendees
@@ -213,9 +237,10 @@ export async function getAvailableGamesForGameNight(gameNightId: string): Promis
       if (Array.isArray(userGames)) {
         games.push(...userGames.map((game: any, index: number) => ({
           id: `${email}-${index}`,
-          title: game.title,
-          image: game.image,
+          title: game.title || '',
+          image: game.image || '',
           owner: email,
+          status: game.status || 'available',
           minPlayers: game.minPlayers,
           maxPlayers: game.maxPlayers,
           minPlaytime: game.minPlaytime,

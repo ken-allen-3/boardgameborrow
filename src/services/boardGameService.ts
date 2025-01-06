@@ -2,13 +2,134 @@ import { BOARD_GAME_API } from '../config/constants';
 import { BoardGame } from '../types/boardgame';
 import { makeApiRequest } from './apiService';
 
-import { logError, createAppError } from '../utils/errorUtils';
+import { logError, createAppError, AppError } from '../utils/errorUtils';
 
-// Cache for storing game search results
-const searchCache = new Map<string, BoardGame[]>();
-const gameCache = new Map<string, BoardGame>();
+// Cache configuration
+const CACHE_VERSION = '1.0';
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+const MAX_CACHE_SIZE = 100; // Maximum number of games to cache
+
+interface CacheEntry<T> {
+  version: string;
+  timestamp: number;
+  data: T;
+}
+
+class PersistentCache<T> {
+  private readonly key: string;
+  private cache: Map<string, CacheEntry<T>>;
+
+  constructor(key: string) {
+    this.key = key;
+    this.cache = new Map();
+    this.loadFromStorage();
+  }
+
+  private loadFromStorage() {
+    try {
+      const stored = localStorage.getItem(this.key);
+      if (stored) {
+        const data = JSON.parse(stored);
+        this.cache = new Map(Object.entries(data));
+      }
+    } catch (error) {
+      console.error(`Error loading cache ${this.key}:`, error);
+      this.cache = new Map();
+    }
+  }
+
+  private saveToStorage() {
+    try {
+      const data = Object.fromEntries(this.cache.entries());
+      localStorage.setItem(this.key, JSON.stringify(data));
+    } catch (error) {
+      console.error(`Error saving cache ${this.key}:`, error);
+    }
+  }
+
+  get(key: string): T | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+
+    // Check version and TTL
+    if (entry.version !== CACHE_VERSION || 
+        Date.now() - entry.timestamp > CACHE_TTL) {
+      this.cache.delete(key);
+      this.saveToStorage();
+      return null;
+    }
+
+    return entry.data;
+  }
+
+  set(key: string, data: T) {
+    // Enforce cache size limit
+    if (this.cache.size >= MAX_CACHE_SIZE) {
+      // Remove oldest entries
+      const entries = Array.from(this.cache.entries());
+      const oldestEntries = entries
+        .sort((a, b) => a[1].timestamp - b[1].timestamp)
+        .slice(0, Math.ceil(MAX_CACHE_SIZE * 0.2)); // Remove 20% of oldest entries
+
+      oldestEntries.forEach(([key]) => this.cache.delete(key));
+    }
+
+    this.cache.set(key, {
+      version: CACHE_VERSION,
+      timestamp: Date.now(),
+      data
+    });
+    this.saveToStorage();
+  }
+
+  clear() {
+    this.cache.clear();
+    this.saveToStorage();
+  }
+}
+
+// Initialize caches
+const searchCache = new PersistentCache<BoardGame[]>('bgb-search-cache');
+const gameCache = new PersistentCache<BoardGame>('bgb-game-cache');
+const popularGamesCache = new PersistentCache<BoardGame[]>('bgb-popular-cache');
 
 const BATCH_SIZE = 10;
+const POPULAR_GAMES_IDS = [
+  '174430', // Gloomhaven
+  '161936', // Pandemic Legacy: Season 1
+  '167791', // Terraforming Mars
+  '266192', // Spirit Island
+  '342942', // Ark Nova
+  '233078', // Wingspan
+  '224517', // Brass Birmingham
+  '291457', // Gloomhaven: Jaws of the Lion
+  '162886', // Viticulture
+  '220308'  // Root
+];
+
+export async function getPopularGames(): Promise<BoardGame[]> {
+  const cached = popularGamesCache.get('popular');
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    const games = await processBatch(
+      POPULAR_GAMES_IDS,
+      id => getGameById(id)
+    );
+    
+    // Sort by rank
+    const sortedGames = games.sort((a, b) => (a.rank || 999999) - (b.rank || 999999));
+    popularGamesCache.set('popular', sortedGames);
+    
+    return sortedGames;
+  } catch (error) {
+    console.error('Failed to fetch popular games:', error);
+    return [];
+  }
+}
+
 const BATCH_DELAY = 1000; // 1 second delay between batches
 
 interface SearchResults {
@@ -47,9 +168,10 @@ async function processBatch<T>(
 export async function searchGames(query: string, page: number = 1): Promise<SearchResults> {
   // Check cache first
   const cacheKey = `${query.toLowerCase()}-${page}`;
-  if (searchCache.has(cacheKey)) {
+  const cachedSearch = searchCache.get(cacheKey);
+  if (cachedSearch) {
     return {
-      items: searchCache.get(cacheKey)!,
+      items: cachedSearch,
       hasMore: page < 3 // Limit to 3 pages total
     };
   }
@@ -64,7 +186,9 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
     
     const doc = await parseXML(xmlText);
     const items = Array.from(doc.getElementsByTagName('item'));
-    const gameIds = items.map(item => item.getAttribute('id')).filter(Boolean);
+    const gameIds = items
+      .map(item => item.getAttribute('id'))
+      .filter((id): id is string => typeof id === 'string');
     
     // If no exact matches found, try regular search
     if (gameIds.length === 0) {
@@ -75,7 +199,10 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
       
       const regularDoc = await parseXML(regularXmlText);
       const regularItems = Array.from(regularDoc.getElementsByTagName('item'));
-      gameIds.push(...regularItems.map(item => item.getAttribute('id')).filter(Boolean));
+      gameIds.push(...regularItems
+        .map(item => item.getAttribute('id'))
+        .filter((id): id is string => typeof id === 'string')
+      );
     }
     
     if (gameIds.length === 0) {
@@ -119,20 +246,25 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
     // Cache the page results
     searchCache.set(cacheKey, pageResults);
     
+    // Cache individual games for faster retrieval
+    pageResults.forEach(game => {
+      gameCache.set(game.id, game);
+    });
+    
     return {
       items: pageResults,
       hasMore: endIdx < sortedGames.length
     };
   } catch (error: any) {
     const errorMessage = error instanceof Error ? error.message : 'An error occurred while searching games';
-    logError({
-      message: 'Error searching games',
-      code: 'SEARCH_ERROR',
-      context: {
-        error: errorMessage,
-        query
-      }
-    });
+    const appError = new Error('Error searching games') as AppError;
+    appError.name = 'AppError';
+    appError.code = 'SEARCH_ERROR';
+    appError.context = {
+      error: errorMessage,
+      query
+    };
+    logError(appError);
     
     throw createAppError(
       'An error occurred while fetching game data. Please try again.',
@@ -144,9 +276,10 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
 
 export async function getGameById(id: string): Promise<BoardGame> {
   // Check cache first
-  if (gameCache.has(id)) {
+  const cachedGame = gameCache.get(id);
+  if (cachedGame) {
     console.log('[BGG] Returning cached game details:', id);
-    return gameCache.get(id)!;
+    return cachedGame;
   }
 
   try {
@@ -172,6 +305,7 @@ export async function getGameById(id: string): Promise<BoardGame> {
     const maxPlayers = item.querySelector('maxplayers')?.getAttribute('value');
     const minPlaytime = item.querySelector('minplaytime')?.getAttribute('value');
     const maxPlaytime = item.querySelector('maxplaytime')?.getAttribute('value');
+    const minAge = item.querySelector('minage')?.getAttribute('value');
     
     // Get ranking information
     const rankNode = item.querySelector('rank[type="subtype"][name="boardgame"]');
@@ -186,11 +320,12 @@ export async function getGameById(id: string): Promise<BoardGame> {
     const game: BoardGame = {
       id,
       name,
-      year_published: yearPublished ? parseInt(yearPublished) : undefined,
+      year_published: yearPublished ? parseInt(yearPublished) : 0,
       min_players: minPlayers ? parseInt(minPlayers) : 1,
+      min_age: minAge ? parseInt(minAge) : 0,
       max_players: maxPlayers ? parseInt(maxPlayers) : 4,
-      min_playtime: minPlaytime ? parseInt(minPlaytime) : undefined,
-      max_playtime: maxPlaytime ? parseInt(maxPlaytime) : undefined,
+      min_playtime: minPlaytime ? parseInt(minPlaytime) : 0,
+      max_playtime: maxPlaytime ? parseInt(maxPlaytime) : 0,
       thumb_url: thumbnail,
       image_url: image,
       description,
@@ -243,15 +378,15 @@ export async function getGameById(id: string): Promise<BoardGame> {
     gameCache.set(id, game);
     return game;
   } catch (error: any) {
-    logError({
-      message: 'Error fetching game details',
-      code: 'GAME_FETCH_ERROR',
-      context: {
-        id,
-        error: error.message,
-        originalError: error
-      }
-    });
+    const appError = new Error('Error fetching game details') as AppError;
+    appError.name = 'AppError';
+    appError.code = 'GAME_FETCH_ERROR';
+    appError.context = {
+      id,
+      error: error.message,
+      originalError: error
+    };
+    logError(appError);
     throw createAppError('Failed to fetch game details', 'GAME_FETCH_ERROR', { id });
   }
 }

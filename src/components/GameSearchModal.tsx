@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Loader2, AlertCircle, Star } from 'lucide-react';
-import { searchGames } from '../services/boardGameService';
+import { X, Search, Loader2, AlertCircle, Star, TrendingUp } from 'lucide-react';
+import { searchGames, getPopularGames } from '../services/boardGameService';
 import { BoardGame } from '../types/boardgame';
 import { useDebounce } from '../hooks/useDebounce';
 
@@ -12,7 +12,26 @@ interface GameSearchModalProps {
 function GameSearchModal({ onClose, onGameSelect }: GameSearchModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<(BoardGame & { pageId: string })[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Load popular games on mount
+  useEffect(() => {
+    const loadPopularGames = async () => {
+      try {
+        const games = await getPopularGames();
+        const gamesWithPageIds = games.map(game => ({
+          ...game,
+          pageId: `${game.id}-popular`
+        }));
+        setResults(gamesWithPageIds);
+      } catch (error) {
+        setError('Failed to load popular games');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadPopularGames();
+  }, []);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -25,8 +44,16 @@ function GameSearchModal({ onClose, onGameSelect }: GameSearchModalProps) {
     if (debouncedSearch) {
       handleSearch(true);
     } else {
-      setResults([]);
-      setHasMore(false);
+      // Reset to popular games when search is cleared
+      getPopularGames().then(games => {
+        const gamesWithPageIds = games.map(game => ({
+          ...game,
+          pageId: `${game.id}-popular`
+        }));
+        setResults(gamesWithPageIds);
+        setHasMore(false);
+        setError(null);
+      });
     }
   }, [debouncedSearch]);
 
@@ -97,7 +124,15 @@ function GameSearchModal({ onClose, onGameSelect }: GameSearchModalProps) {
     <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-lg w-full max-w-md mt-16">
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">Search Games</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold">Search Games</h2>
+            {!searchQuery && !loading && (
+              <div className="flex items-center gap-1 text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded">
+                <TrendingUp className="h-3 w-3" />
+                <span>Popular Games</span>
+              </div>
+            )}
+          </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
             <X className="h-5 w-5" />
           </button>

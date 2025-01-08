@@ -30,8 +30,10 @@ function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectio
       setProcessingStep('Finding matches...');
       const matches = await findMatchingGames(detected);
       setGameMatches(matches);
-    } catch (err) {
-      setError('Failed to process image. Please try again.');
+    } catch (err: any) {
+      // Display the detailed error message from the vision client
+      setError(err.message || 'Failed to process image. Please try again.');
+      console.error('Vision processing error:', err);
     } finally {
       setLoading(false);
     }
@@ -60,9 +62,14 @@ function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectio
           </button>
         </div>
         <div className="flex-1 flex items-center justify-center p-4">
-          <div className="text-center">
+          <div className="text-center max-w-lg">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <p className="text-red-600 mb-4">{error}</p>
+            <div className="text-red-600 mb-4">
+              <p className="font-semibold mb-2">Failed to process image</p>
+              <pre className="text-left text-sm bg-red-50 p-4 rounded-lg overflow-auto">
+                {error}
+              </pre>
+            </div>
             <button
               onClick={onClose}
               className="bg-indigo-600 text-white px-4 py-2 rounded-lg"

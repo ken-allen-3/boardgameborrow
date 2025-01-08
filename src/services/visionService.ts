@@ -1,5 +1,6 @@
 import { BoardGame } from '../types/boardgame';
 import { searchGames } from './boardGameService';
+import { visionClient } from '../config/vision';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -16,23 +17,24 @@ export interface DetectedGame {
 
 export async function analyzeShelfImage(base64Image: string): Promise<DetectedGame[]> {
   try {
-    const response = await fetch(`${API_URL}/api/vision/analyze`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ image: base64Image }),
+    // Use the enhanced visionClient instead of direct fetch
+    const result = await visionClient.textDetection({
+      image: { content: base64Image }
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to analyze image');
+    
+    if (!result || !result[0]) {
+      throw new Error('No results from vision API');
     }
 
-    const { detectedGames } = await response.json();
-    return detectedGames;
+    return result[0].map((game: any) => ({
+      title: game.title,
+      confidence: game.confidence,
+      boundingBox: game.boundingBox
+    }));
   } catch (error) {
+    // Pass through the detailed error from visionClient
     console.error('Error analyzing image:', error);
-    throw new Error('Failed to analyze image');
+    throw error;
   }
 }
 

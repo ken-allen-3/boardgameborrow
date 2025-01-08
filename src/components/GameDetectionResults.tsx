@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ChevronRight, Loader2, AlertCircle, Check } from 'lucide-react';
+import { X, ChevronRight, Loader2, AlertCircle, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { BoardGame } from '../types/boardgame';
 import { analyzeShelfImage, findMatchingGames, DetectedGame } from '../services/visionService';
 
@@ -16,6 +16,14 @@ function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectio
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [processingStep, setProcessingStep] = useState<string>('Analyzing image...');
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<{
+    url?: string;
+    requestHeaders?: Record<string, string>;
+    responseStatus?: number;
+    responseHeaders?: Record<string, string>;
+    rawResponse?: string;
+  }>({});
 
   useEffect(() => {
     processImage();
@@ -31,9 +39,26 @@ function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectio
       const matches = await findMatchingGames(detected);
       setGameMatches(matches);
     } catch (err: any) {
-      // Display the detailed error message from the vision client
-      setError(err.message || 'Failed to process image. Please try again.');
-      console.error('Vision processing error:', err);
+      // Extract debug info from error message if available
+      const errorMessage = err.message || 'Failed to process image. Please try again.';
+      setError(errorMessage);
+
+      // Parse debug info from error message
+      try {
+        const urlMatch = errorMessage.match(/URL: (.*)/);
+        const statusMatch = errorMessage.match(/Status: (.*)/);
+        const contentTypeMatch = errorMessage.match(/Content-Type: (.*)/);
+        const responseMatch = errorMessage.match(/Response: (.*)/s);
+
+        setDebugInfo({
+          url: urlMatch?.[1],
+          responseStatus: statusMatch?.[1] ? parseInt(statusMatch[1]) : undefined,
+          responseHeaders: contentTypeMatch?.[1] ? { 'Content-Type': contentTypeMatch[1] } : undefined,
+          rawResponse: responseMatch?.[1]
+        });
+      } catch (parseError) {
+        console.error('Error parsing debug info:', parseError);
+      }
     } finally {
       setLoading(false);
     }
@@ -61,18 +86,69 @@ function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectio
             <X className="h-6 w-6" />
           </button>
         </div>
-        <div className="flex-1 flex items-center justify-center p-4">
-          <div className="text-center max-w-lg">
+        <div className="flex-1 overflow-auto p-4">
+          <div className="max-w-lg mx-auto">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <div className="text-red-600 mb-4">
               <p className="font-semibold mb-2">Failed to process image</p>
-              <pre className="text-left text-sm bg-red-50 p-4 rounded-lg overflow-auto">
+              <pre className="text-left text-sm bg-red-50 p-4 rounded-lg overflow-auto whitespace-pre-wrap">
                 {error}
               </pre>
             </div>
+
+            <div className="mb-4">
+              <button
+                onClick={() => setShowDebugInfo(!showDebugInfo)}
+                className="flex items-center justify-between w-full px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+              >
+                <span className="font-medium">Debug Information</span>
+                {showDebugInfo ? (
+                  <ChevronUp className="h-5 w-5" />
+                ) : (
+                  <ChevronDown className="h-5 w-5" />
+                )}
+              </button>
+
+              {showDebugInfo && (
+                <div className="mt-2 space-y-2">
+                  {debugInfo.url && (
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <div className="font-medium text-sm text-gray-700">Request URL:</div>
+                      <div className="text-sm break-all">{debugInfo.url}</div>
+                    </div>
+                  )}
+                  
+                  {debugInfo.responseStatus && (
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <div className="font-medium text-sm text-gray-700">Response Status:</div>
+                      <div className="text-sm">{debugInfo.responseStatus}</div>
+                    </div>
+                  )}
+
+                  {debugInfo.responseHeaders && (
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <div className="font-medium text-sm text-gray-700">Response Headers:</div>
+                      <pre className="text-sm overflow-auto">
+                        {JSON.stringify(debugInfo.responseHeaders, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+
+                  {debugInfo.rawResponse && (
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <div className="font-medium text-sm text-gray-700">Raw Response:</div>
+                      <pre className="text-sm overflow-auto whitespace-pre-wrap">
+                        {debugInfo.rawResponse}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <button
               onClick={onClose}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
+              className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
             >
               Try Again
             </button>

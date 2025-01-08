@@ -31,9 +31,20 @@ export async function analyzeShelfImage(base64Image: string): Promise<DetectedGa
       confidence: game.confidence,
       boundingBox: game.boundingBox
     }));
-  } catch (error) {
-    // Pass through the detailed error from visionClient
-    console.error('Error analyzing image:', error);
+  } catch (error: any) {
+    // Ensure error message contains debug info
+    if (error.message.includes('Failed to fetch')) {
+      throw new Error(
+        `Network Error:\n` +
+        `URL: ${API_URL}/analyzeImage\n` +
+        `Status: Failed to connect\n` +
+        `Details: The request failed to reach the server. This could be due to:\n` +
+        `- No internet connection\n` +
+        `- Server is down\n` +
+        `- CORS configuration issue\n` +
+        `- Invalid API URL`
+      );
+    }
     throw error;
   }
 }
@@ -70,14 +81,17 @@ export async function findMatchingGames(detectedGames: DetectedGame[]): Promise<
   return matches;
 }
 
-// Mock data for testing camera capture feature
-const mockGames: BoardGame[] = [
-  {
+export async function searchGamesByImage(imageUrl: string): Promise<BoardGame[]> {
+  // For testing, return mock data instead of making API call
+  return Promise.resolve([{
     id: "13",
     name: "Catan",
     year_published: 1995,
     min_players: 3,
     max_players: 4,
+    min_playtime: 60,
+    max_playtime: 60,
+    min_age: 10,
     thumb_url: "https://cf.geekdo-images.com/W3Bsga_uLP9kO91gZ7H8yw__thumb/img/8a9HeqFydO7Uun_le9bXWPnidcA=/fit-in/200x150/filters:strip_icc()/pic2419375.jpg",
     image_url: "https://cf.geekdo-images.com/W3Bsga_uLP9kO91gZ7H8yw__original/img/A-0yDJkve0avEicYQ4HoNO-HkK8=/0x0/filters:format(jpeg)/pic2419375.jpg",
     description: "Classic game of resource management and trading",
@@ -125,10 +139,5 @@ const mockGames: BoardGame[] = [
     official_url: "",
     commentary: "",
     faq: ""
-  }
-];
-
-export async function searchGamesByImage(imageUrl: string): Promise<BoardGame[]> {
-  // For testing, return mock data instead of making API call
-  return Promise.resolve(mockGames);
+  }]);
 }

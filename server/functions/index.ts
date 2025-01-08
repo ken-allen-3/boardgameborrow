@@ -17,8 +17,19 @@ export const bggGameDetails = getGameDetails;
 export const analyzeImage = onRequest({
   timeoutSeconds: 60,
   memory: '1GiB',
-  cors: true
+  cors: {
+    origin: true,
+    methods: ['POST'],
+    allowedHeaders: ['Content-Type', 'Accept'],
+    maxAge: 3600
+  }
 }, async (req, res) => {
+  // Handle preflight request
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
   if (req.method !== 'POST') {
     res.status(405).send('Method Not Allowed');
     return;
@@ -39,9 +50,12 @@ export const analyzeImage = onRequest({
 
     const games = await gameDetectionService.processAnnotations(annotations);
     res.json({ rawResponse: games });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Vision API Error:', error);
-    res.status(500).json({ error: 'Failed to analyze image' });
+    res.status(500).json({ 
+      error: 'Failed to analyze image',
+      details: error.message || 'Unknown error'
+    });
   }
 });
 
@@ -49,7 +63,12 @@ export const analyzeImage = onRequest({
 export const rateLimiter = onRequest({
   timeoutSeconds: 30,
   memory: '256MiB',
-  cors: true
+  cors: {
+    origin: true,
+    methods: ['POST'],
+    allowedHeaders: ['Content-Type', 'Accept'],
+    maxAge: 3600
+  }
 }, async (req, res) => {
   const ip = req.ip || req.headers['x-forwarded-for'];
   const key = `ratelimit_${ip}`;

@@ -3,7 +3,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 export const visionClient = {
   textDetection: async ({ image }: { image: { content: string } }) => {
     try {
-      const response = await fetch(API_URL, {
+      const response = await fetch(`${API_URL}/analyzeImage`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -12,7 +12,8 @@ export const visionClient = {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to analyze image');
+        const errorText = await response.text();
+        throw new Error(`Failed to analyze image: ${errorText}`);
       }
 
       const { rawResponse } = await response.json();

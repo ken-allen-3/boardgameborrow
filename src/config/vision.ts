@@ -3,7 +3,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 export const visionClient = {
   textDetection: async ({ image }: { image: { content: string } }) => {
     try {
-      const url = `${API_URL}/analyzeImage`;
+      // Ensure URL ends with function name
+      const url = API_URL.endsWith('/analyzeImage') ? API_URL : `${API_URL}/analyzeImage`;
       console.log('Vision API Request URL:', url);
       console.log('Vision API Headers:', {
         'Content-Type': 'application/json',

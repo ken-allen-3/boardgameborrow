@@ -1,4 +1,4 @@
-import { onRequest } from 'firebase-functions/v2/https';
+import { onRequest, HttpsOptions } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { searchGames, getGameDetails } from './boardgameApi';
 import { GameDetectionService } from '../services/gameDetection';
@@ -13,17 +13,20 @@ const gameDetectionService = new GameDetectionService();
 export const bggSearch = searchGames;
 export const bggGameDetails = getGameDetails;
 
-// Vision API endpoint
-export const analyzeImage = onRequest({
+const functionConfig: HttpsOptions = {
   timeoutSeconds: 60,
   memory: '1GiB',
-  cors: {
-    origin: true,
-    methods: ['POST'],
-    allowedHeaders: ['Content-Type', 'Accept'],
-    maxAge: 3600
-  }
-}, async (req, res) => {
+  region: 'us-central1'
+};
+
+// Vision API endpoint
+export const analyzeImage = onRequest(functionConfig, async (req, res) => {
+  // Set CORS headers
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Accept');
+  res.set('Access-Control-Max-Age', '3600');
+
   // Handle preflight request
   if (req.method === 'OPTIONS') {
     res.status(204).send('');
@@ -63,13 +66,19 @@ export const analyzeImage = onRequest({
 export const rateLimiter = onRequest({
   timeoutSeconds: 30,
   memory: '256MiB',
-  cors: {
-    origin: true,
-    methods: ['POST'],
-    allowedHeaders: ['Content-Type', 'Accept'],
-    maxAge: 3600
-  }
+  region: 'us-central1'
 }, async (req, res) => {
+  // Set CORS headers
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Accept');
+  res.set('Access-Control-Max-Age', '3600');
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
   const ip = req.ip || req.headers['x-forwarded-for'];
   const key = `ratelimit_${ip}`;
   

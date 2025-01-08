@@ -31,14 +31,18 @@ const AddGameButton: React.FC<AddGameButtonProps> = ({ onCameraClick, onSearchCl
       {showOptions && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50">
           <button
-            disabled
-            className="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 cursor-not-allowed opacity-75"
+            onClick={() => {
+              pauseTutorial();
+              onCameraClick();
+              setShowOptions(false);
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition"
             data-tutorial="camera-button"
           >
             <Camera className="h-5 w-5 text-gray-400" />
             <div className="text-left">
-              <div className="font-medium text-gray-500">Photo Detection</div>
-              <div className="text-sm text-gray-400">Coming soon!</div>
+              <div className="font-medium">Photo Detection</div>
+              <div className="text-sm text-gray-500">Scan games with your camera</div>
             </div>
           </button>
           <button

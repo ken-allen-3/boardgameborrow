@@ -10,6 +10,14 @@ interface DetectedGame {
     width: number;
     height: number;
   };
+  metadata?: {
+    players?: string;
+    ages?: string;
+    gameType?: string;
+    publisher?: string;
+    playTime?: string;
+    complexity?: string;
+  };
   matchedBggId?: string;
 }
 
@@ -244,17 +252,53 @@ function VisionDebug() {
                     onMouseEnter={() => setHighlightedGame(game)}
                     onMouseLeave={() => setHighlightedGame(null)}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium">{game.title}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-xs ${
-                        game.confidence > 0.8 
-                          ? 'bg-green-100 text-green-800'
-                          : game.confidence > 0.6
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {Math.round(game.confidence * 100)}% confidence
-                      </span>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium">{game.title}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs ${
+                          game.confidence > 0.8 
+                            ? 'bg-green-100 text-green-800'
+                            : game.confidence > 0.6
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {Math.round(game.confidence * 100)}% confidence
+                        </span>
+                      </div>
+                      {game.metadata && Object.keys(game.metadata).length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {game.metadata.publisher && (
+                            <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs">
+                              {game.metadata.publisher}
+                            </span>
+                          )}
+                          {game.metadata.players && (
+                            <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded text-xs">
+                              {game.metadata.players} players
+                            </span>
+                          )}
+                          {game.metadata.ages && (
+                            <span className="px-2 py-0.5 bg-pink-50 text-pink-700 rounded text-xs">
+                              Ages {game.metadata.ages}
+                            </span>
+                          )}
+                          {game.metadata.gameType && (
+                            <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs">
+                              {game.metadata.gameType}
+                            </span>
+                          )}
+                          {game.metadata.playTime && (
+                            <span className="px-2 py-0.5 bg-cyan-50 text-cyan-700 rounded text-xs">
+                              {game.metadata.playTime} min
+                            </span>
+                          )}
+                          {game.metadata.complexity && (
+                            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-xs">
+                              {game.metadata.complexity}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <button
                       className="px-3 py-1 text-sm text-indigo-600 hover:bg-indigo-50 rounded-lg"

@@ -24,6 +24,8 @@ import WelcomeModal from './components/onboarding/WelcomeModal';
 import VisionDebug from './pages/VisionDebug';
 import PerformanceMonitor from './pages/PerformanceMonitor';
 import AdminDashboard from './pages/AdminDashboard';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsAndConditions from './pages/TermsAndConditions';
 
 function AppRoutes() {
   const { currentUser, showWelcome, setShowWelcome, isAdmin } = useAuth();
@@ -56,6 +58,8 @@ function AppRoutes() {
               currentUser && isAdmin ? <AdminDashboard /> : <Navigate to="/" />
             } 
           />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsAndConditions />} />
         </Routes>
       </main>
 

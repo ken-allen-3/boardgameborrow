@@ -19,26 +19,43 @@ function AddressOnboardingModal({ onComplete }: AddressOnboardingModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser?.email || !location.text) return;
+    console.log('Submit triggered with location:', location);
+    
+    if (!currentUser?.email) {
+      console.error('No current user email available');
+      return;
+    }
+    
+    if (!location.text) {
+      console.error('No location text provided');
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
 
     try {
+      const profileUpdate = {
+        location: location.text,
+        coordinates: location.coordinates ? {
+          latitude: location.coordinates[1],  // Mapbox returns [longitude, latitude]
+          longitude: location.coordinates[0]
+        } : undefined
+      };
+      
+      console.log('Attempting to update profile with:', profileUpdate);
+      
       await Promise.all([
-        updateUserProfile(currentUser.email, {
-          location: location.text,
-          coordinates: location.coordinates ? {
-            longitude: location.coordinates[0],
-            latitude: location.coordinates[1]
-          } : undefined
-        }),
+        updateUserProfile(currentUser.email, profileUpdate),
         updateOnboardingProgress(currentUser.email, {
           hasLocation: true
         })
       ]);
+      
+      console.log('Profile update successful');
       setShowFriendsModal(true);
     } catch (err) {
+      console.error('Profile update failed:', err);
       setError('Failed to save your location. Please try again.');
     } finally {
       setIsSubmitting(false);

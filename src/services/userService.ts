@@ -79,13 +79,17 @@ export async function updateOnboardingProgress(email: string, progress: Partial<
 }
 
 export async function updateUserProfile(email: string, updates: UserProfileUpdate): Promise<void> {
+  console.log('updateUserProfile called with:', { email, updates });
+  
   const db = getDatabase();
   const userKey = email.replace(/\./g, ',');
   const userRef = ref(db, `users/${userKey}`);
 
   try {
+    console.log('Fetching current user data...');
     const snapshot = await get(userRef);
     const currentData = snapshot.val() || {};
+    console.log('Current user data:', currentData);
     
     // If updating onboarding progress, merge with existing progress
     if (updates.onboardingProgress) {
@@ -96,15 +100,35 @@ export async function updateUserProfile(email: string, updates: UserProfileUpdat
       };
     }
 
-    await update(userRef, {
-      ...currentData,
+    // Create the update object, handling nested objects carefully
+    const updateData = {
       ...updates,
       email, // Always ensure email is set
       updatedAt: new Date().toISOString()
-    });
+    };
+
+    // If coordinates are provided, ensure they're properly structured
+    if (updates.coordinates) {
+      console.log('Processing coordinates:', updates.coordinates);
+      if (typeof updates.coordinates.latitude !== 'number' || typeof updates.coordinates.longitude !== 'number') {
+        throw new Error('Invalid coordinates format. Expected numbers for latitude and longitude.');
+      }
+      updateData.coordinates = {
+        latitude: updates.coordinates.latitude,
+        longitude: updates.coordinates.longitude
+      };
+    }
+
+    console.log('Preparing to update with data:', updateData);
+    await update(userRef, updateData);
+    console.log('Update successful');
   } catch (error) {
     console.error('Error updating user profile:', error);
-    throw new Error('Failed to update user profile');
+    if (error instanceof Error) {
+      throw new Error(`Failed to update user profile: ${error.message}`);
+    } else {
+      throw new Error('Failed to update user profile: Unknown error');
+    }
   }
 }
 

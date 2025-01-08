@@ -7,7 +7,8 @@ import {
   setPersistence,
   browserLocalPersistence, 
   createUserWithEmailAndPassword,
-  signInWithPopup
+  signInWithPopup,
+  GoogleAuthProvider
 } from 'firebase/auth';
 import { ref, set, get, update } from 'firebase/database';
 import { 
@@ -36,6 +37,7 @@ interface AuthContextType {
   isNewUser: boolean;
   needsOnboarding: boolean;
   completeOnboarding: () => Promise<void>;
+  googleAccessToken: string | null;
 }
 
 // Define the shape of signup data
@@ -115,9 +117,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const [googleAccessToken, setGoogleAccessToken] = useState<string | null>(null);
+
   const signInWithGoogle = async () => {
     try {
+      // Add scopes for Google People API
+      googleProvider.addScope('https://www.googleapis.com/auth/contacts.readonly');
       const result = await signInWithPopup(auth, googleProvider);
+      
+      // Store the access token
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (!credential?.accessToken) {
+        throw new Error('Failed to get Google access token');
+      }
+      setGoogleAccessToken(credential.accessToken);
       if (result.user) {
         const userRef = ref(database, `users/${result.user.email?.replace(/\./g, ',')}`);
         const snapshot = await get(userRef);
@@ -176,6 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async (): Promise<void> => {
     try {
+      setGoogleAccessToken(null);
       await firebaseSignOut(auth);
     } catch (error: any) {
       throw new Error(error.message || 'Failed to sign out');
@@ -263,7 +277,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setShowWelcome: updateShowWelcome,
     isNewUser,
     needsOnboarding,
-    completeOnboarding
+    completeOnboarding,
+    googleAccessToken
   };
 
   return (

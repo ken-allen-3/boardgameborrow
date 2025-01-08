@@ -39,18 +39,37 @@ export function LocationAutocomplete({
   const debouncedValue = useDebounce(value, 300);
 
   async function searchLocations(query: string): Promise<GeocodingResult[]> {
-    if (!query?.trim() || !MAPBOX_API_KEY) return [];
+    if (!query?.trim()) {
+      console.log('No query provided');
+      return [];
+    }
+    
+    if (!MAPBOX_API_KEY) {
+      console.error('Mapbox API key is missing');
+      setError('Location service configuration error');
+      return [];
+    }
 
     try {
+      console.log('Fetching locations for query:', query);
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_API_KEY}&types=place,locality,neighborhood,postcode&country=US`
       );
 
       if (!response.ok) {
-        throw new Error('Geocoding request failed');
+        const errorText = await response.text();
+        console.error('Geocoding request failed:', response.status, errorText);
+        throw new Error(`Geocoding request failed: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('Geocoding response:', data);
+      
+      if (!data.features) {
+        console.error('No features in response:', data);
+        return [];
+      }
+      
       return data.features;
     } catch (error) {
       console.error('Geocoding error:', error);
@@ -107,6 +126,7 @@ export function LocationAutocomplete({
           type="text"
           value={value}
           onChange={(e) => {
+            console.log('Input changed:', e.target.value);
             onChange(e.target.value);
             setShowSuggestions(true);
           }}
@@ -134,6 +154,7 @@ export function LocationAutocomplete({
             <li
               key={suggestion.id}
               onClick={() => {
+                console.log('Selected location:', suggestion);
                 onChange(formatSuggestion(suggestion), suggestion.center);
                 setShowSuggestions(false);
               }}

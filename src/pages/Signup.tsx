@@ -219,12 +219,24 @@ function Signup() {
           )}
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-600">
-          Already have an account?{' '}
-          <Link to="/login" className="text-indigo-600 hover:text-indigo-700 font-medium">
-            Sign in
-          </Link>
-        </p>
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-600 mb-2">
+            Already have an account?{' '}
+            <Link to="/login" className="text-indigo-600 hover:text-indigo-700 font-medium">
+              Sign in
+            </Link>
+          </p>
+          <p className="text-xs text-gray-500">
+            By creating an account, you agree to our{' '}
+            <Link to="/terms" className="text-indigo-600 hover:text-indigo-700">
+              Terms & Conditions
+            </Link>{' '}
+            and{' '}
+            <Link to="/privacy" className="text-indigo-600 hover:text-indigo-700">
+              Privacy Policy
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

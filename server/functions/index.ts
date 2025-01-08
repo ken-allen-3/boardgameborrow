@@ -1,19 +1,56 @@
-import * as functions from 'firebase-functions';
+import { onRequest } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { searchGames, getGameDetails } from './boardgameApi';
+import { GameDetectionService } from '../services/gameDetection';
 
 // Initialize Firebase Admin
 admin.initializeApp();
+
+// Initialize services
+const gameDetectionService = new GameDetectionService();
 
 // Export the functions
 export const bggSearch = searchGames;
 export const bggGameDetails = getGameDetails;
 
+// Vision API endpoint
+export const analyzeImage = onRequest({
+  timeoutSeconds: 60,
+  memory: '1GiB',
+  cors: true
+}, async (req, res) => {
+  if (req.method !== 'POST') {
+    res.status(405).send('Method Not Allowed');
+    return;
+  }
+
+  try {
+    const { image } = req.body;
+    if (!image) {
+      res.status(400).json({ error: 'No image data provided' });
+      return;
+    }
+
+    const annotations = [{
+      description: image,
+      boundingPoly: null,
+      confidence: 1
+    }];
+
+    const games = await gameDetectionService.processAnnotations(annotations);
+    res.json({ rawResponse: games });
+  } catch (error) {
+    console.error('Vision API Error:', error);
+    res.status(500).json({ error: 'Failed to analyze image' });
+  }
+});
+
 // Add rate limiting middleware
-export const rateLimiter = functions.runWith({
+export const rateLimiter = onRequest({
   timeoutSeconds: 30,
-  memory: '256MB'
-}).https.onRequest(async (req, res) => {
+  memory: '256MiB',
+  cors: true
+}, async (req, res) => {
   const ip = req.ip || req.headers['x-forwarded-for'];
   const key = `ratelimit_${ip}`;
   
@@ -34,10 +71,10 @@ export const rateLimiter = functions.runWith({
     await admin.firestore().collection('ratelimits').doc(key).set({ requests });
     
     // Continue to the actual function
-    return true;
+    res.status(200).send('Rate limit check passed');
   } catch (error) {
     console.error('Rate limiting error:', error);
     // Allow the request if rate limiting fails
-    return true;
+    res.status(200).send('Rate limit check passed (error fallback)');
   }
 });

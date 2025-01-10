@@ -120,10 +120,10 @@ app.post('/api/vision/analyze', async (req, res) => {
 
     console.log('Detected games:', detectedGames);
 
-    res.json({
+    res.json([{
       detectedGames,
       rawResponse: result
-    });
+    }]);
   } catch (error) {
     console.error('Vision API Error:', error);
     

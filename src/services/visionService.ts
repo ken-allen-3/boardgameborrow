@@ -22,15 +22,11 @@ export async function analyzeShelfImage(base64Image: string): Promise<DetectedGa
       image: { content: base64Image }
     });
     
-    if (!result || !result[0]) {
+    if (!result || !result[0] || !result[0].detectedGames) {
       throw new Error('No results from vision API');
     }
 
-    return result[0].map((game: any) => ({
-      title: game.title,
-      confidence: game.confidence,
-      boundingBox: game.boundingBox
-    }));
+    return result[0].detectedGames;
   } catch (error: any) {
     // Ensure error message contains debug info
     if (error.message.includes('Failed to fetch')) {

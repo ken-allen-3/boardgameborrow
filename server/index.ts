@@ -52,13 +52,20 @@ try {
 const gameDetectionService = new GameDetectionService();
 
 // Configure CORS
+const allowedOrigins = [
+  'http://localhost:5174',
+  'http://127.0.0.1:5174',
+  'https://boardgameshare.netlify.app',
+  'https://boardgameborrow.com',
+  'https://www.boardgameborrow.com'
+];
+
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
 app.use(cors({
-  origin: [
-    'http://localhost:5174',
-    'http://127.0.0.1:5174',
-    'https://boardgameshare.netlify.app',
-    process.env.FRONTEND_URL
-  ].filter(Boolean),
+  origin: allowedOrigins,
   methods: ['GET', 'POST', 'OPTIONS'],
   credentials: true
 }));

@@ -1,4 +1,4 @@
-import { onRequest, HttpsOptions } from 'firebase-functions/v2/https';
+import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { searchGames, getGameDetails } from './boardgameApi';
 import { GameDetectionService } from '../services/gameDetection';
@@ -13,14 +13,8 @@ const gameDetectionService = new GameDetectionService();
 export const bggSearch = searchGames;
 export const bggGameDetails = getGameDetails;
 
-const functionConfig: HttpsOptions = {
-  timeoutSeconds: 60,
-  memory: '1GiB',
-  region: 'us-central1'
-};
-
 // Vision API endpoint
-export const analyzeImage = onRequest(functionConfig, async (req, res) => {
+export const analyzeImage = functions.https.onRequest(async (req, res) => {
   // Set CORS headers
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -63,11 +57,7 @@ export const analyzeImage = onRequest(functionConfig, async (req, res) => {
 });
 
 // Add rate limiting middleware
-export const rateLimiter = onRequest({
-  timeoutSeconds: 30,
-  memory: '256MiB',
-  region: 'us-central1'
-}, async (req, res) => {
+export const rateLimiter = functions.https.onRequest(async (req, res) => {
   // Set CORS headers
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');

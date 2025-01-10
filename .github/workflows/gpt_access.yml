@@ -1,7 +1,7 @@
 name: GPT Access Automation
 
 on:
-  workflow_dispatch:  # Allows you to manually trigger the workflow
+  workflow_dispatch:  # Allows manual triggering
 
 jobs:
   update-repo:
@@ -11,9 +11,16 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Use GPT Token for API Access
-        run: |
-          echo "Using GPT Token for authorized API access."
-          curl -H "Authorization: token ${{ secrets.GPT_TOKEN }}" \
-               -H "Accept: application/vnd.github.v3+json" \
-               https://api.github.com/repos/${{ github.repository }}/contents/
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install Octokit dependency
+        run: npm install @octokit/rest
+
+      - name: Run GitHub Integration Script
+        run: node github_integration_script.js
+        env:
+          ACCESS_TOKEN: ${{ secrets.GPT_TOKEN }}
+

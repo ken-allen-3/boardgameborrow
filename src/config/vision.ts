@@ -1,4 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// Ensure we have a default API URL if environment variable is not set
+const API_URL = import.meta.env.VITE_API_URL || 'https://boardgameborrow.com';
 
 export const visionClient = {
   textDetection: async ({ image }: { image: { content: string } }) => {
@@ -78,7 +79,7 @@ export const visionClient = {
       if (error instanceof TypeError && error.message === 'Failed to fetch') {
         console.error('Network Error Details:', {
           apiUrl: API_URL,
-          fullUrl: `${API_URL}/analyzeImage`,
+          fullUrl: `${API_URL}/api/vision/analyze`,
           env: import.meta.env,
           error
         });

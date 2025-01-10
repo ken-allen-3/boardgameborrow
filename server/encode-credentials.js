@@ -1,8 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 
+// Get the filename from command line args or use default
+const filename = process.argv[2] || 'vision-credentials.json';
 // Read the JSON file
-const credentialsPath = path.join(__dirname, 'vision-credentials.json');
+const credentialsPath = path.join(__dirname, filename);
 const jsonContent = fs.readFileSync(credentialsPath, 'utf8');
 
 // Convert to base64

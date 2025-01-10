@@ -1,5 +1,8 @@
 // Ensure we have a default API URL if environment variable is not set
-const API_URL = import.meta.env.VITE_API_URL || 'https://boardgameborrow.com';
+const API_URL = import.meta.env.VITE_API_URL;
+if (!API_URL) {
+  throw new Error('VITE_API_URL environment variable is required');
+}
 
 export const visionClient = {
   textDetection: async ({ image }: { image: { content: string } }) => {

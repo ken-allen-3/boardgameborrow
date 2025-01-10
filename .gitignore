@@ -29,3 +29,5 @@ dist-ssr
 
 # Google Cloud credentials
 vision-credentials.jsonserver/boardgameshare-001-37de06d81f76.json
+server/boardgameshare-001-37de06d81f76.json
+server/vision-credentials.json

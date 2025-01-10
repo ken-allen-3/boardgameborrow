@@ -5,6 +5,13 @@
   command = "npm run build"
 
 [[redirects]]
+  from = "/api/vision/analyze"
+  to = "https://boardgameshare-vision-service-389248d4aea9.herokuapp.com/api/vision/analyze"
+  status = 200
+  force = true
+  headers = {Access-Control-Allow-Origin = "*"}
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200

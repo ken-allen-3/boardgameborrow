@@ -53,8 +53,13 @@ const gameDetectionService = new GameDetectionService();
 
 // Configure CORS
 app.use(cors({
-  origin: ['http://localhost:5174', 'http://127.0.0.1:5174'],
-  methods: ['GET', 'POST'],
+  origin: [
+    'http://localhost:5174',
+    'http://127.0.0.1:5174',
+    'https://boardgameshare.netlify.app',
+    process.env.FRONTEND_URL
+  ].filter(Boolean),
+  methods: ['GET', 'POST', 'OPTIONS'],
   credentials: true
 }));
 
@@ -131,10 +136,17 @@ app.post('/api/vision/analyze', async (req, res) => {
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const isProduction = process.env.NODE_ENV === 'production';
   console.error('Server Error:', err);
+  
+  // Don't expose stack traces in production
   res.status(500).json({
     error: 'Internal server error',
-    details: process.env.NODE_ENV === 'development' ? err.message : 'An unexpected error occurred'
+    message: isProduction ? 'An unexpected error occurred' : err.message,
+    details: isProduction ? undefined : {
+      stack: err.stack,
+      name: err.name
+    }
   });
 });
 

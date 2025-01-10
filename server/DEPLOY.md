@@ -1,0 +1,80 @@
+# Deploying the Vision API Server to Heroku
+
+## Prerequisites
+1. Heroku CLI installed
+2. Google Cloud Vision API credentials
+3. Logged into Heroku account
+
+## Deployment Steps
+
+1. **Create Heroku App**
+```bash
+cd server
+# First time setup
+heroku create boardgameshare-vision-api
+
+# Set required environment variables (copy these commands exactly)
+heroku config:set GOOGLE_CLOUD_PROJECT_ID="boardgameshare-440016"
+heroku config:set GOOGLE_CLOUD_VISION_CREDENTIALS="ewogICJ0eXBlIjogInNlcnZpY2VfYWNjb3VudCIsCiAgInByb2plY3RfaWQiOiAiYm9hcmRnYW1lc2hhcmUtNDQwMDE2IiwKICAicHJpdmF0ZV9rZXlfaWQiOiAiMjdiY2NiOWM4NzBiMmFlMmQ4YzkxMTRhNjlhNTg5MzA1OWNhZTYwMCIsCiAgInByaXZhdGVfa2V5IjogIi0tLS0tQkVHSU4gUFJJVkFURSBLRVktLS0tLVxuTUlJRXVnSUJBREFOQmdrcWhraUc5dzBCQVFFRkFBU0NCS1F3Z2dTZ0FnRUFBb0lCQVFEWkRkNEZBTjF4WXpLRFxuQkNDR2JNMHNkSU9uaGxIUTQ0b0tOK0gyZG5iVG1aK2NlTk1BbWI0c2RJa1FCd01tczZocHVVNldzTzZFa1h5alxuNFhGZUJ5QlY4SW1lTGt5L3pDbTBOd0JCdTFwYkVySmw4UmxyVTNPRmpVNXlIWnlxanA1eUxuaWxRT1VzTmRDZ1xub1pwTEIrYUV0SkxMODBuL0dRVzFrQ2lCdm1UbnRFQlZtQzNtb3hqYXp5N21wejNyb3Jqcmg3NjZXVHB6OEV5WlxueXlqd3JLMDRIY2h3NzdKaE1Wb21TTFZtZnNkK2Y0SEZqbjBKWFpneFZhZnRyK2pDajlhcG5kUFBJUmZraWF6QlxuM3E0TGpZa0RNdmpHeGhHcy9TMFRrd2gzNWlXYmVxNTVKMlcxYXBDTXpkdGJqclRTV1JJKzNhQWdxTVhwTkR2M1xuWUVKaGlJOHZBZ01CQUFFQ2dmOHd3R3lkc3hRSjQ3MzByM2lldU5GY3FzN25VY1FPcHd6YVByTUNLSm1IN1hsc1xuSzdjNDYwOUxyT0VjT0hiOHVsMlpZWVhGVXZnL3ptMndZWEtWTEFTWFNPK2dGOFlsVGpZUHhFcktlTXBTcW1CblxuaFQrd1c0NFc4U1l0ZTNrMDFkUEEwYTlIYnN3S29ndTZDSklmU0NiK3A1QlJQdFBmK0Q3UUNSRVFFek9XMXZ1WVxuaWUyMStDdHZSeUh0VHUrNUlEeDhIYVRHTFVGS3NJaTlpVllGZVI2aXpWME5CNHJoY0c1czBsYWVqbUFhNzFtbFxuaFdYNU9BRTVpSS9XZ0dVazFaVWxNM3FmUDU4cGRvNzdnMzJKaVRSbTg1UHBVUXFYWkRWV05hREhrdVQ5YlNtQlxuakUxNzhzeTVCR0VrdHg0YkdYM1NndHRoWHU0dXorTWJGS2Y0QkxFQ2dZRUE5MW9BNDBoUFJuYzRNc0MydVZWM1xuRFk3eGk4TWZ3ODJoY25CODF4YWc2dTRIb09NNTVwWTVlcmQxTEFTMElseURpSlo4a3BPNGE2QXJUYjJpdUNWSFxuYTJHWmRQMEdYVnBlajVaT2JlaHhOSDdRTlROVGdHWk8xU2JqclhFYXhaZklUM3lLVXRZdUdLS0JDR2VKQzhBSVxuVHExZmkrc2w0Vjd5QU1KdTM4ZDJYbkVDZ1lFQTRLU3RjWk9tdUJwY3pyYmwvdUdVZWVVSllqUWcyTHpRdllpMlxubXc0WWZNdU5FOEZqQTlob0E2ZVVDSWdhenJYQUVVN083dStQQW9YZFk2bzBPTjhMVG03UzE5RVhhc3lTd2lTUVxuWHhMcEtuODlBb1JWMXJIVkZDQkFOVHRTWkM3S0xsQkU0Y0V0MlJuZEVKR25BSzltbDJUMWZWRnZzMVBBem42TVxuQzVCajE1OENnWUJXSUx6V1owTlRZZ2ZyaERjYjZhcCt5aHRKY3pRSVZmMjFmMzI0MTJSSTZZRTJnR2lVNWhJMVxuck5QYjgvZFZUNmx0VWhrbVlOR0NpRThMenRCdUZtejc4d3dnTkVxWER2U0dRdXdrVVV4TDN5eFltZnFsWnZwa1xuTmhwcE5rMEFLSTNUUDZaYW1jR0xTbXBycHNHTm1keEtxUXZ3Q0gwME1IOUx6R2dXKzdrM3dRS0JnREpnbThqUlxuck55eWhNZVN1cWRiSFRuc3hCcnl4Nzd6TVBpZ05SczJvUVV6ZkxMR2RwY0JLK3BONVdPNGFoS2JMYlJ6OFBJaVxuWlBiUzRHQWVabEd1cTFGdWh2Z0JHdmhIWWs0SmR4cnJHY0QvQWNhVHVOQkoxeGdKVjN6WWpkU0xyYW1QTkxOUFxuNkNFOHJKZXZvajBFR01Td3ptREpKM3lXdHJGWUxiM1dKcDNQQW9HQWNkMFJjYk1LYXFFbFFuUm5LaFNnT3h4elxucTlMWTlpQ1JBQ2VsMDcwdkYyMTlYcUFmZHRGbVdRUVkzcUcyOUU2NVpPMEl0eW90UFhWQVFtZTIxUU9Ca2FmWlxubWdoaFNxaXVtSis3OGNTM1RsMzRsUitjMWUyckZ2U2VLTUQvTTdMNDFKbFRyU2tJWlMvN29YS3phUUxLSEo1ZlxubXVCUmc2aDB1UTh0cWxMZTFrMD1cbi0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS1cbiIsCiAgImNsaWVudF9lbWFpbCI6ICJib2Fyc2dhbWVzaGFyZS12aXNpb25AYm9hcmRnYW1lc2hhcmUtNDQwMDE2LmlhbS5nc2VydmljZWFjY291bnQuY29tIiwKICAiY2xpZW50X2lkIjogIjEwOTgxMjEzMzIyNjE5MzQxMDQ4OCIsCiAgImF1dGhfdXJpIjogImh0dHBzOi8vYWNjb3VudHMuZ29vZ2xlLmNvbS9vL29hdXRoMi9hdXRoIiwKICAidG9rZW5fdXJpIjogImh0dHBzOi8vb2F1dGgyLmdvb2dsZWFwaXMuY29tL3Rva2VuIiwKICAiYXV0aF9wcm92aWRlcl94NTA5X2NlcnRfdXJsIjogImh0dHBzOi8vd3d3Lmdvb2dsZWFwaXMuY29tL29hdXRoMi92MS9jZXJ0cyIsCiAgImNsaWVudF94NTA5X2NlcnRfdXJsIjogImh0dHBzOi8vd3d3Lmdvb2dsZWFwaXMuY29tL3JvYm90L3YxL21ldGFkYXRhL3g1MDkvYm9hcnNnYW1lc2hhcmUtdmlzaW9uJTQwYm9hcmRnYW1lc2hhcmUtNDQwMDE2LmlhbS5nc2VydmljZWFjY291bnQuY29tIiwKICAidW5pdmVyc2VfZG9tYWluIjogImdvb2dsZWFwaXMuY29tIgp9Cg=="
+```
+
+2. **Set Environment Variables**
+```bash
+# Set Google Cloud Vision credentials (base64 encoded JSON)
+heroku config:set GOOGLE_CLOUD_VISION_CREDENTIALS="your-base64-encoded-credentials"
+
+# Set Google Cloud project ID
+heroku config:set GOOGLE_CLOUD_PROJECT_ID="your-project-id"
+
+# Set production mode
+heroku config:set NODE_ENV="production"
+
+# Set allowed frontend URL
+heroku config:set FRONTEND_URL="https://boardgameshare.netlify.app"
+```
+
+3. **Deploy to Heroku**
+```bash
+git subtree push --prefix server heroku main
+```
+
+4. **Verify Deployment**
+```bash
+# Check logs
+heroku logs --tail
+
+# Test the endpoint
+curl https://your-heroku-app.herokuapp.com/api/test
+```
+
+## After Deployment
+
+1. Update the frontend environment variable in Netlify:
+   - Go to Netlify dashboard > Site settings > Environment variables
+   - Add/Update `VITE_API_URL` to your Heroku app URL (e.g., https://boardgameshare-vision-api.herokuapp.com)
+
+2. Trigger a new Netlify deployment:
+   - Go to Netlify dashboard > Deploys
+   - Click "Trigger deploy" > "Deploy site"
+
+## Troubleshooting
+
+1. **Vision API Errors**
+   - Check Heroku logs: `heroku logs --tail`
+   - Verify credentials are set correctly
+   - Check Google Cloud Vision API is enabled
+
+2. **CORS Issues**
+   - Verify frontend URL in Heroku config matches actual URL
+   - Check browser console for specific CORS errors
+
+3. **Build Failures**
+   - Check Heroku build logs
+   - Verify Node.js version compatibility
+   - Check for missing dependencies
+
+## Maintenance
+
+- Monitor Heroku logs regularly
+- Keep dependencies updated
+- Watch Heroku and Google Cloud Vision API usage/billing

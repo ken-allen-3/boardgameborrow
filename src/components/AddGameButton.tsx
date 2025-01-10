@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { Plus, Camera, Search } from 'lucide-react';
-import { useTutorial } from './tutorial/TutorialProvider';
-
 interface AddGameButtonProps {
   onCameraClick: () => void;
   onSearchClick: () => void;
@@ -9,10 +7,7 @@ interface AddGameButtonProps {
 
 const AddGameButton: React.FC<AddGameButtonProps> = ({ onCameraClick, onSearchClick }) => {
   const [showOptions, setShowOptions] = useState(false);
-  const { pauseTutorial } = useTutorial();
-
   const handleSearchClick = () => {
-    pauseTutorial();
     onSearchClick();
     setShowOptions(false);
   };
@@ -22,7 +17,6 @@ const AddGameButton: React.FC<AddGameButtonProps> = ({ onCameraClick, onSearchCl
       <button 
         onClick={() => setShowOptions(!showOptions)}
         className="flex items-center justify-center space-x-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition w-full"
-        data-tutorial="add-game-button"
       >
         <Plus className="h-5 w-5" />
         <span>Add Game</span>
@@ -50,12 +44,10 @@ const AddGameButton: React.FC<AddGameButtonProps> = ({ onCameraClick, onSearchCl
           </style>
           <button
             onClick={() => {
-              pauseTutorial();
               onCameraClick();
               setShowOptions(false);
             }}
             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition relative overflow-hidden group"
-            data-tutorial="camera-button"
           >
             <div className="absolute inset-0 ai-gradient opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
             <div className="relative flex items-center gap-3">
@@ -77,7 +69,6 @@ const AddGameButton: React.FC<AddGameButtonProps> = ({ onCameraClick, onSearchCl
           <button
             onClick={handleSearchClick}
             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition border-t"
-            data-tutorial="search-button"
           >
             <Search className="h-5 w-5 text-gray-400" />
             <div className="text-left">

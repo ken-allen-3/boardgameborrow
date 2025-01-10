@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { BugReportProvider } from './contexts/BugReportContext';
-import { TutorialProvider } from './components/tutorial/TutorialProvider';
 import ErrorBoundary from './components/ErrorBoundary';
 import { LoadingPlaceholder } from './components/LoadingStates';
 import Navbar from './components/Navbar';
@@ -20,7 +19,6 @@ import ApiTest from './pages/ApiTest';
 import GroupInvite from './pages/GroupInvite';
 import Users from './pages/Users';
 import { useAuth } from './contexts/AuthContext';
-import WelcomeModal from './components/onboarding/WelcomeModal';
 import VisionDebug from './pages/VisionDebug';
 import PerformanceMonitor from './pages/PerformanceMonitor';
 import AdminDashboard from './pages/AdminDashboard';
@@ -63,9 +61,6 @@ function AppRoutes() {
         </Routes>
       </main>
 
-      {showWelcome && (
-        <WelcomeModal onClose={() => setShowWelcome(false)} />
-      )}
     </div>
   );
 }
@@ -76,9 +71,7 @@ function App() {
       <ErrorBoundary>
         <BrowserRouter>
           <BugReportProvider>
-            <TutorialProvider>
               <AppRoutes />
-            </TutorialProvider>
           </BugReportProvider>
         </BrowserRouter>
       </ErrorBoundary>

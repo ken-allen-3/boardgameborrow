@@ -19,8 +19,6 @@ import {
   googleProvider,
   facebookProvider 
 } from '../config/firebase';
-import AddressOnboardingModal from '../components/onboarding/AddressOnboardingModal';
-
 // Define the shape of our auth context
 interface AuthContextType {
   currentUser: User | null;
@@ -290,9 +288,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ) : !loading ? (
         <>
           {children}
-          {needsOnboarding && currentUser && (
-            <AddressOnboardingModal onComplete={completeOnboarding} />
-          )}
         </>
       ) : (
         <div className="flex items-center justify-center min-h-screen">

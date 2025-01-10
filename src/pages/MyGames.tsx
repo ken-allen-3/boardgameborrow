@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Camera, Plus, Trash2, Search, ImageOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useTutorial } from '../components/tutorial/TutorialProvider';
 import { rateGame } from '../services/ratingService';
 import CameraCapture from '../components/CameraCapture';
 import LoadingScreen from '../components/LoadingScreen';
@@ -21,6 +20,8 @@ const DEFAULT_ONBOARDING_PROGRESS: OnboardingProgress = {
   hasBorrowed: false,
   hasJoinedGroup: false,
   hasAttendedGameNight: false,
+  hasFriends: false,
+  hasLocation: false,
   onboardingDismissed: false
 };
 
@@ -31,7 +32,6 @@ const MyGames = () => {
   const [onboardingProgress, setOnboardingProgress] = useState<OnboardingProgress>(DEFAULT_ONBOARDING_PROGRESS);
   
   const { currentUser } = useAuth();
-  const { resumeTutorial } = useTutorial();
 
   const [showCamera, setShowCamera] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -145,11 +145,6 @@ const MyGames = () => {
       });
       
       setOnboardingProgress(updatedProgress);
-      
-      // Resume tutorial after adding first game
-      if (games.length === 0) {
-        resumeTutorial();
-      }
     } catch (err) {
       setError('Failed to add game. Please try again.');
     }

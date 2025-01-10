@@ -11,36 +11,19 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Function to decode and write credentials to a file
-const setupCredentials = () => {
+// Initialize Vision client
+let visionClient: ImageAnnotatorClient;
+try {
   const encodedCreds = process.env.GOOGLE_CLOUD_VISION_CREDENTIALS;
   if (!encodedCreds) {
     throw new Error('Missing GOOGLE_CLOUD_VISION_CREDENTIALS environment variable');
   }
 
-  const credentialsPath = path.join(__dirname, 'vision-credentials.json');
+  // Decode base64 credentials
+  const credentials = JSON.parse(Buffer.from(encodedCreds, 'base64').toString('utf-8'));
   
-  try {
-    // Decode base64 credentials
-    const decodedCreds = Buffer.from(encodedCreds, 'base64').toString('utf-8');
-    
-    // Write credentials to file
-    fs.writeFileSync(credentialsPath, decodedCreds);
-    console.log('Credentials file created successfully');
-    
-    return credentialsPath;
-  } catch (error) {
-    console.error('Error setting up credentials:', error);
-    throw error;
-  }
-};
-
-// Initialize Vision client
-let visionClient: ImageAnnotatorClient;
-try {
-  const credentialsPath = setupCredentials();
   visionClient = new ImageAnnotatorClient({
-    keyFilename: credentialsPath,
+    credentials,
     projectId: process.env.GOOGLE_CLOUD_PROJECT_ID
   });
   console.log('Vision client initialized successfully');
@@ -155,26 +138,6 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
       name: err.name
     }
   });
-});
-
-// Cleanup function
-const cleanup = () => {
-  const credentialsPath = path.join(__dirname, 'vision-credentials.json');
-  if (fs.existsSync(credentialsPath)) {
-    fs.unlinkSync(credentialsPath);
-    console.log('Cleaned up credentials file');
-  }
-};
-
-// Cleanup on exit
-process.on('SIGINT', () => {
-  cleanup();
-  process.exit();
-});
-
-process.on('SIGTERM', () => {
-  cleanup();
-  process.exit();
 });
 
 app.listen(port, () => {

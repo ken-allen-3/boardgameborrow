@@ -44,36 +44,23 @@ export const visionClient = {
       console.log('Vision API Response Status:', response.status);
       console.log('Vision API Response Headers:', Object.fromEntries(response.headers.entries()));
       
-      let errorDetail = '';
-      
-      try {
-        const responseText = await response.text();
-        console.log('Vision API Raw Response:', responseText);
-        
-        if (contentType?.includes('application/json')) {
-          const data = JSON.parse(responseText);
-          errorDetail = JSON.stringify(data, null, 2);
-        } else {
-          errorDetail = responseText;
-        }
-      } catch (parseError) {
-        console.error('Vision API Parse Error:', parseError);
-        errorDetail = 'Could not parse response body';
-      }
-
       if (!response.ok) {
+        const errorText = await response.text();
         throw new Error(
           `Vision API Error:\n` +
           `Status: ${response.status} ${response.statusText}\n` +
           `URL: ${url}\n` +
           `Content-Type: ${contentType}\n` +
-          `Response: ${errorDetail}`
+          `Response: ${errorText}`
         );
       }
 
-      const data = JSON.parse(errorDetail);
-      const { rawResponse } = data;
-      return [rawResponse];
+      const responseText = await response.text();
+      console.log('Vision API Raw Response:', responseText);
+      
+      const data = JSON.parse(responseText);
+      console.log('Parsed Vision API Response:', data);
+      return data;
     } catch (error) {
       // Enhanced error logging
       if (error instanceof TypeError && error.message === 'Failed to fetch') {

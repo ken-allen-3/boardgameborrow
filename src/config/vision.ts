@@ -7,7 +7,7 @@ export const visionClient = {
       console.log('Environment API_URL:', API_URL);
       console.log('import.meta.env:', import.meta.env);
       
-      const url = API_URL.endsWith('/analyzeImage') ? API_URL : `${API_URL}/analyzeImage`;
+      const url = `${API_URL}/api/vision/analyze`;
       console.log('Final Vision API URL:', url);
       
       // Test the URL with a preflight request first

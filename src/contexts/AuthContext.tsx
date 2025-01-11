@@ -24,6 +24,7 @@ interface AuthContextType {
   currentUser: User | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (data: SignUpData) => Promise<void>;
+  updateProfile: (data: Omit<SignUpData, 'email' | 'password'>) => Promise<void>;
   signInWithGoogle: () => Promise<any>;
   signInWithFacebook: () => Promise<any>;
   signOut: () => Promise<void>;
@@ -260,11 +261,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsubscribe;
   }, []);
 
+  const updateProfile = async (data: Omit<SignUpData, 'email' | 'password'>): Promise<void> => {
+    if (!currentUser?.email) {
+      throw new Error('No user logged in');
+    }
+
+    try {
+      const userRef = ref(database, `users/${currentUser.email.replace(/\./g, ',')}`);
+      await update(userRef, {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        photoUrl: data.photoUrl,
+        location: data.location || '',
+        updatedAt: new Date().toISOString()
+      });
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to update profile');
+    }
+  };
+
   // Context value
   const value: AuthContextType = {
     currentUser,
     signIn,
     signUp,
+    updateProfile,
     signInWithGoogle,
     signInWithFacebook,
     signOut,

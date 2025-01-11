@@ -27,7 +27,7 @@ interface FormData {
 }
 
 function Step2AccountSetup({ onNext, onBack }: Step2AccountSetupProps) {
-  const { currentUser, signUp } = useAuth();
+  const { currentUser, updateProfile } = useAuth();
   const [formData, setFormData] = useState<FormData>({
     firstName: currentUser?.displayName?.split(' ')[0] || '',
     lastName: currentUser?.displayName?.split(' ').slice(1).join(' ') || '',
@@ -92,11 +92,11 @@ function Step2AccountSetup({ onNext, onBack }: Step2AccountSetupProps) {
       }
 
       // Update user profile in Firebase
-      await signUp({
-        ...formData,
+      await updateProfile({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         photoUrl,
-        email: currentUser?.email || '',
-        password: '' // Not needed for profile update
+        location: formData.location
       });
 
       onNext();

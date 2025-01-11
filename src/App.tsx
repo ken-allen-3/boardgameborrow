@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import Step1Welcome from './components/onboarding/Step1Welcome';
+import OnboardingFlow from './components/onboarding/OnboardingFlow';
 import { BugReportProvider } from './contexts/BugReportContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import { LoadingPlaceholder } from './components/LoadingStates';
@@ -30,13 +30,7 @@ function AppRoutes() {
   const { currentUser, showWelcome, setShowWelcome, isAdmin } = useAuth();
 
   if (currentUser && showWelcome) {
-    return (
-      <div className="min-h-screen bg-vintage-cream">
-        <main className="container mx-auto px-4 py-8">
-          <Step1Welcome onNext={() => setShowWelcome(false)} />
-        </main>
-      </div>
-    );
+    return <OnboardingFlow />;
   }
 
   return (

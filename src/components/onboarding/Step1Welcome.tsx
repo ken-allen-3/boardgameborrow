@@ -7,7 +7,7 @@ interface Step1WelcomeProps {
 }
 
 function Step1Welcome({ onNext }: Step1WelcomeProps) {
-  const { currentUser } = useAuth();
+  const { currentUser, setShowWelcome } = useAuth();
 
   const features = [
     {
@@ -79,7 +79,7 @@ function Step1Welcome({ onNext }: Step1WelcomeProps) {
 
       {/* Skip Option */}
       <button
-        onClick={onNext}
+        onClick={() => setShowWelcome(false)}
         className="w-full text-gray-500 text-sm mt-4 hover:text-gray-700 transition"
       >
         Skip Introduction

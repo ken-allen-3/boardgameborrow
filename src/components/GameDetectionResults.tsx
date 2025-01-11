@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, ChevronRight, Loader2, AlertCircle, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, ChevronRight, Loader2, AlertCircle, Check, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { BoardGame } from '../types/boardgame';
-import { analyzeShelfImage, findMatchingGames, DetectedGame } from '../services/visionService';
+import { analyzeShelfImage, findMatchingGames, DetectedGame, VisionServiceError, manualGameSearch } from '../services/visionService';
 
 interface GameDetectionResultsProps {
   photoData: string;
@@ -11,7 +11,6 @@ interface GameDetectionResultsProps {
 
 function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectionResultsProps) {
   const [detectedGames, setDetectedGames] = useState<DetectedGame[]>([]);
-  const [gameMatches, setGameMatches] = useState<Map<string, BoardGame[]>>(new Map());
   const [selectedGames, setSelectedGames] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +23,10 @@ function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectio
     responseHeaders?: Record<string, string>;
     rawResponse?: string;
   }>({});
+  const [showManualSearch, setShowManualSearch] = useState(false);
+  const [manualSearchQuery, setManualSearchQuery] = useState('');
+  const [manualSearchResults, setManualSearchResults] = useState<BoardGame[]>([]);
+  const [manualSearchLoading, setManualSearchLoading] = useState(false);
 
   useEffect(() => {
     processImage();
@@ -33,31 +36,24 @@ function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectio
     try {
       setProcessingStep('Analyzing image...');
       const detected = await analyzeShelfImage(photoData);
-      setDetectedGames(detected);
       
       setProcessingStep('Finding matches...');
-      const matches = await findMatchingGames(detected);
-      setGameMatches(matches);
+      const processedGames = await findMatchingGames(detected);
+      setDetectedGames(processedGames);
     } catch (err: any) {
-      // Extract debug info from error message if available
-      const errorMessage = err.message || 'Failed to process image. Please try again.';
-      setError(errorMessage);
-
-      // Parse debug info from error message
-      try {
-        const urlMatch = errorMessage.match(/URL: (.*)/);
-        const statusMatch = errorMessage.match(/Status: (.*)/);
-        const contentTypeMatch = errorMessage.match(/Content-Type: (.*)/);
-        const responseMatch = errorMessage.match(/Response: (.*)/s);
-
-        setDebugInfo({
-          url: urlMatch?.[1],
-          responseStatus: statusMatch?.[1] ? parseInt(statusMatch[1]) : undefined,
-          responseHeaders: contentTypeMatch?.[1] ? { 'Content-Type': contentTypeMatch[1] } : undefined,
-          rawResponse: responseMatch?.[1]
-        });
-      } catch (parseError) {
-        console.error('Error parsing debug info:', parseError);
+      if (err instanceof VisionServiceError) {
+        switch (err.code) {
+          case 'NO_GAMES_DETECTED':
+          case 'LOW_CONFIDENCE':
+            setError(`${err.message}. Try manual search instead.`);
+            setShowManualSearch(true);
+            break;
+          default:
+            setError(err.message);
+        }
+        setDebugInfo(err.details || {});
+      } else {
+        setError(err.message || 'Failed to process image. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -77,7 +73,25 @@ function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectio
     }
   };
 
-  if (error) {
+  const handleManualSearch = async (query: string) => {
+    setManualSearchQuery(query);
+    if (query.length < 2) {
+      setManualSearchResults([]);
+      return;
+    }
+
+    setManualSearchLoading(true);
+    try {
+      const results = await manualGameSearch(query);
+      setManualSearchResults(results);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setManualSearchLoading(false);
+    }
+  };
+
+  if (error && !showManualSearch) {
     return (
       <div className="fixed inset-0 bg-white z-50 flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
@@ -146,12 +160,95 @@ function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectio
               )}
             </div>
 
-            <button
-              onClick={onClose}
-              className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
-            >
-              Try Again
-            </button>
+            <div className="space-y-4">
+              <button
+                onClick={() => setShowManualSearch(true)}
+                className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+              >
+                Search Manually
+              </button>
+
+              <button
+                onClick={onClose}
+                className="w-full border border-gray-300 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-50"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (showManualSearch) {
+    return (
+      <div className="fixed inset-0 bg-white z-50 flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b">
+          <h2 className="text-lg font-semibold">Search for Games</h2>
+          <button onClick={onClose} className="p-2">
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-auto p-4">
+          <div className="max-w-lg mx-auto space-y-4">
+            <div className="relative">
+              <input
+                type="text"
+                value={manualSearchQuery}
+                onChange={(e) => handleManualSearch(e.target.value)}
+                placeholder="Type to search..."
+                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+              {manualSearchLoading ? (
+                <Loader2 className="absolute left-3 top-2.5 w-5 h-5 animate-spin text-gray-400" />
+              ) : (
+                <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
+              )}
+            </div>
+
+            {error && (
+              <div className="text-red-500 text-sm p-2 bg-red-50 rounded-lg">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              {manualSearchResults.map((game) => (
+                <button
+                  key={game.id}
+                  onClick={() => handleGameSelect(game)}
+                  disabled={selectedGames.has(game.id)}
+                  className="w-full bg-white border rounded-lg p-4 flex items-center gap-4 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <img
+                    src={game.thumb_url}
+                    alt={game.name}
+                    className="w-16 h-16 object-cover rounded"
+                    onError={(e) => {
+                      e.currentTarget.src = '/board-game-placeholder.png';
+                    }}
+                  />
+                  <div className="flex-1 text-left">
+                    <h3 className="font-semibold">{game.name}</h3>
+                    <p className="text-sm text-gray-600">
+                      {game.year_published} · {game.min_players}-{game.max_players} Players
+                    </p>
+                    {game.rank > 0 && (
+                      <p className="text-xs text-indigo-600">
+                        BGG Rank: #{game.rank}
+                      </p>
+                    )}
+                  </div>
+                  {selectedGames.has(game.id) ? (
+                    <Check className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <ChevronRight className="h-5 w-5 text-gray-400" />
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -205,55 +302,65 @@ function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectio
               Select the games you want to add to your collection:
             </p>
 
-            {detectedGames.map((detected) => {
-              const matches = gameMatches.get(detected.title) || [];
-              return (
-                <div key={detected.title} className="bg-white border rounded-lg p-4">
-                  <h3 className="font-semibold mb-2">
+            {detectedGames.map((detected) => (
+              <div key={detected.title} className="bg-white border rounded-lg p-4">
+                <h3 className="font-semibold mb-2 flex items-center justify-between">
+                  <span>
                     Detected: {detected.title}
                     <span className="ml-2 text-sm text-gray-500">
                       ({Math.round(detected.confidence * 100)}% confidence)
                     </span>
-                  </h3>
-                  
-                  <div className="space-y-2">
-                    {matches.map((game) => (
-                      <button
-                        key={game.id}
-                        onClick={() => handleGameSelect(game)}
-                        disabled={selectedGames.has(game.id)}
-                        className="w-full bg-white border rounded-lg p-4 flex items-center gap-4 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <img
-                          src={game.thumb_url}
-                          alt={game.name}
-                          className="w-16 h-16 object-cover rounded"
-                          onError={(e) => {
-                            e.currentTarget.src = '/board-game-placeholder.png';
-                          }}
-                        />
-                        <div className="flex-1 text-left">
-                          <h3 className="font-semibold">{game.name}</h3>
-                          <p className="text-sm text-gray-600">
-                            {game.year_published} · {game.min_players}-{game.max_players} Players
+                  </span>
+                  {detected.status === 'rejected' && (
+                    <span className="text-sm text-red-500">No matches found</span>
+                  )}
+                </h3>
+                
+                <div className="space-y-2">
+                  {detected.matches?.map((game) => (
+                    <button
+                      key={game.id}
+                      onClick={() => handleGameSelect(game)}
+                      disabled={selectedGames.has(game.id)}
+                      className="w-full bg-white border rounded-lg p-4 flex items-center gap-4 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <img
+                        src={game.thumb_url}
+                        alt={game.name}
+                        className="w-16 h-16 object-cover rounded"
+                        onError={(e) => {
+                          e.currentTarget.src = '/board-game-placeholder.png';
+                        }}
+                      />
+                      <div className="flex-1 text-left">
+                        <h3 className="font-semibold">{game.name}</h3>
+                        <p className="text-sm text-gray-600">
+                          {game.year_published} · {game.min_players}-{game.max_players} Players
+                        </p>
+                        {game.rank > 0 && (
+                          <p className="text-xs text-indigo-600">
+                            BGG Rank: #{game.rank}
                           </p>
-                          {game.rank > 0 && (
-                            <p className="text-xs text-indigo-600">
-                              BGG Rank: #{game.rank}
-                            </p>
-                          )}
-                        </div>
-                        {selectedGames.has(game.id) ? (
-                          <Check className="h-5 w-5 text-green-500" />
-                        ) : (
-                          <ChevronRight className="h-5 w-5 text-gray-400" />
                         )}
-                      </button>
-                    ))}
-                  </div>
+                      </div>
+                      {selectedGames.has(game.id) ? (
+                        <Check className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <ChevronRight className="h-5 w-5 text-gray-400" />
+                      )}
+                    </button>
+                  ))}
                 </div>
-              );
-            })}
+              </div>
+            ))}
+
+            <button
+              onClick={() => setShowManualSearch(true)}
+              className="w-full flex items-center justify-center gap-2 border border-gray-300 text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-50 transition"
+            >
+              <Search className="w-5 h-5" />
+              <span>Can't find your game? Try manual search</span>
+            </button>
           </div>
         )}
       </div>

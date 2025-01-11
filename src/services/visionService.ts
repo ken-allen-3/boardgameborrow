@@ -3,6 +3,7 @@ import { searchGames } from './boardGameService';
 import { visionClient } from '../config/vision';
 
 const API_URL = import.meta.env.VITE_API_URL;
+const CONFIDENCE_THRESHOLD = 0.6; // 60% confidence threshold for automatic inclusion
 
 export interface DetectedGame {
   title: string;
@@ -13,11 +14,29 @@ export interface DetectedGame {
     width: number;
     height: number;
   };
+  status?: 'pending' | 'confirmed' | 'rejected';
+  matches?: BoardGame[];
+}
+
+export class VisionServiceError extends Error {
+  constructor(
+    public code: 'VISION_API_ERROR' | 'NETWORK_ERROR' | 'NO_GAMES_DETECTED' | 'LOW_CONFIDENCE' | 'VALIDATION_ERROR',
+    message: string,
+    public details?: any
+  ) {
+    super(message);
+    this.name = 'VisionServiceError';
+  }
 }
 
 export async function analyzeShelfImage(base64Image: string): Promise<DetectedGame[]> {
   try {
-    // Use the enhanced visionClient instead of direct fetch
+    // Validate input
+    if (!base64Image || typeof base64Image !== 'string') {
+      throw createVisionError('VALIDATION_ERROR', 'Invalid image data provided');
+    }
+
+    // Use the enhanced visionClient for text detection
     const result = await visionClient.textDetection({
       image: { content: base64Image }
     });
@@ -26,16 +45,32 @@ export async function analyzeShelfImage(base64Image: string): Promise<DetectedGa
     
     if (!result || !Array.isArray(result) || !result[0] || !result[0].detectedGames) {
       console.error('Invalid result structure:', result);
-      throw new Error('No results from vision API');
+      throw createVisionError('VISION_API_ERROR', 'Invalid response from Vision API');
     }
 
-    const games = result[0].detectedGames;
-    console.log('Detected Games:', games);
+    // Filter and process detected games
+    const games = result[0].detectedGames
+      .map((game: DetectedGame) => ({
+        ...game,
+        status: game.confidence >= CONFIDENCE_THRESHOLD ? 'pending' : undefined,
+      }))
+      .sort((a: DetectedGame, b: DetectedGame) => b.confidence - a.confidence); // Sort by confidence
+
+    if (games.length === 0) {
+      throw createVisionError('NO_GAMES_DETECTED', 'No games were detected in the image');
+    }
+
+    const lowConfidenceGames = games.filter((g: DetectedGame) => g.confidence < CONFIDENCE_THRESHOLD);
+    if (lowConfidenceGames.length === games.length) {
+      throw createVisionError('LOW_CONFIDENCE', 'All detected games had low confidence scores');
+    }
+
+    console.log('Processed Games:', games);
     return games;
   } catch (error: any) {
-    // Ensure error message contains debug info
     if (error.message.includes('Failed to fetch')) {
-      throw new Error(
+      throw createVisionError(
+        'NETWORK_ERROR',
         `Network Error:\n` +
         `URL: ${API_URL}/analyzeImage\n` +
         `Status: Failed to connect\n` +
@@ -46,32 +81,47 @@ export async function analyzeShelfImage(base64Image: string): Promise<DetectedGa
         `- Invalid API URL`
       );
     }
-    throw error;
+    throw error instanceof VisionServiceError ? error : createVisionError('VISION_API_ERROR', error.message);
   }
 }
 
-export async function findMatchingGames(detectedGames: DetectedGame[]): Promise<Map<string, BoardGame[]>> {
-  const matches = new Map<string, BoardGame[]>();
-  
+export async function findMatchingGames(detectedGames: DetectedGame[]): Promise<DetectedGame[]> {
+  // Validate input
+  if (!Array.isArray(detectedGames)) {
+    throw createVisionError('VALIDATION_ERROR', 'Invalid games array provided');
+  }
+
   // Process games in parallel with rate limiting
   const batchSize = 3;
+  const processedGames: DetectedGame[] = [];
+
   for (let i = 0; i < detectedGames.length; i += batchSize) {
     const batch = detectedGames.slice(i, i + batchSize);
     const results = await Promise.all(
       batch.map(async (game) => {
         try {
           const { items } = await searchGames(game.title);
-          return { title: game.title, matches: items };
+          const status: DetectedGame['status'] = 
+            game.status || (game.confidence >= CONFIDENCE_THRESHOLD ? 'pending' : undefined);
+          
+          return {
+            ...game,
+            matches: items,
+            status
+          } as DetectedGame;
         } catch (error) {
           console.error(`Error finding matches for ${game.title}:`, error);
-          return { title: game.title, matches: [] };
+          const failedGame: DetectedGame = {
+            ...game,
+            matches: [],
+            status: 'rejected'
+          };
+          return failedGame;
         }
       })
     );
     
-    results.forEach(({ title, matches: gameMatches }) => {
-      matches.set(title, gameMatches);
-    });
+    processedGames.push(...results);
 
     // Add small delay between batches to avoid rate limiting
     if (i + batchSize < detectedGames.length) {
@@ -79,66 +129,26 @@ export async function findMatchingGames(detectedGames: DetectedGame[]): Promise<
     }
   }
   
-  return matches;
+  return processedGames;
 }
 
-export async function searchGamesByImage(imageUrl: string): Promise<BoardGame[]> {
-  // For testing, return mock data instead of making API call
-  return Promise.resolve([{
-    id: "13",
-    name: "Catan",
-    year_published: 1995,
-    min_players: 3,
-    max_players: 4,
-    min_playtime: 60,
-    max_playtime: 60,
-    min_age: 10,
-    thumb_url: "https://cf.geekdo-images.com/W3Bsga_uLP9kO91gZ7H8yw__thumb/img/8a9HeqFydO7Uun_le9bXWPnidcA=/fit-in/200x150/filters:strip_icc()/pic2419375.jpg",
-    image_url: "https://cf.geekdo-images.com/W3Bsga_uLP9kO91gZ7H8yw__original/img/A-0yDJkve0avEicYQ4HoNO-HkK8=/0x0/filters:format(jpeg)/pic2419375.jpg",
-    description: "Classic game of resource management and trading",
-    rank: 374,
-    mechanics: [],
-    categories: [],
-    publishers: [],
-    designers: [],
-    developers: [],
-    artists: [],
-    names: [],
-    num_user_ratings: 0,
-    average_user_rating: 0,
-    historical_low_prices: [],
-    primary_publisher: { id: "1", score: 0, url: "" },
-    primary_designer: { id: "1", score: 0, url: "" },
-    related_to: [],
-    related_as: [],
-    weight_amount: 0,
-    weight_units: "",
-    size_height: 0,
-    size_depth: 0,
-    size_units: "",
-    active: true,
-    num_user_complexity_votes: 0,
-    average_learning_complexity: 0,
-    average_strategy_complexity: 0,
-    visits: 0,
-    lists: 0,
-    mentions: 0,
-    links: 0,
-    plays: 0,
-    type: "boardgame",
-    sku: "",
-    upc: "",
-    price: "",
-    price_ca: "",
-    price_uk: "",
-    price_au: "",
-    msrp: 0,
-    discount: "",
-    handle: "",
-    url: "https://boardgamegeek.com/boardgame/13",
-    rules_url: "",
-    official_url: "",
-    commentary: "",
-    faq: ""
-  }]);
+export async function manualGameSearch(query: string): Promise<BoardGame[]> {
+  try {
+    if (!query || typeof query !== 'string' || query.length < 2) {
+      throw createVisionError('VALIDATION_ERROR', 'Search query must be at least 2 characters');
+    }
+
+    const { items } = await searchGames(query);
+    return items;
+  } catch (error: any) {
+    throw createVisionError('VISION_API_ERROR', `Manual search failed: ${error.message}`);
+  }
+}
+
+function createVisionError(
+  code: VisionServiceError['code'],
+  message: string,
+  details?: any
+): VisionServiceError {
+  return new VisionServiceError(code, message, details);
 }

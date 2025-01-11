@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Camera, Search, ArrowRight, Loader2, Plus } from 'lucide-react';
 import { BoardGame } from '../../types/boardgame';
 import CameraCapture from '../CameraCapture';
-import { analyzeShelfImage, findMatchingGames, DetectedGame } from '../../services/visionService';
-import { searchGames } from '../../services/boardGameService';
+import { analyzeShelfImage, findMatchingGames, DetectedGame, VisionServiceError, manualGameSearch } from '../../services/visionService';
 
 interface Step3AddGameProps {
   onNext: () => void;
@@ -22,7 +21,7 @@ function Step3AddGame({ onNext, onBack }: Step3AddGameProps) {
   const [mode, setMode] = useState<'select' | 'camera' | 'manual'>('select');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
-  const [detectedGames, setDetectedGames] = useState<Map<string, BoardGame[]>>();
+  const [detectedGames, setDetectedGames] = useState<DetectedGame[]>();
   const [selectedGame, setSelectedGame] = useState<BoardGame | null>(null);
   const [manualSearch, setManualSearch] = useState('');
   const [searchResults, setSearchResults] = useState<BoardGame[]>([]);
@@ -40,11 +39,26 @@ function Step3AddGame({ onNext, onBack }: Step3AddGameProps) {
     setLoading(true);
     try {
       const detected = await analyzeShelfImage(photoData);
-      const matches = await findMatchingGames(detected);
-      setDetectedGames(matches);
+      const processedGames = await findMatchingGames(detected);
+      setDetectedGames(processedGames);
       setMode('select');
     } catch (error: any) {
-      setErrors(prev => ({ ...prev, submit: error.message }));
+      if (error instanceof VisionServiceError) {
+        switch (error.code) {
+          case 'NO_GAMES_DETECTED':
+          case 'LOW_CONFIDENCE':
+            setErrors(prev => ({ 
+              ...prev, 
+              submit: `${error.message}. Try manual search instead.`
+            }));
+            setMode('manual');
+            break;
+          default:
+            setErrors(prev => ({ ...prev, submit: error.message }));
+        }
+      } else {
+        setErrors(prev => ({ ...prev, submit: error.message }));
+      }
     } finally {
       setLoading(false);
     }
@@ -58,8 +72,8 @@ function Step3AddGame({ onNext, onBack }: Step3AddGameProps) {
     }
 
     try {
-      const { items } = await searchGames(query);
-      setSearchResults(items);
+      const results = await manualGameSearch(query);
+      setSearchResults(results);
     } catch (error: any) {
       console.error('Search error:', error);
     }
@@ -147,13 +161,21 @@ function Step3AddGame({ onNext, onBack }: Step3AddGameProps) {
             Detected Games
           </h3>
           
-          {Array.from(detectedGames.entries()).map(([title, matches]) => (
-            <div key={title} className="border rounded-lg p-4">
-              <h4 className="font-medium text-gray-700 mb-2">
-                Detected: {title}
+          {detectedGames.map((detected) => (
+            <div key={detected.title} className="border rounded-lg p-4">
+              <h4 className="font-medium text-gray-700 mb-2 flex items-center justify-between">
+                <span>
+                  Detected: {detected.title}
+                  <span className="ml-2 text-sm text-gray-500">
+                    ({Math.round(detected.confidence * 100)}% confidence)
+                  </span>
+                </span>
+                {detected.status === 'rejected' && (
+                  <span className="text-sm text-red-500">No matches found</span>
+                )}
               </h4>
               <div className="space-y-2">
-                {matches.map(game => (
+                {detected.matches?.map(game => (
                   <button
                     key={game.id}
                     onClick={() => setSelectedGame(game)}
@@ -181,6 +203,14 @@ function Step3AddGame({ onNext, onBack }: Step3AddGameProps) {
               </div>
             </div>
           ))}
+
+          <button
+            onClick={() => setMode('manual')}
+            className="w-full flex items-center justify-center gap-2 border border-gray-300 text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-50 transition"
+          >
+            <Search className="w-5 h-5" />
+            <span>Can't find your game? Try manual search</span>
+          </button>
         </div>
       )}
 

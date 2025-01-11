@@ -2,6 +2,13 @@
 
 All notable changes to this documentation will be documented in this file.
 
+## [1.1.1] - 2024-01-10
+
+### Changed
+- Moved knowledgebase into boardgameborrow directory
+- Updated directory structure documentation to reflect new project organization
+- Consolidated all project documentation under main project root
+
 ## [1.1.0] - 2024-01-20
 
 ### Added

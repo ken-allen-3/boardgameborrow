@@ -38,18 +38,22 @@ This knowledge base centralizes all technical and operational knowledge for the 
 ## Directory Structure
 
 ```
-knowledgebase/
-├── README.md                    # Overview and index
-├── docs/                        # Documentation files
-│   ├── technical_architecture.md    # System architecture
-│   ├── onboarding_implementation.md # Onboarding system
-│   ├── developer_instructions.md    # Development guide
-│   ├── data_modeling.md            # Database structure
-│   └── api_integrations.md         # API documentation
-├── assets/                     # Visual aids, diagrams, screenshots
-│   └── architecture_diagram.png    # System architecture diagram
-├── CHANGELOG.md               # Record of documentation changes
-└── CONTRIBUTING.md           # Guidelines for contributing
+boardgameborrow/              # Project root
+├── src/                      # Application source code
+├── server/                   # Backend services
+├── public/                   # Static assets
+└── knowledgebase/           # Project documentation
+    ├── README.md                # Overview and index
+    ├── docs/                    # Documentation files
+    │   ├── technical_architecture.md    # System architecture
+    │   ├── onboarding_implementation.md # Onboarding system
+    │   ├── developer_instructions.md    # Development guide
+    │   ├── data_modeling.md            # Database structure
+    │   └── api_integrations.md         # API documentation
+    ├── assets/                 # Visual aids, diagrams, screenshots
+    │   └── architecture_diagram.png    # System architecture diagram
+    ├── CHANGELOG.md           # Record of documentation changes
+    └── CONTRIBUTING.md       # Guidelines for contributing
 ```
 
 ## Visual Aids

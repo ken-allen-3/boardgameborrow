@@ -36,7 +36,16 @@ VITE_BGG_API_RATE_LIMIT=
 
 ## Project Structure
 
-### Frontend
+### Root
+```
+boardgameborrow/
+├── src/           # Frontend source code
+├── server/        # Backend services
+├── public/        # Static assets
+└── knowledgebase/ # Project documentation
+```
+
+### Frontend (src/)
 ```
 src/
 ├── components/     # React components
@@ -47,11 +56,20 @@ src/
 └── utils/         # Utility functions
 ```
 
-### Backend
+### Backend (server/)
 ```
 server/
 ├── functions/     # Firebase functions
 └── services/      # Backend services
+```
+
+### Documentation (knowledgebase/)
+```
+knowledgebase/
+├── docs/          # Documentation files
+├── assets/        # Visual aids and diagrams
+├── CHANGELOG.md   # Documentation changes
+└── CONTRIBUTING.md # Contribution guidelines
 ```
 
 ## Development Workflow

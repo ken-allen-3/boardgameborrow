@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Users, MapPin, TrendingUp, Filter } from 'lucide-react';
 import { getDatabase, ref, get } from 'firebase/database';
 import { useAuth } from '../contexts/AuthContext';
 import { createBorrowRequest, getUserBorrowRequests, BorrowRequest } from '../services/borrowRequestService';
 import { sendBorrowRequestEmail } from '../services/email';
+import { getFriendsList } from '../services/friendService';
+import { getUserProfile } from '../services/userService';
 import BorrowRequestModal from '../components/BorrowRequestModal';
 import ErrorMessage from '../components/ErrorMessage';
 import SuccessMessage from '../components/SuccessMessage';
+import GameCard from '../components/GameCard';
 
 interface Game {
   id: string;
@@ -16,12 +19,29 @@ interface Game {
     email: string;
     firstName: string;
     lastName: string;
+    photoUrl?: string;
+    coordinates?: {
+      latitude: number;
+      longitude: number;
+    };
   };
   available: boolean;
   minPlayers?: number;
   maxPlayers?: number;
   minPlaytime?: number;
   maxPlaytime?: number;
+  category?: string;
+  distance?: number;
+  isFriend?: boolean;
+}
+
+interface Filters {
+  playerCount?: number;
+  minPlaytime?: number;
+  maxPlaytime?: number;
+  category?: string;
+  availability: 'all' | 'available' | 'unavailable';
+  sortBy: 'friends' | 'distance' | 'popularity';
 }
 
 interface BorrowRequestInput {
@@ -38,6 +58,11 @@ function BorrowGames() {
   const [borrowRequests, setBorrowRequests] = useState<BorrowRequest[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [filters, setFilters] = useState<Filters>({
+    availability: 'available',
+    sortBy: 'friends'
+  });
   const { currentUser } = useAuth();
 
   useEffect(() => {
@@ -61,31 +86,55 @@ function BorrowGames() {
   };
 
   const loadAllGames = async () => {
+    if (!currentUser?.email) return;
+    setLoading(true);
+    
     const db = getDatabase();
     const gamesRef = ref(db, 'games');
     const usersRef = ref(db, 'users');
     
     try {
-      const [gamesSnapshot, usersSnapshot] = await Promise.all([
+      const [gamesSnapshot, usersSnapshot, friendsList, currentUserProfile] = await Promise.all([
         get(gamesRef),
-        get(usersRef)
+        get(usersRef),
+        getFriendsList(currentUser.email.replace(/\./g, ',')),
+        getUserProfile(currentUser.email)
       ]);
 
       const allGames: Game[] = [];
       const users = usersSnapshot.val() || {};
+      const friendEmails = new Set(friendsList.map(friend => friend.email));
+      const userCoordinates = currentUserProfile.coordinates;
       
       if (gamesSnapshot.exists()) {
         // Convert the games object to an array of entries and iterate
         Object.entries(gamesSnapshot.val()).forEach(([userKey, userGames]) => {
           const userEmail = userKey.replace(/,/g, '.');
-          if (userEmail === currentUser?.email) return; // Skip current user's games
+          if (userEmail === currentUser.email) return; // Skip current user's games
 
           const games = userGames as any[];
           const userInfo = users[userKey] || {};
+          const isFriend = friendEmails.has(userEmail);
           
           if (Array.isArray(games)) {
             games.forEach((game, index) => {
               if (game.status === 'available') {
+                // Calculate distance if both user and owner have coordinates
+                let distance: number | undefined;
+                if (userCoordinates && userInfo.coordinates) {
+                  const R = 6371; // Earth's radius in km
+                  const lat1 = userCoordinates.latitude * Math.PI / 180;
+                  const lat2 = userInfo.coordinates.latitude * Math.PI / 180;
+                  const dLat = (userInfo.coordinates.latitude - userCoordinates.latitude) * Math.PI / 180;
+                  const dLon = (userInfo.coordinates.longitude - userCoordinates.longitude) * Math.PI / 180;
+                  
+                  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1) * Math.cos(lat2) *
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+                  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                  distance = R * c;
+                }
+
                 allGames.push({
                   id: `${userKey}-${index}`,
                   title: game.title,
@@ -93,13 +142,18 @@ function BorrowGames() {
                   owner: {
                     email: userEmail,
                     firstName: userInfo.firstName || '',
-                    lastName: userInfo.lastName || userEmail.split('@')[0]
+                    lastName: userInfo.lastName || userEmail.split('@')[0],
+                    photoUrl: userInfo.photoUrl,
+                    coordinates: userInfo.coordinates
                   },
                   available: true,
                   minPlayers: game.minPlayers,
                   maxPlayers: game.maxPlayers,
                   minPlaytime: game.minPlaytime,
-                  maxPlaytime: game.maxPlaytime
+                  maxPlaytime: game.maxPlaytime,
+                  category: game.category,
+                  distance,
+                  isFriend
                 });
               }
             });
@@ -112,6 +166,8 @@ function BorrowGames() {
     } catch (err) {
       console.error('Error loading games:', err);
       setError('Failed to load available games. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -163,31 +219,65 @@ function BorrowGames() {
     }
   };
 
-  const filteredGames = games.filter(game => 
-    game.available && (
-      game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      `${game.owner.firstName} ${game.owner.lastName}`.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  );
+  const applyFilters = (games: Game[]) => {
+    return games.filter(game => {
+      // Search filter
+      const matchesSearch = 
+        game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        `${game.owner.firstName} ${game.owner.lastName}`.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // Availability filter
+      const matchesAvailability = 
+        filters.availability === 'all' ||
+        (filters.availability === 'available' && game.available) ||
+        (filters.availability === 'unavailable' && !game.available);
+      
+      // Player count filter
+      const matchesPlayerCount = !filters.playerCount ||
+        (game.minPlayers && game.maxPlayers &&
+          filters.playerCount >= game.minPlayers &&
+          filters.playerCount <= game.maxPlayers);
+      
+      // Playtime filter
+      const matchesPlaytime = 
+        (!filters.minPlaytime || (game.maxPlaytime && game.maxPlaytime >= filters.minPlaytime)) &&
+        (!filters.maxPlaytime || (game.minPlaytime && game.minPlaytime <= filters.maxPlaytime));
+      
+      // Category filter
+      const matchesCategory = !filters.category || game.category === filters.category;
+      
+      return matchesSearch && matchesAvailability && matchesPlayerCount && 
+             matchesPlaytime && matchesCategory;
+    });
+  };
+
+  const sortGames = (games: Game[]) => {
+    return [...games].sort((a, b) => {
+      switch (filters.sortBy) {
+        case 'friends':
+          if (a.isFriend === b.isFriend) {
+            return (a.distance || Infinity) - (b.distance || Infinity);
+          }
+          return a.isFriend ? -1 : 1;
+        case 'distance':
+          return (a.distance || Infinity) - (b.distance || Infinity);
+        case 'popularity':
+          // For now, sort by distance as a placeholder for popularity
+          return (a.distance || Infinity) - (b.distance || Infinity);
+        default:
+          return 0;
+      }
+    });
+  };
+
+  const filteredGames = sortGames(applyFilters(games));
+
+  const friendsGames = filteredGames.filter(game => game.isFriend);
+  const nearbyGames = filteredGames.filter(game => game.distance && game.distance <= 10); // Games within 10km
+  const allGames = filteredGames.filter(game => !game.isFriend && (!game.distance || game.distance > 10));
 
   const getGameRequestStatus = (gameId: string) => {
     return borrowRequests.find(req => req.gameId === gameId)?.status;
-  };
-
-  const formatPlaytime = (min?: number, max?: number) => {
-    if (!min && !max) return null;
-    if (min === max) return `${min} min`;
-    if (!max) return `${min}+ min`;
-    if (!min) return `Up to ${max} min`;
-    return `${min}-${max} min`;
-  };
-
-  const formatPlayers = (min?: number, max?: number) => {
-    if (!min && !max) return null;
-    if (min === max) return `${min} players`;
-    if (!max) return `${min}+ players`;
-    if (!min) return `Up to ${max} players`;
-    return `${min}-${max} players`;
   };
 
   return (
@@ -219,96 +309,124 @@ function BorrowGames() {
               if (!game) return null;
 
               return (
-                <div key={request.id} className="bg-white rounded-xl shadow-md overflow-hidden opacity-75">
-                  <div className="relative aspect-square">
-                    <img
-                      src={game.image}
-                      alt={game.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = '/board-game-placeholder.png';
-                      }}
-                    />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="text-lg font-semibold mb-2 line-clamp-1" title={game.title}>
-                      {game.title}
-                    </h3>
-                    <p className="text-gray-600 mb-4 line-clamp-1">
-                      Owned by {game.owner.firstName} {game.owner.lastName}
-                    </p>
-                    
-                    <div className={`text-center py-2 rounded-lg ${
-                      request.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : request.status === 'approved'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      Request {request.status}
-                    </div>
-                  </div>
-                </div>
+                <GameCard
+                  key={request.id}
+                  game={game}
+                  onSelect={setSelectedGame}
+                  requestStatus={request.status}
+                />
               );
             })}
           </div>
         </div>
       )}
 
-      {/* Available Games Section */}
-      <h2 className="text-xl font-semibold mb-4">Available Games</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {filteredGames.map((game) => (
-          <div key={game.id} className="bg-white rounded-xl shadow-md overflow-hidden">
-            <div className="relative aspect-square">
-              <img
-                src={game.image}
-                alt={game.title}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = '/board-game-placeholder.png';
-                }}
-              />
-            </div>
-            <div className="p-4">
-              <h3 className="text-lg font-semibold mb-2 line-clamp-1" title={game.title}>
-                {game.title}
-              </h3>
-              <p className="text-gray-600 mb-4 line-clamp-1">
-                Owned by {game.owner.firstName} {game.owner.lastName}
-              </p>
-              
-              <div className="flex flex-wrap gap-2 mb-4 text-sm text-gray-600">
-                {formatPlayers(game.minPlayers, game.maxPlayers) && (
-                  <span>{formatPlayers(game.minPlayers, game.maxPlayers)}</span>
-                )}
-                {formatPlaytime(game.minPlaytime, game.maxPlaytime) && (
-                  <span>• {formatPlaytime(game.minPlaytime, game.maxPlaytime)}</span>
-                )}
-              </div>
-              
-              {getGameRequestStatus(game.id) ? (
-                <div className={`text-center py-2 rounded-lg ${
-                  getGameRequestStatus(game.id) === 'pending'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : getGameRequestStatus(game.id) === 'approved'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}>
-                  Request {getGameRequestStatus(game.id)}
-                </div>
-              ) : (
-                <button
-                  onClick={() => setSelectedGame(game)}
-                  className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
-                >
-                  Request to Borrow
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
+      {/* Filters Section */}
+      <div className="mb-8 flex flex-wrap gap-4">
+        <select
+          value={filters.sortBy}
+          onChange={(e) => setFilters({ ...filters, sortBy: e.target.value as Filters['sortBy'] })}
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        >
+          <option value="friends">Friends First</option>
+          <option value="distance">Distance</option>
+          <option value="popularity">Popularity</option>
+        </select>
+
+        <select
+          value={filters.availability}
+          onChange={(e) => setFilters({ ...filters, availability: e.target.value as Filters['availability'] })}
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        >
+          <option value="all">All Games</option>
+          <option value="available">Available</option>
+          <option value="unavailable">Unavailable</option>
+        </select>
+
+        <input
+          type="number"
+          placeholder="Player Count"
+          value={filters.playerCount || ''}
+          onChange={(e) => setFilters({ ...filters, playerCount: e.target.value ? Number(e.target.value) : undefined })}
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        />
+
+        <input
+          type="number"
+          placeholder="Min Playtime (min)"
+          value={filters.minPlaytime || ''}
+          onChange={(e) => setFilters({ ...filters, minPlaytime: e.target.value ? Number(e.target.value) : undefined })}
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        />
+
+        <input
+          type="number"
+          placeholder="Max Playtime (min)"
+          value={filters.maxPlaytime || ''}
+          onChange={(e) => setFilters({ ...filters, maxPlaytime: e.target.value ? Number(e.target.value) : undefined })}
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        />
       </div>
+
+      {/* Friends' Games Section */}
+      {friendsGames.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Users className="h-6 w-6" />
+            Friends' Games
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {friendsGames.map((game) => (
+              <GameCard
+                key={game.id}
+                game={game}
+                onSelect={setSelectedGame}
+                requestStatus={getGameRequestStatus(game.id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Games Near You Section */}
+      {nearbyGames.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <MapPin className="h-6 w-6" />
+            Games Near You
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {nearbyGames.map((game) => (
+              <GameCard
+                key={game.id}
+                game={game}
+                onSelect={setSelectedGame}
+                requestStatus={getGameRequestStatus(game.id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* All Games Section */}
+      {allGames.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <TrendingUp className="h-6 w-6" />
+            All Games (Popular)
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {allGames.map((game) => (
+              <GameCard
+                key={game.id}
+                game={game}
+                onSelect={setSelectedGame}
+                requestStatus={getGameRequestStatus(game.id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {selectedGame && (
         <BorrowRequestModal

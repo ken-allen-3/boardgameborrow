@@ -57,8 +57,13 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({
         await onSendRequest(userId);
         // Remove the user from search results after sending request
         setSearchResults(prev => prev.filter(user => user.email.replace(/\./g, ',') !== userId));
+        setError('Friend request sent successfully!');
       } else {
-        setError(status === 'pending' ? 'Friend request already sent' : 'Already friends with this user');
+        setError(
+          status === 'pending' ? 'You have a pending request from this user' :
+          status === 'sent' ? 'Friend request already sent' :
+          'Already friends with this user'
+        );
       }
     } catch (err) {
       setError('Failed to send friend request. Please try again.');

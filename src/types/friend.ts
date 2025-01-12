@@ -1,5 +1,5 @@
 export interface Friendship {
-  status: 'pending' | 'accepted';
+  status: 'pending' | 'sent' | 'accepted';
   createdAt: string;
   updatedAt: string;
 }
@@ -7,7 +7,7 @@ export interface Friendship {
 export interface FriendRequest {
   fromUserId: string;
   toUserId: string;
-  status: 'pending' | 'accepted';
+  status: 'pending' | 'sent' | 'accepted';
 }
 
 export interface FriendProfile extends Friendship {

@@ -132,18 +132,16 @@ const Friends = () => {
 
         {error && <ErrorMessage message={error} />}
 
-        {pendingRequests.length > 0 && (
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Friend Requests</h2>
-            <FriendRequestsList
-              requests={pendingRequests}
-              onAcceptRequest={handleAcceptRequest}
-              onDeclineRequest={handleDeclineRequest}
-            />
-          </div>
-        )}
-
         <div>
+          <h2 className="text-xl font-semibold mb-4">Friend Requests</h2>
+          <FriendRequestsList
+            requests={pendingRequests}
+            onAcceptRequest={handleAcceptRequest}
+            onDeclineRequest={handleDeclineRequest}
+          />
+        </div>
+
+        <div className="mt-8">
           <h2 className="text-xl font-semibold mb-4">My Friends</h2>
           <FriendsList
             friends={friends}

@@ -6,16 +6,18 @@ const db = getDatabase();
 
 export async function sendFriendRequest(fromUserId: string, toUserId: string): Promise<void> {
   const timestamp = new Date().toISOString();
-  const friendship: Friendship = {
-    status: 'pending',
-    createdAt: timestamp,
-    updatedAt: timestamp
-  };
-
-  // Create bidirectional friendship entries
+  // Create friendship entries with different statuses for sender and receiver
   const updates: { [key: string]: any } = {
-    [`friendships/${fromUserId}/${toUserId}`]: friendship,
-    [`friendships/${toUserId}/${fromUserId}`]: friendship
+    [`friendships/${fromUserId}/${toUserId}`]: {
+      status: 'sent',
+      createdAt: timestamp,
+      updatedAt: timestamp
+    },
+    [`friendships/${toUserId}/${fromUserId}`]: {
+      status: 'pending',
+      createdAt: timestamp,
+      updatedAt: timestamp
+    }
   };
 
   try {
@@ -160,7 +162,7 @@ async function getUserEmailById(userId: string): Promise<string | null> {
 }
 
 // Helper function to check if a friendship exists
-export async function checkFriendshipStatus(userId: string, friendId: string): Promise<'none' | 'pending' | 'accepted'> {
+export async function checkFriendshipStatus(userId: string, friendId: string): Promise<'none' | 'pending' | 'sent' | 'accepted'> {
   try {
     const friendshipRef = ref(db, `friendships/${userId}/${friendId}`);
     const snapshot = await get(friendshipRef);

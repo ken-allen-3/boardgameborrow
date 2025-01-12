@@ -24,7 +24,7 @@ function Navbar() {
     <>
       <Link
         to="/my-games"
-        className="nav-link gap-2"
+        className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2"
         data-tutorial="my-games-link"
         onClick={() => setIsOpen(false)}
       >
@@ -34,7 +34,7 @@ function Navbar() {
       
       <Link
         to="/borrow"
-        className="nav-link gap-2"
+        className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2"
         data-tutorial="borrow-link"
         onClick={() => setIsOpen(false)}
       >
@@ -44,7 +44,7 @@ function Navbar() {
       
       <Link
         to="/groups"
-        className="nav-link gap-2"
+        className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2"
         data-tutorial="groups-link"
         onClick={() => setIsOpen(false)}
       >
@@ -54,7 +54,7 @@ function Navbar() {
 
       <Link
         to="/friends"
-        className="nav-link gap-2"
+        className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2"
         onClick={() => setIsOpen(false)}
       >
         <UserPlus className="h-5 w-5" />
@@ -63,7 +63,7 @@ function Navbar() {
       
       <Link
         to="/game-nights"
-        className="nav-link gap-2"
+        className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2"
         onClick={() => setIsOpen(false)}
       >
         <Calendar className="h-5 w-5" />
@@ -72,7 +72,7 @@ function Navbar() {
 
       <Link
         to="/profile"
-        className="nav-link gap-2"
+        className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2"
         onClick={() => setIsOpen(false)}
       >
         <UserCircle className="h-5 w-5" />
@@ -82,7 +82,7 @@ function Navbar() {
       {isAdmin && (
         <Link
           to="/admin"
-          className="nav-link gap-2"
+          className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2"
           onClick={() => setIsOpen(false)}
         >
           <Settings className="h-5 w-5" />
@@ -95,7 +95,7 @@ function Navbar() {
           reportBug();
           setIsOpen(false);
         }}
-        className="nav-link gap-2 text-brand-gray-500 hover:text-brand-gray-700"
+        className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2 text-brand-gray-500 hover:text-brand-gray-700"
       >
         <Bug className="h-5 w-5" />
         <span>Report Bug</span>
@@ -106,7 +106,7 @@ function Navbar() {
           handleSignOut();
           setIsOpen(false);
         }}
-        className="nav-link gap-2 text-brand-gray-500 hover:text-brand-gray-700"
+        className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2 text-brand-gray-500 hover:text-brand-gray-700"
       >
         <LogOut className="h-5 w-5" />
         <span>Sign Out</span>
@@ -159,9 +159,9 @@ function Navbar() {
 
         {/* Mobile Navigation */}
         {isOpen && currentUser && (
-          <div className="md:hidden border-t border-brand-gray-200">
-            <div className="py-2 space-y-1">
-              <div className="flex flex-col space-y-2 p-2">
+          <div className="md:hidden border-t border-brand-gray-200 bg-white fixed left-0 right-0 top-16">
+            <div className="py-3 max-h-[calc(100vh-4rem)] overflow-y-auto">
+              <div className="flex flex-col divide-y divide-brand-gray-100">
                 <NavLinks />
               </div>
             </div>

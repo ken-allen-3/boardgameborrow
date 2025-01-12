@@ -47,3 +47,9 @@
   @apply px-4 py-3 rounded-lg border border-brand-gray-200
     focus:outline-none focus:ring-2 focus:ring-brand-blue-500 focus:border-transparent;
 }
+
+/* Navigation Link Styles */
+.nav-link {
+  @apply text-brand-gray-700 hover:text-brand-blue-600 transition-colors duration-200
+    active:bg-brand-gray-50 md:hover:bg-transparent;
+}

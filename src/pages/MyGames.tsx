@@ -71,15 +71,29 @@ const MyGames = () => {
     }
   };
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [gameToDelete, setGameToDelete] = useState<{id: string, title: string} | null>(null);
+
   const handleDeleteGame = async (gameId: string) => {
-    if (!currentUser?.email || !window.confirm('Are you sure you want to remove this game?')) return;
+    const game = games.find(g => g.id === gameId);
+    if (game) {
+      setGameToDelete({ id: gameId, title: game.title });
+      setShowDeleteConfirm(true);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!currentUser?.email || !gameToDelete) return;
 
     try {
-      await deleteGame(currentUser.email, gameId);
+      await deleteGame(currentUser.email, gameToDelete.id);
       await loadGames();
       setError(null);
     } catch (err) {
       setError('Failed to delete game. Please try again.');
+    } finally {
+      setShowDeleteConfirm(false);
+      setGameToDelete(null);
     }
   };
 
@@ -150,6 +164,37 @@ const MyGames = () => {
           onClose={() => setCapturedPhoto(null)}
           onGameSelect={handleGameSelect}
         />
+      )}
+
+      {/* Delete Confirmation Alert */}
+      {showDeleteConfirm && gameToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-sm w-full p-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Remove Game
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to remove <span className="font-medium">{gameToDelete.title}</span>?
+            </p>
+            <div className="flex flex-col sm:flex-row justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setGameToDelete(null);
+                }}
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

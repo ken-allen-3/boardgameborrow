@@ -33,14 +33,14 @@ function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-blue-50 to-white py-8 sm:py-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+    <div className="min-h-screen bg-gradient-to-br from-brand-blue-50 to-white py-4 sm:py-12">
+      <div className="max-w-4xl mx-auto px-2 sm:px-6">
         {/* Hero Section */}
         <div className="text-center mb-12 sm:mb-16">
           <h1 className="text-4xl sm:text-5xl font-bold text-brand-gray-900 mb-4 sm:mb-6">
             Effortless Game Nights. Share, Borrow, and Play More Games with Friends.
           </h1>
-          <p className="text-lg sm:text-xl text-brand-gray-600 max-w-2xl mx-auto px-2 mb-8">
+          <p className="text-lg sm:text-xl text-brand-gray-600 max-w-2xl mx-auto mb-8">
             Create your game inventory, share it with friends, and explore new games with ease.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">

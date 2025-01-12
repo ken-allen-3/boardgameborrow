@@ -131,42 +131,65 @@ const categoryCache = new PersistentCache<BoardGame[]>('bgb-category-cache');
 
 export async function getGamesByCategory(categoryId: string): Promise<BoardGame[]> {
   return measurePerformance('get-category-games', async () => {
+    console.log(`[BGG] Fetching games for category ${categoryId}`);
+    
     // Check cache first
     const cached = categoryCache.get(categoryId, 'category-games');
     if (cached) {
+      console.log(`[BGG] Returning cached games for category ${categoryId}`);
       return cached;
     }
 
     try {
-      // First get the list of top games in this category
-      const xmlText = await makeApiRequest(BOARD_GAME_API.SEARCH_ENDPOINT, {
-        type: 'boardgame',
-        domain: 'boardgame',
-        sort: 'rank',
-        showcount: '20',
-        family: categoryId
+      // Get hot games in this category
+      const hotXmlText = await makeApiRequest(`${BOARD_GAME_API.BASE_URL}/${BOARD_GAME_API.HOT_ENDPOINT}`, {
+        type: 'boardgame'
       });
 
-      const doc = await parseXML(xmlText);
+      console.log(`[BGG] Got hot games response for category ${categoryId}`);
+      
+      const doc = await parseXML(hotXmlText);
       const items = Array.from(doc.getElementsByTagName('item'));
+      
+      // Get IDs of hot games
       const gameIds = items
         .map(item => item.getAttribute('id'))
         .filter((id): id is string => typeof id === 'string')
-        .slice(0, 20); // Ensure we only get top 20
+        .slice(0, 20);
 
-      // Fetch full details for each game
+      console.log(`[BGG] Found ${gameIds.length} hot games`);
+
+      // Get full details for each game
+      console.log(`[BGG] Fetching details for ${gameIds.length} games`);
+      
       const games = await processBatch(
         gameIds,
-        id => getGameById(id)
+        async (id) => {
+          try {
+            return await getGameById(id);
+          } catch (error) {
+            console.error(`[BGG] Error fetching game ${id}:`, error);
+            return null;
+          }
+        }
       );
 
-      // Sort by rank
-      const sortedGames = games.sort((a, b) => (a.rank || 999999) - (b.rank || 999999));
+      // Filter out failed fetches and sort by rank
+      const validGames = games
+        .filter((game): game is BoardGame => game !== null)
+        .filter(game => {
+          // Check if game belongs to the requested category
+          return game.categories.some(cat => cat.id === categoryId);
+        })
+        .sort((a, b) => (a.rank || 999999) - (b.rank || 999999))
+        .slice(0, 20);
+
+      console.log(`[BGG] Found ${validGames.length} valid games for category ${categoryId}`);
       
       // Cache the results
-      categoryCache.set(categoryId, sortedGames, 'category-games');
+      categoryCache.set(categoryId, validGames, 'category-games');
       
-      return sortedGames;
+      return validGames;
     } catch (error) {
       console.error('Failed to fetch games by category:', error);
       throw createAppError(
@@ -227,7 +250,7 @@ export async function getGameById(id: string): Promise<BoardGame> {
     }
 
     try {
-      const xmlText = await makeApiRequest(BOARD_GAME_API.THING_ENDPOINT, {
+      const xmlText = await makeApiRequest(`${BOARD_GAME_API.BASE_URL}/${BOARD_GAME_API.THING_ENDPOINT}`, {
         id,
         stats: '1',
         versions: '0'  // Exclude version info to reduce response size
@@ -387,7 +410,7 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
 
     try {
       // Try exact match first
-      const xmlText = await makeApiRequest(BOARD_GAME_API.SEARCH_ENDPOINT, {
+      const xmlText = await makeApiRequest(`${BOARD_GAME_API.BASE_URL}/${BOARD_GAME_API.SEARCH_ENDPOINT}`, {
       query,
       type: 'boardgame',
       exact: '1'
@@ -401,7 +424,7 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
     
     // If no exact matches found, try regular search
     if (gameIds.length === 0) {
-      const regularXmlText = await makeApiRequest(BOARD_GAME_API.SEARCH_ENDPOINT, {
+      const regularXmlText = await makeApiRequest(`${BOARD_GAME_API.BASE_URL}/${BOARD_GAME_API.SEARCH_ENDPOINT}`, {
         query,
         type: 'boardgame'
       });

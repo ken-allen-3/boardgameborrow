@@ -30,10 +30,14 @@ export async function makeApiRequest(endpoint: string, params: Record<string, st
 
   console.log('[API] Making request:', { endpoint, params });
 
-  const functionName = endpoint === '/search' ? 'searchGames' : 'getGameDetails';
-  const url = `${FUNCTIONS_BASE_URL}/${functionName}`;
+  // If endpoint starts with http, use it directly (for BGG API)
+  const url = endpoint.startsWith('http') ? endpoint : `${FUNCTIONS_BASE_URL}/${endpoint}`;
 
-  const request = axios.get(url, { params })
+  const request = axios.get(url, { 
+    params,
+    // Add XML response type for BGG API
+    responseType: endpoint.includes('boardgamegeek.com') ? 'text' : 'json'
+  })
     .then((response: AxiosResponse) => {
       const xmlData = response.data;
       

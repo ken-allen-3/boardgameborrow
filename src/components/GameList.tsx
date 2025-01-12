@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, ImageOff, Users, Clock, Star } from 'lucide-react';
+import { Trash2, ImageOff, Users, Clock, Star, Tag } from 'lucide-react';
 import { Game } from '../services/gameService';
 import StarRating from './StarRating';
 
@@ -76,6 +76,13 @@ const GameList: React.FC<GameListProps> = ({ games, onDeleteGame, onRateGame }) 
                 <div className="flex items-center gap-1 text-sm text-gray-600">
                   <Clock className="h-4 w-4" />
                   <span>{formatPlaytime(game.minPlaytime, game.maxPlaytime)}</span>
+                </div>
+              )}
+              
+              {game.category && (
+                <div className="flex items-center gap-1 text-sm text-gray-600">
+                  <Tag className="h-4 w-4" />
+                  <span>{game.category}</span>
                 </div>
               )}
             </div>

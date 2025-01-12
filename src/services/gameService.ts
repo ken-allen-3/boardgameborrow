@@ -12,6 +12,7 @@ export interface Game {
   maxPlayers?: number;
   minPlaytime?: number;
   maxPlaytime?: number;
+  category?: string;
   ratings?: {
     [gameId: string]: {
       rating: number;
@@ -46,7 +47,8 @@ export async function loadUserGames(userEmail: string): Promise<Game[]> {
       minPlayers: game.minPlayers,
       maxPlayers: game.maxPlayers,
       minPlaytime: game.minPlaytime,
-      maxPlaytime: game.maxPlaytime
+      maxPlaytime: game.maxPlaytime,
+      category: game.category
     })) : [];
   } catch (err) {
     console.error('Error loading games:', err);
@@ -74,6 +76,7 @@ export async function addGame(userEmail: string, game: BoardGame): Promise<void>
       maxPlayers: game.max_players,
       minPlaytime: game.min_playtime,
       maxPlaytime: game.max_playtime,
+      category: game.categories?.[0]?.id,
       ratings: {}
     };
 

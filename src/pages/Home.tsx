@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Dice6, Users, Share2, Calendar, ArrowRight, Mail } from 'lucide-react';
+import { Dice6, Users, Share2, Calendar, ArrowRight } from 'lucide-react';
+import TestimonialCarousel from '../components/TestimonialCarousel';
 import { sendWaitlistEmail } from '../services/email';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -156,48 +157,29 @@ function Home() {
         </div>
 
         {/* Testimonials Section */}
-        <div className="mb-16 sm:mb-24">
+        <div className="mb-16 sm:mb-24 overflow-hidden">
           <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8">
             What Our Community Says
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <blockquote className="card p-6">
-              <div className="flex items-center mb-4">
-                <img src="/board-game-placeholder.png" alt="Sarah" className="w-12 h-12 rounded-full mr-4 object-cover" />
-                <div>
-                  <p className="font-bold">Sarah Martinez</p>
-                  <p className="text-sm text-brand-gray-600">Game Night Host</p>
-                </div>
-              </div>
-              <p className="text-lg text-brand-gray-600 mb-4">
-                "I love that I can finally organize my games online and easily share them with friends. Game nights are now so much easier to plan!"
-              </p>
-            </blockquote>
-            <blockquote className="card p-6">
-              <div className="flex items-center mb-4">
-                <img src="/board-game-placeholder.png" alt="Mark" className="w-12 h-12 rounded-full mr-4 object-cover" />
-                <div>
-                  <p className="font-bold">Mark Johnson</p>
-                  <p className="text-sm text-brand-gray-600">Board Game Enthusiast</p>
-                </div>
-              </div>
-              <p className="text-lg text-brand-gray-600 mb-4">
-                "I discovered five new games I'd never played before! BoardGameBorrow has completely changed how our group shares games."
-              </p>
-            </blockquote>
-            <blockquote className="card p-6">
-              <div className="flex items-center mb-4">
-                <img src="/board-game-placeholder.png" alt="Emily" className="w-12 h-12 rounded-full mr-4 object-cover" />
-                <div>
-                  <p className="font-bold">Emily Chen</p>
-                  <p className="text-sm text-brand-gray-600">Game Collector</p>
-                </div>
-              </div>
-              <p className="text-lg text-brand-gray-600 mb-4">
-                "Finally, a way to keep track of my collection and share it with friends. The borrowing system is so smooth!"
-              </p>
-            </blockquote>
-          </div>
+          <TestimonialCarousel
+            testimonials={[
+              {
+                name: "Sarah Martinez",
+                role: "Game Night Host",
+                quote: "I love that I can finally organize my games online and easily share them with friends. Game nights are now so much easier to plan!"
+              },
+              {
+                name: "Mark Johnson",
+                role: "Board Game Enthusiast",
+                quote: "I discovered five new games I'd never played before! BoardGameBorrow has completely changed how our group shares games."
+              },
+              {
+                name: "Emily Chen",
+                role: "Game Collector",
+                quote: "Finally, a way to keep track of my collection and share it with friends. The borrowing system is so smooth!"
+              }
+            ]}
+          />
           <div className="flex justify-center mt-8">
             <div className="bg-brand-blue-50 rounded-lg p-4 inline-flex items-center">
               <span className="text-brand-blue-600 font-medium">🔒 Secure Data Handling</span>

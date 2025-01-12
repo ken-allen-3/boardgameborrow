@@ -137,8 +137,16 @@ const StepGameTypes: React.FC<Props> = ({ onNext, currentStep, totalSteps }) => 
               }`}>
                 {category.icon}
               </div>
-              <div className="text-center">
+              <div className="text-center space-y-1">
                 <span className="font-medium">{category.name}</span>
+                <p className="text-sm text-gray-500">
+                  {category.id === 'strategy' && 'Like Catan, Risk, Scythe'}
+                  {category.id === 'family' && 'Like Monopoly, Ticket to Ride, Carcassonne'}
+                  {category.id === 'party' && 'Like Codenames, Dixit, Just One'}
+                  {category.id === 'thematic' && 'Like Pandemic, Arkham Horror, Gloomhaven'}
+                  {category.id === 'wargames' && 'Like Axis & Allies, Twilight Struggle'}
+                  {category.id === 'abstract' && 'Like Chess, Go, Azul'}
+                </p>
                 <div className={`mt-2 w-6 h-6 mx-auto rounded-full border-2 flex items-center justify-center ${
                   selectedCategories.includes(category.id)
                     ? 'border-blue-500 bg-blue-500'

@@ -34,6 +34,7 @@ const StepQuickAddGames: React.FC<Props> = ({
   const [selectedGames, setSelectedGames] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
+  const [categoryExamples, setCategoryExamples] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     const fetchGamesForCategories = async () => {
@@ -73,9 +74,53 @@ const StepQuickAddGames: React.FC<Props> = ({
       setLoading(false);
     };
 
-    if (selectedCategories.length > 0) {
-      fetchGamesForCategories();
-    }
+    const fetchAndCacheGames = async () => {
+      if (selectedCategories.length === 0) return;
+      
+      setLoading(true);
+      const gamesMap: Record<string, Game[]> = {};
+      const examplesMap: Record<string, string[]> = {};
+      const errors: string[] = [];
+
+      await Promise.all(
+        selectedCategories.map(async (category) => {
+          try {
+            const categoryId = getCategoryId(category);
+            if (!categoryId) {
+              console.error(`No BGG category ID found for ${category}`);
+              return;
+            }
+
+            const games = await getGamesByCategory(categoryId);
+            // Ensure exactly 20 games per category
+            const categoryGames = games.slice(0, 20);
+            gamesMap[category] = categoryGames.map((game: BoardGame) => ({
+              id: game.id,
+              name: game.name,
+              image: game.image_url,
+              category,
+              min_players: game.min_players,
+              max_players: game.max_players,
+              min_playtime: game.min_playtime,
+              max_playtime: game.max_playtime,
+              type: game.type
+            }));
+
+            // Store top 3 games as examples
+            examplesMap[category] = categoryGames.slice(0, 3).map(g => g.name);
+          } catch (error) {
+            console.error(`Error fetching games for ${category}:`, error);
+            errors.push(category);
+          }
+        })
+      );
+
+      setGamesByCategory(gamesMap);
+      setCategoryExamples(examplesMap);
+      setLoading(false);
+    };
+
+    fetchAndCacheGames();
   }, [selectedCategories]);
 
   const toggleGameSelection = (gameId: string) => {
@@ -90,14 +135,14 @@ const StepQuickAddGames: React.FC<Props> = ({
     if (selectedGames.length > 0 && currentUser?.email) {
       setIsAdding(true);
       try {
-        // Find selected games from all categories
+        // Get all selected games
         const selectedGameObjects = Object.values(gamesByCategory)
           .flat()
           .filter(game => selectedGames.includes(game.id));
 
-        // Add each selected game to the user's collection
-        await Promise.all(
-          selectedGameObjects.map(game => {
+        // Process all selected games in parallel
+        const results = await Promise.allSettled(
+          selectedGameObjects.map(async game => {
             const boardGame: BoardGame = {
               id: game.id,
               name: game.name,

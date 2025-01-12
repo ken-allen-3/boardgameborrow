@@ -79,10 +79,10 @@ const GameList: React.FC<GameListProps> = ({ games, onDeleteGame, onRateGame }) 
                 </div>
               )}
               
-              {game.category && (
+              {game.type && (
                 <div className="flex items-center gap-1 text-sm text-gray-600">
                   <Tag className="h-4 w-4" />
-                  <span>{game.category}</span>
+                  <span>{game.type.replace('boardgame', '').trim() || 'Board Game'}</span>
                 </div>
               )}
             </div>

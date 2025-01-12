@@ -117,6 +117,71 @@ const POPULAR_GAMES_IDS = [
   '220308'  // Root
 ];
 
+// BGG category IDs
+const CATEGORY_IDS = {
+  strategy: '1015', // Strategy
+  family: '1016',   // Family Games
+  party: '1030',    // Party Games
+  thematic: '1010', // Thematic
+  wargames: '1019', // Wargames
+  abstract: '1009'  // Abstract
+};
+
+const categoryCache = new PersistentCache<BoardGame[]>('bgb-category-cache');
+
+export async function getGamesByCategory(categoryId: string): Promise<BoardGame[]> {
+  return measurePerformance('get-category-games', async () => {
+    // Check cache first
+    const cached = categoryCache.get(categoryId, 'category-games');
+    if (cached) {
+      return cached;
+    }
+
+    try {
+      // First get the list of top games in this category
+      const xmlText = await makeApiRequest(BOARD_GAME_API.SEARCH_ENDPOINT, {
+        type: 'boardgame',
+        domain: 'boardgame',
+        sort: 'rank',
+        showcount: '20',
+        family: categoryId
+      });
+
+      const doc = await parseXML(xmlText);
+      const items = Array.from(doc.getElementsByTagName('item'));
+      const gameIds = items
+        .map(item => item.getAttribute('id'))
+        .filter((id): id is string => typeof id === 'string')
+        .slice(0, 20); // Ensure we only get top 20
+
+      // Fetch full details for each game
+      const games = await processBatch(
+        gameIds,
+        id => getGameById(id)
+      );
+
+      // Sort by rank
+      const sortedGames = games.sort((a, b) => (a.rank || 999999) - (b.rank || 999999));
+      
+      // Cache the results
+      categoryCache.set(categoryId, sortedGames, 'category-games');
+      
+      return sortedGames;
+    } catch (error) {
+      console.error('Failed to fetch games by category:', error);
+      throw createAppError(
+        'Failed to fetch games for category',
+        'CATEGORY_FETCH_ERROR',
+        { categoryId }
+      );
+    }
+  });
+}
+
+export function getCategoryId(category: string): string {
+  return CATEGORY_IDS[category as keyof typeof CATEGORY_IDS] || '';
+}
+
 const BATCH_DELAY = 1000; // 1 second delay between batches
 
 interface SearchResults {

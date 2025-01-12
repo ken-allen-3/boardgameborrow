@@ -1,10 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { addGame } from '../../services/gameService';
+import { getGamesByCategory, getCategoryId } from '../../services/boardGameService';
+import { BoardGame } from '../../types/boardgame';
 
 interface Game {
   id: string;
   name: string;
   image: string;
   category: string;
+  min_players?: number;
+  max_players?: number;
+  min_playtime?: number;
+  max_playtime?: number;
+  type?: string;
 }
 
 interface Props {
@@ -20,36 +29,53 @@ const StepQuickAddGames: React.FC<Props> = ({
   currentStep,
   totalSteps
 }) => {
+  const { currentUser } = useAuth();
   const [gamesByCategory, setGamesByCategory] = useState<Record<string, Game[]>>({});
   const [selectedGames, setSelectedGames] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAdding, setIsAdding] = useState(false);
 
   useEffect(() => {
-    // TODO: Replace with actual BGG API call
-    const mockGames: Record<string, Game[]> = {
-      strategy: [
-        { id: '1', name: 'Catan', image: '/board-game-placeholder.png', category: 'strategy' },
-        { id: '2', name: 'Ticket to Ride', image: '/board-game-placeholder.png', category: 'strategy' },
-      ],
-      family: [
-        { id: '3', name: 'Monopoly', image: '/board-game-placeholder.png', category: 'family' },
-        { id: '4', name: 'Clue', image: '/board-game-placeholder.png', category: 'family' },
-      ],
-      party: [
-        { id: '5', name: 'Codenames', image: '/board-game-placeholder.png', category: 'party' },
-        { id: '6', name: 'Dixit', image: '/board-game-placeholder.png', category: 'party' },
-      ],
+    const fetchGamesForCategories = async () => {
+      setLoading(true);
+      const gamesMap: Record<string, Game[]> = {};
+      const errors: string[] = [];
+
+      await Promise.all(
+        selectedCategories.map(async (category) => {
+          try {
+            const categoryId = getCategoryId(category);
+            if (!categoryId) {
+              console.error(`No BGG category ID found for ${category}`);
+              return;
+            }
+
+            const games = await getGamesByCategory(categoryId);
+            gamesMap[category] = games.map((game: BoardGame) => ({
+              id: game.id,
+              name: game.name,
+              image: game.image_url,
+              category,
+              min_players: game.min_players,
+              max_players: game.max_players,
+              min_playtime: game.min_playtime,
+              max_playtime: game.max_playtime,
+              type: game.type
+            }));
+          } catch (error) {
+            console.error(`Error fetching games for ${category}:`, error);
+            errors.push(category);
+          }
+        })
+      );
+
+      setGamesByCategory(gamesMap);
+      setLoading(false);
     };
 
-    // Filter games based on selected categories
-    const filteredGames = Object.fromEntries(
-      Object.entries(mockGames).filter(([category]) => 
-        selectedCategories.includes(category)
-      )
-    );
-
-    setGamesByCategory(filteredGames);
-    setLoading(false);
+    if (selectedCategories.length > 0) {
+      fetchGamesForCategories();
+    }
   }, [selectedCategories]);
 
   const toggleGameSelection = (gameId: string) => {
@@ -60,9 +86,86 @@ const StepQuickAddGames: React.FC<Props> = ({
     );
   };
 
-  const handleComplete = () => {
-    if (selectedGames.length > 0) {
-      onComplete(selectedGames);
+  const handleComplete = async () => {
+    if (selectedGames.length > 0 && currentUser?.email) {
+      setIsAdding(true);
+      try {
+        // Find selected games from all categories
+        const selectedGameObjects = Object.values(gamesByCategory)
+          .flat()
+          .filter(game => selectedGames.includes(game.id));
+
+        // Add each selected game to the user's collection
+        await Promise.all(
+          selectedGameObjects.map(game => {
+            const boardGame: BoardGame = {
+              id: game.id,
+              name: game.name,
+              handle: game.name.toLowerCase().replace(/\s+/g, '-'),
+              url: '',
+              price: '0',
+              price_ca: '0',
+              price_uk: '0',
+              price_au: '0',
+              msrp: 0,
+              discount: '0',
+              year_published: new Date().getFullYear(),
+              min_players: game.min_players || 1,
+              max_players: game.max_players || 4,
+              min_playtime: game.min_playtime || 30,
+              max_playtime: game.max_playtime || 60,
+              min_age: 13,
+              description: '',
+              commentary: '',
+              faq: '',
+              thumb_url: game.image,
+              image_url: game.image,
+              mechanics: [],
+              categories: [],
+              publishers: [],
+              designers: [],
+              primary_publisher: { id: '0', score: 0, url: '' },
+              primary_designer: { id: '0', score: 0, url: '' },
+              developers: [],
+              related_to: [],
+              related_as: [],
+              artists: [],
+              names: [game.name],
+              rules_url: '',
+              official_url: '',
+              weight_amount: 0,
+              weight_units: 'lbs',
+              size_height: 0,
+              size_depth: 0,
+              size_units: 'inches',
+              num_user_ratings: 0,
+              average_user_rating: 0,
+              historical_low_prices: [],
+              active: true,
+              num_user_complexity_votes: 0,
+              average_learning_complexity: 0,
+              average_strategy_complexity: 0,
+              visits: 0,
+              lists: 0,
+              mentions: 0,
+              links: 0,
+              plays: 0,
+              rank: 0,
+              type: game.type || game.category,
+              sku: '',
+              upc: ''
+            };
+            return addGame(currentUser.email!, boardGame);
+          })
+        );
+
+        onComplete(selectedGames);
+      } catch (error) {
+        console.error('Error adding games:', error);
+        // You might want to show an error message to the user here
+      } finally {
+        setIsAdding(false);
+      }
     }
   };
 
@@ -140,14 +243,14 @@ const StepQuickAddGames: React.FC<Props> = ({
       {/* Complete Button */}
       <button
         onClick={handleComplete}
-        disabled={selectedGames.length === 0}
+        disabled={selectedGames.length === 0 || isAdding}
         className={`w-full py-3 px-4 rounded-lg font-medium ${
-          selectedGames.length > 0
+          selectedGames.length > 0 && !isAdding
             ? 'bg-blue-500 text-white hover:bg-blue-600'
             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
         }`}
       >
-        Add Selected Games
+        {isAdding ? 'Adding Games...' : 'Add Selected Games'}
       </button>
     </div>
   );

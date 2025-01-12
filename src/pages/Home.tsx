@@ -37,100 +37,86 @@ function Home() {
         {/* Hero Section */}
         <div className="text-center mb-12 sm:mb-16">
           <h1 className="text-4xl sm:text-5xl font-bold text-brand-gray-900 mb-4 sm:mb-6">
-            Game Nights, Made Easy with BoardGameBorrow
+            Effortless Game Nights. Share, Borrow, and Play More Games with Friends.
           </h1>
-          <p className="text-lg sm:text-xl text-brand-gray-600 max-w-2xl mx-auto px-2">
-            Create your game inventory, share with friends, and enjoy new games without the hassle.
+          <p className="text-lg sm:text-xl text-brand-gray-600 max-w-2xl mx-auto px-2 mb-8">
+            Create your game inventory, share it with friends, and explore new games with ease.
           </p>
-          <div className="mt-12 max-w-md mx-auto">
-            <form onSubmit={handleWaitlistSubmit} className="mb-6">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="relative flex-1">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-brand-gray-400 h-5 w-5" />
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <Link to="/signup" className="btn-primary">
+              Get Started for Free
+            </Link>
+            <a href="#how-it-works" className="btn-secondary">
+              Explore How It Works
+            </a>
+          </div>
+          <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-4">
+            <img 
+              src="/board-game-placeholder.png" 
+              alt="BoardGameBorrow Demo" 
+              className="w-full rounded-lg"
+            />
+          </div>
+          
+          <div className="text-center mt-8">
+            <button
+              onClick={() => setShowInviteForm(!showInviteForm)}
+              className="text-brand-blue-600 hover:text-brand-blue-700 text-sm font-medium"
+            >
+              Have an invite code? Click here
+            </button>
+            
+            {showInviteForm && (
+              <form onSubmit={handleInviteSubmit} className="mt-4">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    className="input pl-10 w-full"
+                    type="text"
+                    value={inviteCode}
+                    onChange={(e) => setInviteCode(e.target.value)}
+                    placeholder="Enter your invite code"
+                    className="input flex-1"
                     required
                   />
+                  <button type="submit" className="btn-secondary whitespace-nowrap">
+                    Sign Up
+                  </button>
                 </div>
-                <button 
-                  type="submit" 
-                  disabled={submitting}
-                  className="btn-primary whitespace-nowrap disabled:opacity-50"
-                >
-                  {submitting ? 'Joining...' : 'Join the Waitlist'}
-                </button>
-              </div>
-              {waitlistSuccess && (
-                <p className="text-brand-accent-green text-sm mt-2">
-                  Thanks for your interest! We've added you to our waitlist. We'll notify you by email when we're ready to launch to additional users.
-                </p>
-              )}
-            </form>
-            
-            <div className="text-center">
-              <button
-                onClick={() => setShowInviteForm(!showInviteForm)}
-                className="text-brand-blue-600 hover:text-brand-blue-700 text-sm font-medium"
-              >
-                Have an invite code? Click here
-              </button>
-              
-              {showInviteForm && (
-                <form onSubmit={handleInviteSubmit} className="mt-4">
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <input
-                      type="text"
-                      value={inviteCode}
-                      onChange={(e) => setInviteCode(e.target.value)}
-                      placeholder="Enter your invite code"
-                      className="input flex-1"
-                      required
-                    />
-                    <button type="submit" className="btn-secondary whitespace-nowrap">
-                      Sign Up
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
+              </form>
+            )}
           </div>
         </div>
 
         {/* How It Works Section */}
-        <div className="mb-16 sm:mb-24">
+        <div id="how-it-works" className="mb-16 sm:mb-24 scroll-mt-16">
           <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">
-            Sharing Games Has Never Been Easier
+            How BoardGameBorrow Works
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="card p-6">
-              <div className="w-12 h-12 bg-brand-blue-100 rounded-lg flex items-center justify-center mb-4">
-                <Dice6 className="h-6 w-6 text-brand-blue-600" />
+            <div className="card p-8 text-center hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 bg-brand-blue-100 rounded-full flex items-center justify-center mb-6 mx-auto">
+                <Dice6 className="h-8 w-8 text-brand-blue-600" />
               </div>
-              <h3 className="font-bold mb-2">Create Your Inventory</h3>
+              <h3 className="text-xl font-bold mb-3">Create Your Game Library</h3>
               <p className="text-brand-gray-600">
-                Add your games to your digital shelf, so you know exactly what you have.
+                Digitize your board game collection in minutes. Keep track of all your games in one place.
               </p>
             </div>
-            <div className="card p-6">
-              <div className="w-12 h-12 bg-brand-blue-100 rounded-lg flex items-center justify-center mb-4">
-                <Share2 className="h-6 w-6 text-brand-blue-600" />
+            <div className="card p-8 text-center hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 bg-brand-blue-100 rounded-full flex items-center justify-center mb-6 mx-auto">
+                <Share2 className="h-8 w-8 text-brand-blue-600" />
               </div>
-              <h3 className="font-bold mb-2">Borrow and Lend</h3>
+              <h3 className="text-xl font-bold mb-3">Borrow & Lend Games</h3>
               <p className="text-brand-gray-600">
-                Request games from friends and lend out your own with a few simple clicks.
+                Expand your game nights without buying more. Share games with friends easily.
               </p>
             </div>
-            <div className="card p-6">
-              <div className="w-12 h-12 bg-brand-blue-100 rounded-lg flex items-center justify-center mb-4">
-                <Calendar className="h-6 w-6 text-brand-blue-600" />
+            <div className="card p-8 text-center hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 bg-brand-blue-100 rounded-full flex items-center justify-center mb-6 mx-auto">
+                <Calendar className="h-8 w-8 text-brand-blue-600" />
               </div>
-              <h3 className="font-bold mb-2">Enjoy More Game Nights</h3>
+              <h3 className="text-xl font-bold mb-3">Plan Amazing Game Nights</h3>
               <p className="text-brand-gray-600">
-                With your collection shared and organized, it's easier to get together and have fun!
+                Easily coordinate and discover new games. Make every game night memorable.
               </p>
             </div>
           </div>
@@ -171,34 +157,73 @@ function Home() {
 
         {/* Testimonials Section */}
         <div className="mb-16 sm:mb-24">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8">
+            What Our Community Says
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <blockquote className="card p-6">
+              <div className="flex items-center mb-4">
+                <img src="/board-game-placeholder.png" alt="Sarah" className="w-12 h-12 rounded-full mr-4 object-cover" />
+                <div>
+                  <p className="font-bold">Sarah Martinez</p>
+                  <p className="text-sm text-brand-gray-600">Game Night Host</p>
+                </div>
+              </div>
               <p className="text-lg text-brand-gray-600 mb-4">
                 "I love that I can finally organize my games online and easily share them with friends. Game nights are now so much easier to plan!"
               </p>
-              <footer className="font-medium">— Sarah, Early User</footer>
             </blockquote>
             <blockquote className="card p-6">
+              <div className="flex items-center mb-4">
+                <img src="/board-game-placeholder.png" alt="Mark" className="w-12 h-12 rounded-full mr-4 object-cover" />
+                <div>
+                  <p className="font-bold">Mark Johnson</p>
+                  <p className="text-sm text-brand-gray-600">Board Game Enthusiast</p>
+                </div>
+              </div>
               <p className="text-lg text-brand-gray-600 mb-4">
-                "I never knew how many great games my friends had until we started sharing through BoardGameBorrow. It's a game-changer for our group!"
+                "I discovered five new games I'd never played before! BoardGameBorrow has completely changed how our group shares games."
               </p>
-              <footer className="font-medium">— Mark, Community Member</footer>
             </blockquote>
+            <blockquote className="card p-6">
+              <div className="flex items-center mb-4">
+                <img src="/board-game-placeholder.png" alt="Emily" className="w-12 h-12 rounded-full mr-4 object-cover" />
+                <div>
+                  <p className="font-bold">Emily Chen</p>
+                  <p className="text-sm text-brand-gray-600">Game Collector</p>
+                </div>
+              </div>
+              <p className="text-lg text-brand-gray-600 mb-4">
+                "Finally, a way to keep track of my collection and share it with friends. The borrowing system is so smooth!"
+              </p>
+            </blockquote>
+          </div>
+          <div className="flex justify-center mt-8">
+            <div className="bg-brand-blue-50 rounded-lg p-4 inline-flex items-center">
+              <span className="text-brand-blue-600 font-medium">🔒 Secure Data Handling</span>
+              <span className="mx-4">•</span>
+              <span className="text-brand-blue-600 font-medium">500+ Active Users</span>
+              <span className="mx-4">•</span>
+              <span className="text-brand-blue-600 font-medium">4.8/5 User Rating</span>
+            </div>
           </div>
         </div>
 
         {/* Final CTA */}
-        <div className="text-center">
-          <h2 className="text-3xl font-bold mb-8">Ready to Play?</h2>
-          <p className="text-xl text-brand-gray-600 mb-8">
-            Start sharing, borrowing, and enjoying your favorite games today.
+        <div className="text-center bg-brand-blue-50 rounded-xl p-8 sm:p-12">
+          <h2 className="text-3xl font-bold mb-4">Start Sharing Games Today!</h2>
+          <p className="text-xl text-brand-gray-600 mb-6">
+            Join now and access premium features for free during beta!
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
-            <Link to="/signup" className="btn-primary">
-              Sign Up Now
-              <ArrowRight className="ml-2 h-4 w-4" />
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/signup" className="btn-primary text-lg px-8 py-4">
+              Get Started for Free
+              <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </div>
+          <p className="text-sm text-brand-gray-600 mt-4">
+            No credit card required • Free forever plan available
+          </p>
         </div>
       </div>
     </div>

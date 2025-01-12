@@ -5,8 +5,9 @@ import { getUserProfile } from './userService';
 const db = getDatabase();
 
 export async function sendFriendRequest(fromUserId: string, toUserId: string): Promise<void> {
+  console.log('Sending friend request:', { fromUserId, toUserId });
   const timestamp = new Date().toISOString();
-  // Create friendship entries with different statuses for sender and receiver
+  
   const updates: { [key: string]: any } = {
     [`friendships/${fromUserId}/${toUserId}`]: {
       status: 'sent',
@@ -21,7 +22,9 @@ export async function sendFriendRequest(fromUserId: string, toUserId: string): P
   };
 
   try {
+    console.log('Updating Firebase with:', updates);
     await update(ref(db), updates);
+    console.log('Friend request sent successfully');
   } catch (error) {
     console.error('Error sending friend request:', error);
     throw new Error('Failed to send friend request');
@@ -107,20 +110,25 @@ export async function getFriendsList(userId: string): Promise<FriendProfile[]> {
 }
 
 export async function getPendingRequests(userId: string): Promise<FriendProfile[]> {
+  console.log('Getting pending requests for user:', userId);
   try {
     const friendshipsRef = ref(db, `friendships/${userId}`);
     const snapshot = await get(friendshipsRef);
+    console.log('Friendships snapshot:', snapshot.val());
     
     if (!snapshot.exists()) {
       return [];
     }
 
     const friendships = snapshot.val();
+    console.log('Parsed friendships:', friendships);
     const pendingProfiles: FriendProfile[] = [];
 
     for (const [friendId, friendship] of Object.entries(friendships)) {
+      console.log('Processing friendship:', { friendId, friendship });
       const typedFriendship = friendship as Friendship;
       if (typedFriendship.status === 'pending') {
+        console.log('Found pending request from:', friendId);
         try {
           const friendEmail = await getUserEmailById(friendId);
           if (friendEmail) {
@@ -152,9 +160,18 @@ export async function getPendingRequests(userId: string): Promise<FriendProfile[
 // Helper function to get user email by ID
 async function getUserEmailById(userId: string): Promise<string | null> {
   try {
-    const userRef = ref(db, `userEmails/${userId}`);
+    // userId is already the email with dots replaced by commas
+    // Convert it back to regular email format
+    const email = userId.replace(/,/g, '.');
+    const userRef = ref(db, `users/${userId}`);
     const snapshot = await get(userRef);
-    return snapshot.exists() ? snapshot.val() : null;
+    
+    if (!snapshot.exists()) {
+      console.error('User not found:', userId);
+      return null;
+    }
+    
+    return email;
   } catch (error) {
     console.error('Error getting user email by ID:', error);
     return null;

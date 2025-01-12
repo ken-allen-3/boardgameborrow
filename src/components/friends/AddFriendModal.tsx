@@ -50,8 +50,10 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({
     }
   };
 
-  const handleSendRequest = async (userId: string) => {
+  const handleSendRequest = async (email: string) => {
     try {
+      // Convert email to userId format (replace dots with commas)
+      const userId = email.replace(/\./g, ',');
       const status = await checkFriendshipStatus(currentUserId, userId);
       if (status === 'none') {
         await onSendRequest(userId);
@@ -117,7 +119,7 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({
                   <div className="text-sm text-gray-500">{user.email}</div>
                 </div>
                 <button
-                  onClick={() => handleSendRequest(user.email.replace(/\./g, ','))}
+                  onClick={() => handleSendRequest(user.email)}
                   className="text-blue-500 hover:text-blue-700 p-2 rounded-full hover:bg-blue-50"
                   title="Send friend request"
                 >

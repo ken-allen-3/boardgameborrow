@@ -29,22 +29,28 @@ const Friends = () => {
   const userId = currentUser?.email?.replace(/\./g, ',') || '';
 
   useEffect(() => {
-    if (currentUser?.email) {
+    if (userId) {
       loadFriendsData();
     }
   }, [currentUser]);
 
   const loadFriendsData = async () => {
-    if (!userId) return;
+    if (!userId) {
+      console.log('No userId available for loading friends data');
+      return;
+    }
+    console.log('Loading friends data for userId:', userId);
 
     setLoading(true);
     setError(null);
 
     try {
+      console.log('Fetching friends and pending requests...');
       const [friendsList, requestsList] = await Promise.all([
         getFriendsList(userId),
         getPendingRequests(userId)
       ]);
+      console.log('Fetched data:', { friendsList, requestsList });
 
       setFriends(friendsList);
       setPendingRequests(requestsList);

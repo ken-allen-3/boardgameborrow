@@ -80,7 +80,7 @@ export default function TestimonialCarousel({ testimonials }: TestimonialCarouse
   return (
     <div 
       ref={scrollContainerRef}
-      className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4 pb-4 scroll-smooth"
+      className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4 pb-6 scroll-smooth"
       style={{ scrollBehavior: 'smooth' }}
     >
       {testimonials.map((testimonial, index) => (
@@ -88,17 +88,17 @@ export default function TestimonialCarousel({ testimonials }: TestimonialCarouse
           key={index}
           className="flex-none w-full sm:w-1/3 snap-center pr-4"
         >
-          <blockquote className="card p-6 h-full">
+          <blockquote className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-200 p-6 h-full border border-brand-gray-100">
             <div className="flex items-center mb-4">
-              <div className="w-12 h-12 rounded-full mr-4 bg-brand-blue-100 flex items-center justify-center text-brand-blue-600 text-xl font-bold">
+              <div className="w-12 h-12 rounded-full mr-4 bg-brand-blue-100 flex items-center justify-center text-brand-blue-600 text-xl font-bold shadow-inner">
                 {testimonial.name[0]}
               </div>
               <div>
-                <p className="font-bold">{testimonial.name}</p>
+                <p className="font-bold text-brand-gray-900">{testimonial.name}</p>
                 <p className="text-sm text-brand-gray-600">{testimonial.role}</p>
               </div>
             </div>
-            <p className="text-lg text-brand-gray-600 mb-4">
+            <p className="text-lg text-brand-gray-600 mb-4 leading-relaxed">
               {testimonial.quote}
             </p>
           </blockquote>

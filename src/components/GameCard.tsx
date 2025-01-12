@@ -49,7 +49,7 @@ const GameCard: React.FC<GameCardProps> = ({ game, onSelect, requestStatus }) =>
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden flex">
+    <div className="bg-white rounded-xl shadow-md overflow-hidden flex max-md:min-w-[300px] max-md:snap-center">
       <div className="relative w-48">
         <img
           src={game.image}

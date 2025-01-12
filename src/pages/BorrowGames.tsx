@@ -303,7 +303,7 @@ function BorrowGames() {
       {borrowRequests.length > 0 && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4">My Borrow Requests</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:grid-cols-2 max-md:flex max-md:overflow-x-auto max-md:gap-4 max-md:pb-4 max-md:snap-x max-md:snap-mandatory">
             {borrowRequests.map((request) => {
               const game = games.find(g => g.id === request.gameId);
               if (!game) return null;
@@ -375,7 +375,7 @@ function BorrowGames() {
             <Users className="h-6 w-6" />
             Friends' Games
           </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:grid-cols-2 max-md:flex max-md:overflow-x-auto max-md:gap-4 max-md:pb-4 max-md:snap-x max-md:snap-mandatory">
             {friendsGames.map((game) => (
               <GameCard
                 key={game.id}
@@ -395,7 +395,7 @@ function BorrowGames() {
             <MapPin className="h-6 w-6" />
             Games Near You
           </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:grid-cols-2 max-md:flex max-md:overflow-x-auto max-md:gap-4 max-md:pb-4 max-md:snap-x max-md:snap-mandatory">
             {nearbyGames.map((game) => (
               <GameCard
                 key={game.id}

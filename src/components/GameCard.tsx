@@ -49,8 +49,8 @@ const GameCard: React.FC<GameCardProps> = ({ game, onSelect, requestStatus }) =>
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden">
-      <div className="relative aspect-square">
+    <div className="bg-white rounded-xl shadow-md overflow-hidden flex">
+      <div className="relative w-48">
         <img
           src={game.image}
           alt={game.title}
@@ -70,7 +70,7 @@ const GameCard: React.FC<GameCardProps> = ({ game, onSelect, requestStatus }) =>
           </div>
         )}
       </div>
-      <div className="p-4">
+      <div className="p-4 flex-1">
         <h3 className="text-lg font-semibold mb-2 line-clamp-1" title={game.title}>
           {game.title}
         </h3>
@@ -91,7 +91,7 @@ const GameCard: React.FC<GameCardProps> = ({ game, onSelect, requestStatus }) =>
           </p>
         </div>
         
-        <div className="flex flex-wrap gap-2 mb-4 text-sm text-gray-600">
+        <div className="flex flex-wrap gap-2 mb-2 text-sm text-gray-600">
           {game.category && (
             <span className="bg-gray-100 px-2 py-1 rounded-lg">{game.category}</span>
           )}

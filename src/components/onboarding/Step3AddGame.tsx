@@ -3,6 +3,7 @@ import { Camera, Search, ArrowRight, Loader2, Plus } from 'lucide-react';
 import { BoardGame } from '../../types/boardgame';
 import CameraCapture from '../CameraCapture';
 import { analyzeShelfImage, findMatchingGames, DetectedGame, VisionServiceError, manualGameSearch } from '../../services/visionService';
+import GameSearchModal from '../GameSearchModal';
 
 interface Step3AddGameProps {
   onNext: () => void;
@@ -22,9 +23,8 @@ function Step3AddGame({ onNext, onBack }: Step3AddGameProps) {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [detectedGames, setDetectedGames] = useState<DetectedGame[]>();
-  const [selectedGame, setSelectedGame] = useState<BoardGame | null>(null);
-  const [manualSearch, setManualSearch] = useState('');
-  const [searchResults, setSearchResults] = useState<BoardGame[]>([]);
+  const [selectedGames, setSelectedGames] = useState<Map<string, BoardGame>>(new Map());
+  const [showSearch, setShowSearch] = useState(false);
   const [manualForm, setManualForm] = useState<Partial<BoardGame>>({
     name: '',
     year_published: new Date().getFullYear(),
@@ -64,19 +64,16 @@ function Step3AddGame({ onNext, onBack }: Step3AddGameProps) {
     }
   };
 
-  const handleManualSearch = async (query: string) => {
-    setManualSearch(query);
-    if (query.length < 2) {
-      setSearchResults([]);
-      return;
-    }
-
-    try {
-      const results = await manualGameSearch(query);
-      setSearchResults(results);
-    } catch (error: any) {
-      console.error('Search error:', error);
-    }
+  const handleGameSelect = (game: BoardGame) => {
+    setSelectedGames(prev => {
+      const next = new Map(prev);
+      if (next.has(game.id)) {
+        next.delete(game.id);
+      } else {
+        next.set(game.id, game);
+      }
+      return next;
+    });
   };
 
   const validateManualForm = () => {
@@ -99,13 +96,26 @@ function Step3AddGame({ onNext, onBack }: Step3AddGameProps) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
-    if (selectedGame) {
-      // Submit selected game from detection or search
+  const handleSubmit = () => {
+    if (selectedGames.size > 0) {
+      // Submit selected games from detection or search
       onNext();
     } else if (mode === 'manual' && validateManualForm()) {
       // Submit manual form
       onNext();
+    }
+  };
+
+  const handleGamesSelected = (games: BoardGame[]) => {
+    if (games.length > 0) {
+      games.forEach(game => {
+        setSelectedGames(prev => {
+          const next = new Map(prev);
+          next.set(game.id, game);
+          return next;
+        });
+      });
+      setShowSearch(false);
     }
   };
 
@@ -178,9 +188,9 @@ function Step3AddGame({ onNext, onBack }: Step3AddGameProps) {
                 {detected.matches?.map(game => (
                   <button
                     key={game.id}
-                    onClick={() => setSelectedGame(game)}
+                    onClick={() => handleGameSelect(game)}
                     className={`w-full flex items-center gap-4 p-3 rounded-lg transition ${
-                      selectedGame?.id === game.id
+                      selectedGames.has(game.id)
                         ? 'bg-indigo-100 border-2 border-indigo-500'
                         : 'hover:bg-gray-50 border border-gray-200'
                     }`}
@@ -205,7 +215,7 @@ function Step3AddGame({ onNext, onBack }: Step3AddGameProps) {
           ))}
 
           <button
-            onClick={() => setMode('manual')}
+            onClick={() => setShowSearch(true)}
             className="w-full flex items-center justify-center gap-2 border border-gray-300 text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-50 transition"
           >
             <Search className="w-5 h-5" />
@@ -214,206 +224,165 @@ function Step3AddGame({ onNext, onBack }: Step3AddGameProps) {
         </div>
       )}
 
+      {showSearch && (
+        <GameSearchModal
+          onClose={() => setShowSearch(false)}
+          onGameSelect={handleGamesSelected}
+        />
+      )}
+
       {mode === 'manual' && (
         <div className="space-y-6">
-          {/* Search */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Search for a Game
-            </label>
-            <div className="relative">
+          {/* Manual Form */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Game Name
+              </label>
               <input
                 type="text"
-                value={manualSearch}
-                onChange={(e) => handleManualSearch(e.target.value)}
-                placeholder="Type to search..."
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                value={manualForm.name}
+                onChange={(e) => setManualForm(prev => ({ ...prev, name: e.target.value }))}
+                className={`w-full px-4 py-2 rounded-lg border ${
+                  errors.name ? 'border-red-300' : 'border-gray-300'
+                } focus:ring-2 focus:ring-indigo-500 focus:border-transparent`}
               />
-              <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
+              {errors.name && (
+                <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+              )}
             </div>
 
-            {searchResults.length > 0 && (
-              <div className="mt-2 border rounded-lg divide-y">
-                {searchResults.map(game => (
-                  <button
-                    key={game.id}
-                    onClick={() => {
-                      setSelectedGame(game);
-                      setSearchResults([]);
-                      setManualSearch('');
-                    }}
-                    className="w-full flex items-center gap-4 p-3 hover:bg-gray-50 transition"
-                  >
-                    {game.thumb_url && (
-                      <img
-                        src={game.thumb_url}
-                        alt={game.name}
-                        className="w-12 h-12 object-cover rounded"
-                      />
-                    )}
-                    <div className="flex-1 text-left">
-                      <div className="font-medium">{game.name}</div>
-                      <div className="text-sm text-gray-500">
-                        {game.year_published} • {game.min_players}-{game.max_players} players
-                      </div>
-                    </div>
-                  </button>
-                ))}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Year Published
+                </label>
+                <input
+                  type="number"
+                  value={manualForm.year_published}
+                  onChange={(e) => setManualForm(prev => ({ ...prev, year_published: parseInt(e.target.value) }))}
+                  className={`w-full px-4 py-2 rounded-lg border ${
+                    errors.year ? 'border-red-300' : 'border-gray-300'
+                  } focus:ring-2 focus:ring-indigo-500 focus:border-transparent`}
+                />
+                {errors.year && (
+                  <p className="text-red-500 text-sm mt-1">{errors.year}</p>
+                )}
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Minimum Age
+                </label>
+                <input
+                  type="number"
+                  value={manualForm.min_age}
+                  onChange={(e) => setManualForm(prev => ({ ...prev, min_age: parseInt(e.target.value) }))}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Min Players
+                </label>
+                <input
+                  type="number"
+                  value={manualForm.min_players}
+                  onChange={(e) => setManualForm(prev => ({ ...prev, min_players: parseInt(e.target.value) }))}
+                  className={`w-full px-4 py-2 rounded-lg border ${
+                    errors.players ? 'border-red-300' : 'border-gray-300'
+                  } focus:ring-2 focus:ring-indigo-500 focus:border-transparent`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Max Players
+                </label>
+                <input
+                  type="number"
+                  value={manualForm.max_players}
+                  onChange={(e) => setManualForm(prev => ({ ...prev, max_players: parseInt(e.target.value) }))}
+                  className={`w-full px-4 py-2 rounded-lg border ${
+                    errors.players ? 'border-red-300' : 'border-gray-300'
+                  } focus:ring-2 focus:ring-indigo-500 focus:border-transparent`}
+                />
+              </div>
+            </div>
+
+            {errors.players && (
+              <p className="text-red-500 text-sm">{errors.players}</p>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Min Playtime (min)
+                </label>
+                <input
+                  type="number"
+                  value={manualForm.min_playtime}
+                  onChange={(e) => setManualForm(prev => ({ ...prev, min_playtime: parseInt(e.target.value) }))}
+                  className={`w-full px-4 py-2 rounded-lg border ${
+                    errors.playtime ? 'border-red-300' : 'border-gray-300'
+                  } focus:ring-2 focus:ring-indigo-500 focus:border-transparent`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Max Playtime (min)
+                </label>
+                <input
+                  type="number"
+                  value={manualForm.max_playtime}
+                  onChange={(e) => setManualForm(prev => ({ ...prev, max_playtime: parseInt(e.target.value) }))}
+                  className={`w-full px-4 py-2 rounded-lg border ${
+                    errors.playtime ? 'border-red-300' : 'border-gray-300'
+                  } focus:ring-2 focus:ring-indigo-500 focus:border-transparent`}
+                />
+              </div>
+            </div>
+
+            {errors.playtime && (
+              <p className="text-red-500 text-sm">{errors.playtime}</p>
             )}
           </div>
-
-          {!selectedGame && (
-            <>
-              <div className="text-center text-gray-500 text-sm">or</div>
-
-              {/* Manual Form */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Game Name
-                  </label>
-                  <input
-                    type="text"
-                    value={manualForm.name}
-                    onChange={(e) => setManualForm(prev => ({ ...prev, name: e.target.value }))}
-                    className={`w-full px-4 py-2 rounded-lg border ${
-                      errors.name ? 'border-red-300' : 'border-gray-300'
-                    } focus:ring-2 focus:ring-indigo-500 focus:border-transparent`}
-                  />
-                  {errors.name && (
-                    <p className="text-red-500 text-sm mt-1">{errors.name}</p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Year Published
-                    </label>
-                    <input
-                      type="number"
-                      value={manualForm.year_published}
-                      onChange={(e) => setManualForm(prev => ({ ...prev, year_published: parseInt(e.target.value) }))}
-                      className={`w-full px-4 py-2 rounded-lg border ${
-                        errors.year ? 'border-red-300' : 'border-gray-300'
-                      } focus:ring-2 focus:ring-indigo-500 focus:border-transparent`}
-                    />
-                    {errors.year && (
-                      <p className="text-red-500 text-sm mt-1">{errors.year}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Minimum Age
-                    </label>
-                    <input
-                      type="number"
-                      value={manualForm.min_age}
-                      onChange={(e) => setManualForm(prev => ({ ...prev, min_age: parseInt(e.target.value) }))}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Min Players
-                    </label>
-                    <input
-                      type="number"
-                      value={manualForm.min_players}
-                      onChange={(e) => setManualForm(prev => ({ ...prev, min_players: parseInt(e.target.value) }))}
-                      className={`w-full px-4 py-2 rounded-lg border ${
-                        errors.players ? 'border-red-300' : 'border-gray-300'
-                      } focus:ring-2 focus:ring-indigo-500 focus:border-transparent`}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Max Players
-                    </label>
-                    <input
-                      type="number"
-                      value={manualForm.max_players}
-                      onChange={(e) => setManualForm(prev => ({ ...prev, max_players: parseInt(e.target.value) }))}
-                      className={`w-full px-4 py-2 rounded-lg border ${
-                        errors.players ? 'border-red-300' : 'border-gray-300'
-                      } focus:ring-2 focus:ring-indigo-500 focus:border-transparent`}
-                    />
-                  </div>
-                </div>
-
-                {errors.players && (
-                  <p className="text-red-500 text-sm">{errors.players}</p>
-                )}
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Min Playtime (min)
-                    </label>
-                    <input
-                      type="number"
-                      value={manualForm.min_playtime}
-                      onChange={(e) => setManualForm(prev => ({ ...prev, min_playtime: parseInt(e.target.value) }))}
-                      className={`w-full px-4 py-2 rounded-lg border ${
-                        errors.playtime ? 'border-red-300' : 'border-gray-300'
-                      } focus:ring-2 focus:ring-indigo-500 focus:border-transparent`}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Max Playtime (min)
-                    </label>
-                    <input
-                      type="number"
-                      value={manualForm.max_playtime}
-                      onChange={(e) => setManualForm(prev => ({ ...prev, max_playtime: parseInt(e.target.value) }))}
-                      className={`w-full px-4 py-2 rounded-lg border ${
-                        errors.playtime ? 'border-red-300' : 'border-gray-300'
-                      } focus:ring-2 focus:ring-indigo-500 focus:border-transparent`}
-                    />
-                  </div>
-                </div>
-
-                {errors.playtime && (
-                  <p className="text-red-500 text-sm">{errors.playtime}</p>
-                )}
-              </div>
-            </>
-          )}
         </div>
       )}
 
-      {/* Selected Game Preview */}
-      {selectedGame && (
-        <div className="mt-6 p-4 border-2 border-indigo-100 rounded-lg bg-indigo-50">
-          <div className="flex items-start gap-4">
-            {selectedGame.thumb_url && (
-              <img
-                src={selectedGame.thumb_url}
-                alt={selectedGame.name}
-                className="w-24 h-24 object-cover rounded"
-              />
-            )}
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg">{selectedGame.name}</h3>
-              <p className="text-gray-600">
-                {selectedGame.year_published} • {selectedGame.min_players}-{selectedGame.max_players} players • {selectedGame.min_playtime}-{selectedGame.max_playtime} min
-              </p>
-              <button
-                onClick={() => setSelectedGame(null)}
-                className="text-indigo-600 text-sm hover:text-indigo-700 mt-2"
-              >
-                Change Selection
-              </button>
+      {/* Selected Games Preview */}
+      {selectedGames.size > 0 && (
+        <div className="mt-6 space-y-4">
+          <h3 className="font-semibold text-lg text-gray-900">Selected Games ({selectedGames.size})</h3>
+          {Array.from(selectedGames.values()).map(game => (
+            <div key={game.id} className="p-4 border-2 border-indigo-100 rounded-lg bg-indigo-50">
+              <div className="flex items-start gap-4">
+                {game.thumb_url && (
+                  <img
+                    src={game.thumb_url}
+                    alt={game.name}
+                    className="w-24 h-24 object-cover rounded"
+                  />
+                )}
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg">{game.name}</h3>
+                  <p className="text-gray-600">
+                    {game.year_published} • {game.min_players}-{game.max_players} players • {game.min_playtime}-{game.max_playtime} min
+                  </p>
+                  <button
+                    onClick={() => handleGameSelect(game)}
+                    className="text-indigo-600 text-sm hover:text-indigo-700 mt-2"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
       )}
 
@@ -421,9 +390,9 @@ function Step3AddGame({ onNext, onBack }: Step3AddGameProps) {
       <div className="mt-8 space-y-4">
         <button
           onClick={handleSubmit}
-          disabled={loading || (!selectedGame && mode === 'select') || (mode === 'manual' && !selectedGame && Object.keys(errors).length > 0)}
+          disabled={loading || (selectedGames.size === 0 && mode === 'select') || (mode === 'manual' && Object.keys(errors).length > 0)}
           className={`w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 px-6 rounded-lg transition font-semibold ${
-            loading || (!selectedGame && mode === 'select') || (mode === 'manual' && !selectedGame && Object.keys(errors).length > 0)
+            loading || (selectedGames.size === 0 && mode === 'select') || (mode === 'manual' && Object.keys(errors).length > 0)
               ? 'opacity-50 cursor-not-allowed'
               : 'hover:bg-indigo-700'
           }`}

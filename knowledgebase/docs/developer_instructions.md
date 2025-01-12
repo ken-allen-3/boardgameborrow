@@ -1,150 +1,179 @@
 # Developer Instructions
 
-## Setup
+## Project Setup
+...
 
-### Prerequisites
-- Node.js (v18+)
-- npm or yarn
-- Firebase CLI
-- Git
+## Vision Service & Game Selection
 
-### Initial Setup
-1. Clone repository
-2. Install dependencies: `npm install`
-3. Set up Firebase project
-4. Configure environment variables
+### Overview
+The vision service and game selection components have been enhanced to support multiple game selection, confidence filtering, and improved error handling.
 
-## Development Environment
+### Key Components
 
-### Environment Variables
-```
-VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_AUTH_DOMAIN=
-VITE_FIREBASE_PROJECT_ID=
-VITE_FIREBASE_STORAGE_BUCKET=
-VITE_FIREBASE_MESSAGING_SENDER_ID=
-VITE_FIREBASE_APP_ID=
-VITE_GOOGLE_MAPS_API_KEY=
-VITE_VISION_API_KEY=
-VITE_BGG_API_RATE_LIMIT=
-```
+#### Vision Service
+The vision service (`visionService.ts`) provides game detection capabilities:
 
-### Local Development
-1. Start development server: `npm run dev`
-2. Run Firebase emulators: `firebase emulators:start`
-3. Access app at `http://localhost:3000`
+```typescript
+// Example: Using the vision service
+import { analyzeShelfImage, findMatchingGames } from '../services/visionService';
 
-## Project Structure
-
-### Root
-```
-boardgameborrow/
-├── src/           # Frontend source code
-├── server/        # Backend services
-├── public/        # Static assets
-└── knowledgebase/ # Project documentation
+const handlePhotoCapture = async (photoData: string) => {
+  try {
+    const detected = await analyzeShelfImage(photoData);
+    const processedGames = await findMatchingGames(detected);
+    // Handle detected games...
+  } catch (error) {
+    if (error instanceof VisionServiceError) {
+      switch (error.code) {
+        case 'NO_GAMES_DETECTED':
+        case 'LOW_CONFIDENCE':
+          // Show manual search...
+          break;
+      }
+    }
+  }
+};
 ```
 
-### Frontend (src/)
+#### Multiple Game Selection
+Game selection is managed using a Map to ensure uniqueness and efficient lookups:
+
+```typescript
+const [selectedGames, setSelectedGames] = useState<Map<string, BoardGame>>(new Map());
+
+// Add or remove a game from selection
+const handleGameSelect = (game: BoardGame) => {
+  setSelectedGames(prev => {
+    const next = new Map(prev);
+    if (next.has(game.id)) {
+      next.delete(game.id);
+    } else {
+      next.set(game.id, game);
+    }
+    return next;
+  });
+};
+
+// Submit selected games
+const handleSubmit = (games: BoardGame[]) => {
+  // Process games in sequence to maintain order
+  for (const game of games) {
+    await addGame(currentUser.email, game);
+  }
+};
 ```
-src/
-├── components/     # React components
-├── services/      # API and service logic
-├── contexts/      # React contexts
-├── hooks/         # Custom hooks
-├── types/         # TypeScript types
-└── utils/         # Utility functions
+
+### Implementation Guidelines
+
+1. **Vision Service Usage**
+   - Always handle VisionServiceError with appropriate error messages
+   - Use confidence threshold (60%) for automatic inclusion
+   - Provide manual search fallback for failed detections
+   - Track game status (pending/confirmed/rejected)
+
+2. **Multiple Game Selection**
+   - Use Map for selected games state
+   - Provide clear visual feedback for selected state
+   - Allow easy deselection
+   - Show selection count
+   - Add Done button for batch submission
+
+3. **Error Handling**
+   - Handle specific error types appropriately
+   - Show debug information when needed
+   - Provide clear user feedback
+   - Offer recovery options
+
+4. **UI Components**
+   - Use consistent selection UI across components
+   - Show confidence scores where applicable
+   - Provide manual search option
+   - Display game previews with details
+
+### Example: Adding Multiple Game Selection
+
+```typescript
+// Component with multiple game selection
+function GameSelectionComponent() {
+  const [selectedGames, setSelectedGames] = useState<Map<string, BoardGame>>(new Map());
+  
+  const handleGameSelect = (game: BoardGame) => {
+    setSelectedGames(prev => {
+      const next = new Map(prev);
+      if (next.has(game.id)) {
+        next.delete(game.id);
+      } else {
+        next.set(game.id, game);
+      }
+      return next;
+    });
+  };
+
+  const handleDone = () => {
+    if (selectedGames.size > 0) {
+      onGameSelect(Array.from(selectedGames.values()));
+      onClose();
+    }
+  };
+
+  return (
+    <div>
+      {/* Selection UI */}
+      <div className="space-y-4">
+        {games.map(game => (
+          <button
+            key={game.id}
+            onClick={() => handleGameSelect(game)}
+            className={`flex items-center gap-4 p-4 border rounded-lg ${
+              selectedGames.has(game.id) ? 'bg-indigo-100 border-indigo-500' : ''
+            }`}
+          >
+            <img src={game.thumb_url} alt={game.name} className="w-16 h-16" />
+            <div className="flex-1">
+              <h3>{game.name}</h3>
+              <p>{game.year_published}</p>
+            </div>
+            {selectedGames.has(game.id) ? (
+              <Check className="h-5 w-5 text-green-500" />
+            ) : (
+              <ChevronRight className="h-5 w-5 text-gray-400" />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Done button */}
+      <button
+        onClick={handleDone}
+        disabled={selectedGames.size === 0}
+        className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
+      >
+        Done ({selectedGames.size})
+      </button>
+    </div>
+  );
+}
 ```
 
-### Backend (server/)
-```
-server/
-├── functions/     # Firebase functions
-└── services/      # Backend services
-```
+### Testing Multiple Game Selection
 
-### Documentation (knowledgebase/)
-```
-knowledgebase/
-├── docs/          # Documentation files
-├── assets/        # Visual aids and diagrams
-├── CHANGELOG.md   # Documentation changes
-└── CONTRIBUTING.md # Contribution guidelines
-```
+1. **Vision Detection**
+   - Test with various image qualities
+   - Verify confidence threshold filtering
+   - Check error handling for failed detections
+   - Verify manual search fallback
 
-## Development Workflow
+2. **Game Selection**
+   - Test adding/removing games
+   - Verify selection state persistence
+   - Check batch submission
+   - Test error handling during submission
 
-### Code Standards
-- Use TypeScript
-- Follow ESLint rules
-- Write unit tests
-- Document code changes
+3. **UI/UX**
+   - Verify selection feedback
+   - Test modal behavior
+   - Check error message clarity
+   - Verify accessibility
 
-### Git Workflow
-1. Create feature branch
-2. Make changes
-3. Run tests
-4. Submit PR
-5. Address review comments
-
-## Testing
-
-### Unit Tests
-- Run: `npm test`
-- Coverage: `npm run test:coverage`
-
-### Integration Tests
-- Run: `npm run test:integration`
-- E2E: `npm run test:e2e`
-
-## Deployment
-
-### Staging
-1. Build: `npm run build`
-2. Deploy to staging: `npm run deploy:staging`
-
-### Production
-1. Build: `npm run build`
-2. Deploy: `npm run deploy`
-
-## Common Tasks
-
-### Adding Components
-1. Create component file
-2. Write component code
-3. Add tests
-4. Update documentation
-
-### API Integration
-1. Add service file
-2. Implement API methods
-3. Add error handling
-4. Write tests
-
-## Troubleshooting
-
-### Common Issues
-1. Firebase connection issues
-2. Build errors
-3. Type mismatches
-4. API rate limits
-
-### Debug Tools
-- Chrome DevTools
-- Firebase Console
-- VS Code Debugger
-- React DevTools
-
-## Resources
-
-### Documentation
-- React docs
-- Firebase docs
-- TypeScript docs
-- Vite docs
-
-### Support
-- GitHub Issues
-- Team chat
-- Documentation
-- Code reviews
+## Additional Resources
+...

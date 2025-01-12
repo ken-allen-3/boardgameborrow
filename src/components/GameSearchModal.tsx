@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Loader2, AlertCircle, Star, TrendingUp } from 'lucide-react';
+import { X, Search, Loader2, AlertCircle, Star, TrendingUp, Check, ChevronRight } from 'lucide-react';
 import { searchGames, getPopularGames } from '../services/boardGameService';
 import { BoardGame } from '../types/boardgame';
 import { useDebounce } from '../hooks/useDebounce';
 
 interface GameSearchModalProps {
   onClose: () => void;
-  onGameSelect: (game: BoardGame) => void;
+  onGameSelect: (games: BoardGame[]) => void;
 }
 
 function GameSearchModal({ onClose, onGameSelect }: GameSearchModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<(BoardGame & { pageId: string })[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedGames, setSelectedGames] = useState<Map<string, BoardGame>>(new Map());
 
   // Load popular games on mount
   useEffect(() => {
@@ -116,6 +117,25 @@ function GameSearchModal({ onClose, onGameSelect }: GameSearchModalProps) {
     }
   };
 
+  const handleGameSelect = (game: BoardGame) => {
+    setSelectedGames(prev => {
+      const next = new Map(prev);
+      if (next.has(game.id)) {
+        next.delete(game.id);
+      } else {
+        next.set(game.id, game);
+      }
+      return next;
+    });
+  };
+
+  const handleDone = () => {
+    if (selectedGames.size > 0) {
+      onGameSelect(Array.from(selectedGames.values()));
+      onClose();
+    }
+  };
+
   const formatRating = (rating: number) => {
     return rating ? rating.toFixed(1) : 'N/A';
   };
@@ -133,9 +153,22 @@ function GameSearchModal({ onClose, onGameSelect }: GameSearchModalProps) {
               </div>
             )}
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleDone}
+              disabled={selectedGames.size === 0}
+              className={`px-4 py-2 rounded-lg transition ${
+                selectedGames.size > 0
+                  ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              Done ({selectedGames.size})
+            </button>
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         <div className="p-4">
@@ -166,7 +199,7 @@ function GameSearchModal({ onClose, onGameSelect }: GameSearchModalProps) {
             {results.map((game) => (
               <button
                 key={game.pageId}
-                onClick={() => onGameSelect(game)}
+                onClick={() => handleGameSelect(game)}
                 className="w-full bg-white border rounded-lg p-4 flex items-center gap-4 hover:bg-gray-50 transition text-left"
               >
                 <img
@@ -196,6 +229,11 @@ function GameSearchModal({ onClose, onGameSelect }: GameSearchModalProps) {
                     )}
                   </div>
                 </div>
+                {selectedGames.has(game.id) ? (
+                  <Check className="h-5 w-5 text-green-500" />
+                ) : (
+                  <ChevronRight className="h-5 w-5 text-gray-400" />
+                )}
               </button>
             ))}
 

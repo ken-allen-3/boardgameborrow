@@ -6,12 +6,12 @@ import { analyzeShelfImage, findMatchingGames, DetectedGame, VisionServiceError,
 interface GameDetectionResultsProps {
   photoData: string;
   onClose: () => void;
-  onGameSelect: (game: BoardGame) => void;
+  onGameSelect: (games: BoardGame[]) => void;
 }
 
 function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectionResultsProps) {
   const [detectedGames, setDetectedGames] = useState<DetectedGame[]>([]);
-  const [selectedGames, setSelectedGames] = useState<Set<string>>(new Set());
+  const [selectedGames, setSelectedGames] = useState<Map<string, BoardGame>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [processingStep, setProcessingStep] = useState<string>('Analyzing image...');
@@ -60,16 +60,22 @@ function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectio
     }
   };
 
-  const handleGameSelect = async (game: BoardGame) => {
-    try {
-      await onGameSelect(game);
-      setSelectedGames(prev => {
-        const next = new Set(prev);
-        next.add(game.id);
-        return next;
-      });
-    } catch (err) {
-      setError('Failed to add game. Please try again.');
+  const handleGameSelect = (game: BoardGame) => {
+    setSelectedGames(prev => {
+      const next = new Map(prev);
+      if (next.has(game.id)) {
+        next.delete(game.id);
+      } else {
+        next.set(game.id, game);
+      }
+      return next;
+    });
+  };
+
+  const handleDone = () => {
+    if (selectedGames.size > 0) {
+      onGameSelect(Array.from(selectedGames.values()));
+      onClose();
     }
   };
 
@@ -186,9 +192,22 @@ function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectio
       <div className="fixed inset-0 bg-white z-50 flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-lg font-semibold">Search for Games</h2>
-          <button onClick={onClose} className="p-2">
-            <X className="h-6 w-6" />
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleDone}
+              disabled={selectedGames.size === 0}
+              className={`px-4 py-2 rounded-lg transition ${
+                selectedGames.size > 0
+                  ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              Done ({selectedGames.size})
+            </button>
+            <button onClick={onClose} className="p-2">
+              <X className="h-6 w-6" />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-auto p-4">
@@ -219,8 +238,7 @@ function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectio
                 <button
                   key={game.id}
                   onClick={() => handleGameSelect(game)}
-                  disabled={selectedGames.has(game.id)}
-                  className="w-full bg-white border rounded-lg p-4 flex items-center gap-4 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-white border rounded-lg p-4 flex items-center gap-4 hover:bg-gray-50 transition"
                 >
                   <img
                     src={game.thumb_url}
@@ -259,9 +277,22 @@ function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectio
     <div className="fixed inset-0 bg-white z-50 flex flex-col">
       <div className="flex items-center justify-between p-4 border-b">
         <h2 className="text-lg font-semibold">Detected Games</h2>
-        <button onClick={onClose} className="p-2">
-          <X className="h-6 w-6" />
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleDone}
+            disabled={selectedGames.size === 0}
+            className={`px-4 py-2 rounded-lg transition ${
+              selectedGames.size > 0
+                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            Done ({selectedGames.size})
+          </button>
+          <button onClick={onClose} className="p-2">
+            <X className="h-6 w-6" />
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -321,8 +352,7 @@ function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectio
                     <button
                       key={game.id}
                       onClick={() => handleGameSelect(game)}
-                      disabled={selectedGames.has(game.id)}
-                      className="w-full bg-white border rounded-lg p-4 flex items-center gap-4 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full bg-white border rounded-lg p-4 flex items-center gap-4 hover:bg-gray-50 transition"
                     >
                       <img
                         src={game.thumb_url}

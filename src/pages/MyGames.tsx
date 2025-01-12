@@ -54,17 +54,20 @@ const MyGames = () => {
     }, 1500);
   };
 
-  const handleGameSelect = async (game: BoardGame) => {
+  const handleGameSelect = async (selectedGames: BoardGame[]) => {
     if (!currentUser?.email) return;
 
     try {
-      await addGame(currentUser.email, game);
+      // Add games sequentially to maintain order and handle errors
+      for (const game of selectedGames) {
+        await addGame(currentUser.email, game);
+      }
       await loadGames();
       setCapturedPhoto(null);
       setShowSearch(false);
       setError(null);
     } catch (err) {
-      setError('Failed to add game. Please try again.');
+      setError('Failed to add one or more games. Please try again.');
     }
   };
 

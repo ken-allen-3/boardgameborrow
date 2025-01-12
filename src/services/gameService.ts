@@ -76,7 +76,7 @@ export async function addGame(userEmail: string, game: BoardGame): Promise<void>
       maxPlayers: game.max_players,
       minPlaytime: game.min_playtime,
       maxPlaytime: game.max_playtime,
-      category: game.categories?.[0]?.id,
+      category: game.categories?.[0]?.value,
       ratings: {}
     };
 

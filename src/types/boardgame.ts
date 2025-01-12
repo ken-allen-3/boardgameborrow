@@ -66,6 +66,7 @@ interface GameMechanic {
 interface GameCategory {
   id: string;
   url: string;
+  value?: string;
 }
 
 interface GamePublisher {

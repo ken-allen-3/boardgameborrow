@@ -186,6 +186,14 @@ export async function getGameById(id: string): Promise<BoardGame> {
       const maxPlaytime = item.querySelector('maxplaytime')?.getAttribute('value');
       const minAge = item.querySelector('minage')?.getAttribute('value');
       
+      // Get categories
+      const categoryNodes = Array.from(item.querySelectorAll('link[type="boardgamecategory"]'));
+      const categories = categoryNodes.map(node => ({
+        id: node.getAttribute('id') || '',
+        value: node.getAttribute('value') || '',
+        url: `https://boardgamegeek.com/boardgamecategory/${node.getAttribute('id')}`
+      }));
+      
       // Get ranking information
       const rankNode = item.querySelector('rank[type="subtype"][name="boardgame"]');
       const rank = rankNode?.getAttribute('value');
@@ -211,7 +219,11 @@ export async function getGameById(id: string): Promise<BoardGame> {
         rank: numericRank,
         average_user_rating: numericRating,
         mechanics: [],
-        categories: [],
+        categories: categories.map(cat => ({
+          id: cat.id,
+          url: cat.url,
+          value: cat.value
+        })),
         publishers: [],
         designers: [],
         developers: [],

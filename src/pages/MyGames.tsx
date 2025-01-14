@@ -7,7 +7,11 @@ import LoadingScreen from '../components/LoadingScreen';
 import GameDetectionResults from '../components/GameDetectionResults';
 import GameSearchModal from '../components/GameSearchModal';
 import { BoardGame } from '../types/boardgame';
+<<<<<<< HEAD
 import { Game, loadUserGames, addGames, deleteGame } from '../services/gameService';
+=======
+import { Game, loadUserGames, addGame, deleteGame } from '../services/gameService';
+>>>>>>> dfb5b22bd5e8b9805e62541c2feaf9074f87d6e8
 import GameList from '../components/GameList';
 import AddGameButton from '../components/AddGameButton';
 import ErrorMessage from '../components/ErrorMessage';
@@ -58,7 +62,14 @@ const MyGames = () => {
     if (!currentUser?.email) return;
 
     try {
+<<<<<<< HEAD
       await addGames(currentUser.email, selectedGames);
+=======
+      // Add games sequentially to maintain order and handle errors
+      for (const game of selectedGames) {
+        await addGame(currentUser.email, game);
+      }
+>>>>>>> dfb5b22bd5e8b9805e62541c2feaf9074f87d6e8
       await loadGames();
       setCapturedPhoto(null);
       setShowSearch(false);

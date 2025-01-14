@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, MapPin, Camera, Google, Facebook, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, MapPin, Camera, Chrome, Facebook, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import ErrorMessage from '../components/ErrorMessage';
 import SuccessMessage from '../components/SuccessMessage';
@@ -26,7 +26,7 @@ function Register() {
     photoUrl: ''
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState('');
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -76,12 +76,12 @@ function Register() {
     if (!validateForm()) return;
 
     try {
-      setError(null);
+      setError('');
       setLoading(true);
 
       let photoUrl = formData.photoUrl;
       if (photoFile) {
-        photoUrl = await uploadProfilePhoto(photoFile);
+        photoUrl = await uploadProfilePhoto(photoFile, formData.email);
       }
 
       await signUp({
@@ -93,11 +93,11 @@ function Register() {
       setTimeout(() => navigate('/my-games'), 1500);
     } catch (err: any) {
       console.error('Registration error:', err);
-      if (err.code === 'auth/email-already-in-use') {
-        setError('This email is already registered. Please use a different email or sign in.');
-      } else {
-        setError(err.message || 'Failed to create account');
-      }
+      setError(
+        err.code === 'auth/email-already-in-use'
+          ? 'This email is already registered. Please use a different email or sign in'
+          : err.message || 'Failed to create account'
+      );
     } finally {
       setLoading(false);
     }
@@ -105,7 +105,7 @@ function Register() {
 
   const handleSocialSignIn = async (provider: 'google' | 'facebook') => {
     try {
-      setError(null);
+      setError('');
       setLoading(true);
 
       const signInMethod = provider === 'google' ? signInWithGoogle : signInWithFacebook;
@@ -144,17 +144,8 @@ function Register() {
             disabled={loading}
             className="w-full flex items-center justify-center gap-3 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
           >
-            <Google className="h-5 w-5" />
+            <Chrome className="h-5 w-5" />
             <span>Continue with Google</span>
-          </button>
-
-          <button
-            onClick={() => handleSocialSignIn('facebook')}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-2 bg-[#1877F2] text-white rounded-lg hover:bg-[#1874EA] transition"
-          >
-            <Facebook className="h-5 w-5" />
-            <span>Continue with Facebook</span>
           </button>
 
           <div className="relative">

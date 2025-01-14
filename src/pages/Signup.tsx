@@ -110,15 +110,6 @@ function Signup() {
             <span>Continue with Google</span>
           </button>
 
-          <button
-            onClick={() => handleSocialSignIn('facebook')}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-2 bg-[#1877F2] text-white rounded-lg hover:bg-[#1874EA] transition disabled:opacity-50"
-          >
-            <Facebook className="h-5 w-5" />
-            <span>Continue with Facebook</span>
-          </button>
-
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-300"></div>

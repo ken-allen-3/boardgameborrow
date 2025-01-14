@@ -10,7 +10,7 @@ function OnboardingFlow() {
   const { setShowWelcome } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const totalSteps = 5;
+  const totalSteps = 4;
 
   const handleNext = () => {
     if (currentStep < totalSteps) {

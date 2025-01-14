@@ -127,18 +127,18 @@ function StepQuickAddGames({ selectedCategories, onComplete, currentStep, totalS
                   {getTopGames(category.key).map(game => (
                     <div 
                       key={game.id}
-                      className={`game-card flex-none w-72 border rounded-lg p-4 cursor-pointer transition-all duration-200 snap-start hover:shadow-md ${
+                      className={`game-card flex-none w-72 h-[360px] border rounded-lg p-4 cursor-pointer transition-all duration-200 snap-start hover:shadow-md ${
                         selectedGames.includes(game.id) 
                           ? 'border-brand-blue-600 bg-brand-blue-50 ring-2 ring-brand-blue-600' 
                           : 'hover:border-gray-300'
                       }`}
                       onClick={() => toggleGameSelection(game.id)}
                     >
-                      <div className="aspect-w-4 aspect-h-3 mb-3 relative">
+                      <div className="w-full aspect-square mb-3 relative overflow-hidden">
                         <img 
                           src={game.image || '/board-game-placeholder.png'}
                           alt={game.name}
-                          className="object-cover rounded"
+                          className="w-full h-full object-cover rounded"
                         />
                         {selectedGames.includes(game.id) && (
                           <div className="absolute top-2 right-2 bg-brand-blue-600 text-white rounded-full p-1">
@@ -149,9 +149,9 @@ function StepQuickAddGames({ selectedCategories, onComplete, currentStep, totalS
                         )}
                       </div>
                       
-                      <h4 className="font-medium mb-2 line-clamp-1">{game.name}</h4>
+                      <h4 className="font-medium mb-1 line-clamp-1">{game.name}</h4>
                       
-                      <div className="text-sm text-gray-600 space-y-1">
+                      <div className="text-sm text-gray-600">
                         <p>🎮 {formatPlayerCount(game)}</p>
                         <p>⏱️ {formatPlayTime(game)}</p>
                       </div>
@@ -166,23 +166,26 @@ function StepQuickAddGames({ selectedCategories, onComplete, currentStep, totalS
 
       {/* Fixed bottom bar - outside of loading condition */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
           {selectedGames.length === 0 ? (
-            <button
-              disabled
-              className="bg-gray-100 text-gray-400 px-8 py-3 rounded-lg text-lg font-medium cursor-not-allowed"
-            >
-              Select Games to Continue
-            </button>
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <p className="text-gray-600 text-center sm:text-left">Don't see your games? You can add them later via search or photo.</p>
+              <button
+                onClick={() => onComplete([])}
+                className="w-full sm:w-auto bg-gray-100 hover:bg-gray-200 text-gray-700 px-8 py-3 rounded-lg text-lg font-medium transition-colors duration-200"
+              >
+                Skip for Now
+              </button>
+            </div>
           ) : (
             <button
               onClick={handleComplete}
-              className="bg-brand-blue-600 text-white px-8 py-3 rounded-lg text-lg font-medium hover:bg-brand-blue-700 transition-colors duration-200"
+              className="w-full sm:w-auto bg-brand-blue-600 text-white px-8 py-3 rounded-lg text-lg font-medium hover:bg-brand-blue-700 transition-colors duration-200"
             >
               Add {selectedGames.length} {selectedGames.length === 1 ? 'Game' : 'Games'} to Collection
             </button>
           )}
-          <div className="text-gray-500">
+          <div className="text-gray-500 text-center sm:text-right">
             Step {currentStep} of {totalSteps}
           </div>
         </div>

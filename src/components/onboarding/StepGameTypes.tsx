@@ -62,14 +62,15 @@ function StepGameTypes({ onNext, currentStep, totalSteps }: StepGameTypesProps) 
 
   return (
     <div className="game-types h-screen flex flex-col">
-      <h2 className="text-2xl font-bold mb-2">Tell us a bit about yourself</h2>
-      <p className="text-gray-600 mb-4 text-sm">What types of games do you usually like to play? We'll use this information to kickstart your game library, and recommend games you can borrow from friends.</p>
+      <h2 className="text-xl font-bold mb-1">Tell us a bit about yourself:</h2>
+      <h3 className="text-lg font-semibold mb-1">What types of games do you usually like to play?</h3>
+      <p className="text-gray-600 mb-2 text-sm">We'll use this information to kickstart your game library, and recommend games you can borrow from friends.</p>
       
-      <div className="grid grid-cols-2 gap-3 flex-1">
+      <div className="grid grid-cols-2 gap-2">
         {categories.map(category => (
           <div 
             key={category.key}
-            className={`relative bg-white rounded-lg p-3 cursor-pointer transition-all duration-300 ease-in-out hover:shadow-lg active:scale-95 border-2 transform ${
+            className={`relative bg-white rounded-lg p-2 h-28 cursor-pointer transition-all duration-300 ease-in-out hover:shadow-lg active:scale-95 border-2 transform ${
               selectedTypes.includes(String(category.key))
                 ? 'border-blue-500 shadow-md' 
                 : 'border-gray-200'
@@ -83,9 +84,12 @@ function StepGameTypes({ onNext, currentStep, totalSteps }: StepGameTypesProps) 
               }
             }}
           >
-            <div className="flex flex-col items-center text-center">
-              <div className="text-2xl mb-1">{category.icon}</div>
-              <h3 className="text-base font-semibold mb-1">{category.label}</h3>
+            <div className="flex flex-col items-center h-full">
+              <div className="text-xl mb-0.5">{category.icon}</div>
+              <h3 className="text-sm font-semibold mb-1">{category.label}</h3>
+              <div className="text-xs text-gray-500 text-center">
+                {category.description}
+              </div>
               
               <div 
                 className={`absolute top-2 right-2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-300 ease-in-out transform ${
@@ -111,15 +115,11 @@ function StepGameTypes({ onNext, currentStep, totalSteps }: StepGameTypesProps) 
                 )}
               </div>
             </div>
-            
-            <div className="mt-1 text-xs text-gray-500">
-              {category.description}
-            </div>
           </div>
         ))}
       </div>
 
-      <div className="sticky bottom-0 p-3 bg-white border-t mt-3 flex justify-between items-center">
+      <div className="sticky bottom-0 p-2 bg-white border-t mt-2 flex justify-between items-center">
         <button
           className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 ${
             selectedTypes.length > 0

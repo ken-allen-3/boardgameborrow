@@ -1,8 +1,17 @@
 {
 	"folders": [
 		{
-			"path": "."
+			"path": "c:/Users/finan/Downloads/Cline_apps/boardgameborrow",
+			"name": "BoardGameBorrow"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"git.defaultBranchName": "main",
+		"git.autofetch": true,
+		"git.confirmSync": false,
+		"git.enableSmartCommit": true,
+		"git.branchPrefix": "feature/",
+		"git.fetchOnPull": true,
+		"git.pullBeforeCheckout": true
+	}
 }

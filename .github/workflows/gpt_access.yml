@@ -1,0 +1,26 @@
+name: GPT Access Automation
+
+on:
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  update-repo:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install Octokit dependency
+        run: npm install @octokit/rest
+
+      - name: Run GitHub Integration Script
+        run: node github_integration_script.js
+        env:
+          ACCESS_TOKEN: ${{ secrets.GPT_TOKEN }}
+

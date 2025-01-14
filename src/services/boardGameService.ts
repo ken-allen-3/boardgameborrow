@@ -141,7 +141,6 @@ export async function getGamesByCategory(categoryId: string): Promise<BoardGame[
     }
 
     try {
-<<<<<<< HEAD
       // Use search endpoint with category-specific parameters
       // Get hot games
       // Clear cache to ensure fresh data
@@ -169,25 +168,6 @@ export async function getGamesByCategory(categoryId: string): Promise<BoardGame[
         .slice(0, 30); // Get 30 games to ensure we have enough after filtering
 
       console.log(`[BGG] Found ${gameIds.length} potential games`);
-=======
-      // Get hot games in this category
-      const hotXmlText = await makeApiRequest(`${BOARD_GAME_API.BASE_URL}/${BOARD_GAME_API.HOT_ENDPOINT}`, {
-        type: 'boardgame'
-      });
-
-      console.log(`[BGG] Got hot games response for category ${categoryId}`);
-      
-      const doc = await parseXML(hotXmlText);
-      const items = Array.from(doc.getElementsByTagName('item'));
-      
-      // Get IDs of hot games
-      const gameIds = items
-        .map(item => item.getAttribute('id'))
-        .filter((id): id is string => typeof id === 'string')
-        .slice(0, 20);
-
-      console.log(`[BGG] Found ${gameIds.length} hot games`);
->>>>>>> dfb5b22bd5e8b9805e62541c2feaf9074f87d6e8
 
       // Get full details for each game
       console.log(`[BGG] Fetching details for ${gameIds.length} games`);
@@ -204,7 +184,6 @@ export async function getGamesByCategory(categoryId: string): Promise<BoardGame[
         }
       );
 
-<<<<<<< HEAD
       // Filter and sort games
       const validGames = games
         .filter((game): game is BoardGame => game !== null)
@@ -224,28 +203,13 @@ export async function getGamesByCategory(categoryId: string): Promise<BoardGame[
           return (a.rank || 999999) - (b.rank || 999999);
         })
         .slice(0, 20); // Ensure exactly 20 games
-=======
-      // Filter out failed fetches and sort by rank
-      const validGames = games
-        .filter((game): game is BoardGame => game !== null)
-        .filter(game => {
-          // Check if game belongs to the requested category
-          return game.categories.some(cat => cat.id === categoryId);
-        })
-        .sort((a, b) => (a.rank || 999999) - (b.rank || 999999))
-        .slice(0, 20);
->>>>>>> dfb5b22bd5e8b9805e62541c2feaf9074f87d6e8
 
       console.log(`[BGG] Found ${validGames.length} valid games for category ${categoryId}`);
       
       // Cache the results
-<<<<<<< HEAD
       if (validGames.length === 20) {
         categoryCache.set(categoryId, validGames, 'category-games');
       }
-=======
-      categoryCache.set(categoryId, validGames, 'category-games');
->>>>>>> dfb5b22bd5e8b9805e62541c2feaf9074f87d6e8
       
       return validGames;
     } catch (error) {
@@ -259,7 +223,6 @@ export async function getGamesByCategory(categoryId: string): Promise<BoardGame[
   });
 }
 
-<<<<<<< HEAD
 // Helper function to get related categories
 function getRelatedCategories(categoryId: string): string[] {
   // Define related categories for better matching
@@ -275,8 +238,6 @@ function getRelatedCategories(categoryId: string): string[] {
   return relatedCategories[categoryId] || [categoryId];
 }
 
-=======
->>>>>>> dfb5b22bd5e8b9805e62541c2feaf9074f87d6e8
 export function getCategoryId(category: string): string {
   return CATEGORY_IDS[category as keyof typeof CATEGORY_IDS] || '';
 }
@@ -326,11 +287,7 @@ export async function getGameById(id: string): Promise<BoardGame> {
     }
 
     try {
-<<<<<<< HEAD
       const xmlText = await makeApiRequest(`https://boardgamegeek.com/xmlapi2/thing`, {
-=======
-      const xmlText = await makeApiRequest(`${BOARD_GAME_API.BASE_URL}/${BOARD_GAME_API.THING_ENDPOINT}`, {
->>>>>>> dfb5b22bd5e8b9805e62541c2feaf9074f87d6e8
         id,
         stats: '1',
         versions: '0'  // Exclude version info to reduce response size
@@ -490,106 +447,98 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
 
     try {
       // Try exact match first
-<<<<<<< HEAD
       // Clear all caches to ensure fresh data
       searchCache.clear();
       gameCache.clear();
       
       const xmlText = await makeApiRequest(`https://boardgamegeek.com/xmlapi2/search`, {
-=======
-      const xmlText = await makeApiRequest(`${BOARD_GAME_API.BASE_URL}/${BOARD_GAME_API.SEARCH_ENDPOINT}`, {
->>>>>>> dfb5b22bd5e8b9805e62541c2feaf9074f87d6e8
-      query,
-      type: 'boardgame',
-      exact: '1'
-    });
-    
-    const doc = await parseXML(xmlText);
-    const items = Array.from(doc.getElementsByTagName('item'));
-    const gameIds = items
-      .map(item => item.getAttribute('id'))
-      .filter((id): id is string => typeof id === 'string');
-    
-    // If no exact matches found, try regular search
-    if (gameIds.length === 0) {
-<<<<<<< HEAD
-      const regularXmlText = await makeApiRequest(`https://boardgamegeek.com/xmlapi2/search`, {
-=======
-      const regularXmlText = await makeApiRequest(`${BOARD_GAME_API.BASE_URL}/${BOARD_GAME_API.SEARCH_ENDPOINT}`, {
->>>>>>> dfb5b22bd5e8b9805e62541c2feaf9074f87d6e8
         query,
-        type: 'boardgame'
+        type: 'boardgame',
+        exact: '1'
       });
       
-      const regularDoc = await parseXML(regularXmlText);
-      const regularItems = Array.from(regularDoc.getElementsByTagName('item'));
-      gameIds.push(...regularItems
+      const doc = await parseXML(xmlText);
+      const items = Array.from(doc.getElementsByTagName('item'));
+      const gameIds = items
         .map(item => item.getAttribute('id'))
-        .filter((id): id is string => typeof id === 'string')
-      );
-    }
-    
-    if (gameIds.length === 0) {
-      return { items: [], hasMore: false };
-    }
-    
-    // Process game IDs in batches to avoid rate limiting
-    const games = await processBatch(
-      gameIds,
-      id => getGameById(id)
-    );
-    
-    // Sort results with exact matches first
-    const exactMatches = new RegExp(`^${query}$`, 'i');
-    const sortedGames = games.sort((a, b) => {
-      // Exact matches first
-      const aExact = exactMatches.test(a.name);
-      const bExact = exactMatches.test(b.name);
-      if (aExact && !bExact) return -1;
-      if (!aExact && bExact) return 1;
+        .filter((id): id is string => typeof id === 'string');
       
-      // Then by rank (unranked at end)
-      if (a.rank !== 0 && b.rank !== 0) return a.rank - b.rank;
-      if (a.rank === 0 && b.rank !== 0) return 1;
-      if (a.rank !== 0 && b.rank === 0) return -1;
-      
-      // Then by rating
-      if (a.average_user_rating !== b.average_user_rating) {
-        return b.average_user_rating - a.average_user_rating;
+      // If no exact matches found, try regular search
+      if (gameIds.length === 0) {
+        const regularXmlText = await makeApiRequest(`https://boardgamegeek.com/xmlapi2/search`, {
+          query,
+          type: 'boardgame'
+        });
+        
+        const regularDoc = await parseXML(regularXmlText);
+        const regularItems = Array.from(regularDoc.getElementsByTagName('item'));
+        gameIds.push(...regularItems
+          .map(item => item.getAttribute('id'))
+          .filter((id): id is string => typeof id === 'string')
+        );
       }
       
-      // Finally alphabetically
-      return a.name.localeCompare(b.name);
-    });
-    
-    // Paginate the sorted results
-    const startIdx = (page - 1) * 10;
-    const endIdx = startIdx + 10;
-    const pageResults = sortedGames.slice(startIdx, endIdx);
-    
-    // Cache the page results
-    searchCache.set(cacheKey, pageResults, 'search-results');
-    
-    // Cache individual games for faster retrieval
-    pageResults.forEach(game => {
-      gameCache.set(game.id, game, 'game-details');
-    });
-    
-    return {
-      items: pageResults,
-      hasMore: endIdx < sortedGames.length
-    };
-  } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : 'An error occurred while searching games';
-    const appError = new Error('Error searching games') as AppError;
-    appError.name = 'AppError';
-    appError.code = 'SEARCH_ERROR';
-    appError.context = {
-      error: errorMessage,
-      query
-    };
-    logError(appError);
-    
+      if (gameIds.length === 0) {
+        return { items: [], hasMore: false };
+      }
+      
+      // Process game IDs in batches to avoid rate limiting
+      const games = await processBatch(
+        gameIds,
+        id => getGameById(id)
+      );
+      
+      // Sort results with exact matches first
+      const exactMatches = new RegExp(`^${query}$`, 'i');
+      const sortedGames = games.sort((a, b) => {
+        // Exact matches first
+        const aExact = exactMatches.test(a.name);
+        const bExact = exactMatches.test(b.name);
+        if (aExact && !bExact) return -1;
+        if (!aExact && bExact) return 1;
+        
+        // Then by rank (unranked at end)
+        if (a.rank !== 0 && b.rank !== 0) return a.rank - b.rank;
+        if (a.rank === 0 && b.rank !== 0) return 1;
+        if (a.rank !== 0 && b.rank === 0) return -1;
+        
+        // Then by rating
+        if (a.average_user_rating !== b.average_user_rating) {
+          return b.average_user_rating - a.average_user_rating;
+        }
+        
+        // Finally alphabetically
+        return a.name.localeCompare(b.name);
+      });
+      
+      // Paginate the sorted results
+      const startIdx = (page - 1) * 10;
+      const endIdx = startIdx + 10;
+      const pageResults = sortedGames.slice(startIdx, endIdx);
+      
+      // Cache the page results
+      searchCache.set(cacheKey, pageResults, 'search-results');
+      
+      // Cache individual games for faster retrieval
+      pageResults.forEach(game => {
+        gameCache.set(game.id, game, 'game-details');
+      });
+      
+      return {
+        items: pageResults,
+        hasMore: endIdx < sortedGames.length
+      };
+    } catch (error: any) {
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred while searching games';
+      const appError = new Error('Error searching games') as AppError;
+      appError.name = 'AppError';
+      appError.code = 'SEARCH_ERROR';
+      appError.context = {
+        error: errorMessage,
+        query
+      };
+      logError(appError);
+      
       throw createAppError(
         'An error occurred while fetching game data. Please try again.',
         'SEARCH_ERROR',

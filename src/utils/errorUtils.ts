@@ -28,7 +28,6 @@ export function logError(error: Error | AppError, component?: string) {
     context: (error as AppError).context,
     component: (error as AppError).component || component,
     action: (error as AppError).action,
-    component,
     timestamp: new Date().toISOString()
   };
 

@@ -32,6 +32,8 @@
 - Improved game selection UI with clear visual feedback
 - Updated Borrow Games page with horizontal scrolling layout and improved card design
 - Temporarily simplified Borrow Games UI by hiding filter/sort options
+- Updated MyGames page with consistent horizontal scrolling layout and card sizing
+- Updated Quick Add step game cards to match MyGames and Borrow page design
 
 ### Fixed
 - Game type selection UI not updating properly

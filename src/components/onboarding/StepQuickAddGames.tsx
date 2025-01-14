@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Users, Clock } from 'lucide-react';
 import { gameDataService, type GameData } from '../../services/gameDataService';
 import { addGame } from '../../services/gameService';
 import { useAuth } from '../../contexts/AuthContext';
@@ -127,14 +128,14 @@ function StepQuickAddGames({ selectedCategories, onComplete, currentStep, totalS
                   {getTopGames(category.key).map(game => (
                     <div 
                       key={game.id}
-                      className={`game-card flex-none w-72 h-[360px] border rounded-lg p-4 cursor-pointer transition-all duration-200 snap-start hover:shadow-md ${
+                      className={`game-card flex-none min-w-[300px] bg-white rounded-xl shadow-md overflow-hidden cursor-pointer transition-all duration-200 snap-center ${
                         selectedGames.includes(game.id) 
-                          ? 'border-brand-blue-600 bg-brand-blue-50 ring-2 ring-brand-blue-600' 
-                          : 'hover:border-gray-300'
+                          ? 'ring-2 ring-brand-blue-600' 
+                          : 'hover:shadow-lg'
                       }`}
                       onClick={() => toggleGameSelection(game.id)}
                     >
-                      <div className="w-full aspect-square mb-3 relative overflow-hidden">
+                      <div className="relative w-full aspect-[4/3]">
                         <img 
                           src={game.image || '/board-game-placeholder.png'}
                           alt={game.name}
@@ -149,11 +150,19 @@ function StepQuickAddGames({ selectedCategories, onComplete, currentStep, totalS
                         )}
                       </div>
                       
-                      <h4 className="font-medium mb-1 line-clamp-1">{game.name}</h4>
-                      
-                      <div className="text-sm text-gray-600">
-                        <p>🎮 {formatPlayerCount(game)}</p>
-                        <p>⏱️ {formatPlayTime(game)}</p>
+                      <div className="p-4">
+                        <h4 className="text-lg font-semibold mb-2 line-clamp-1">{game.name}</h4>
+                        
+                        <div className="flex flex-wrap gap-3 mb-3">
+                          <div className="flex items-center gap-1 text-sm text-gray-600">
+                            <Users className="h-4 w-4" />
+                            <span>{formatPlayerCount(game)}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-sm text-gray-600">
+                            <Clock className="h-4 w-4" />
+                            <span>{formatPlayTime(game)}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}

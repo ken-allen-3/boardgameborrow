@@ -29,14 +29,29 @@ min-w-[300px] snap-center
 
 ## Usage
 
-### Borrow Games Page
-The horizontal scroll layout is implemented in three main sections:
+### Page Implementations
+
+#### Quick Add Step
+The onboarding Quick Add step uses the same horizontal scroll layout and card design:
+- Consistent card styling across all game sections
+- 4:3 aspect ratio for images
+- Icon-based metadata display
+- Added selection state with blue ring indicator
+
+#### Borrow Games Page
+The horizontal scroll layout is implemented in four main sections:
 1. My Borrow Requests
 2. Friends' Games
 3. Games Near You
 4. All Games (Popular)
 
 Each section maintains consistent scrolling behavior while preserving the content hierarchy.
+
+#### MyGames Page
+The game list has been updated to use the same horizontal scrolling layout:
+- Single scrollable row of games
+- Consistent card sizing with Borrow Games page
+- Preserved functionality for game management (delete, rate, status)
 
 ### Card Design
 The game card design has been updated to match the MyGames page style while maintaining a compact size suitable for horizontal scrolling:

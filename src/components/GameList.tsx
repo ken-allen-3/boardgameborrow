@@ -37,10 +37,10 @@ const GameList: React.FC<GameListProps> = ({ games, onDeleteGame, onRateGame }) 
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory">
       {games.map((game) => (
-        <div key={game.id} className="bg-white rounded-xl shadow-md overflow-hidden">
-          <div className="relative aspect-square">
+        <div key={game.id} className="bg-white rounded-xl shadow-md overflow-hidden min-w-[300px] snap-center">
+          <div className="relative w-full aspect-[4/3]">
             <img
               src={game.image}
               alt={game.title}

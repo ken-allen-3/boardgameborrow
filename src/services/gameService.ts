@@ -43,7 +43,7 @@ export async function loadUserGames(userEmail: string): Promise<Game[]> {
       image: game.image || 'https://images.unsplash.com/photo-1606503153255-59d5e417dbf0?auto=format&fit=crop&q=80&w=400',
       status: game.status || 'available',
       borrower: game.borrower,
-      rating: game.rating || 0, // Use the direct rating property
+      rating: game.rating || 0,
       minPlayers: game.minPlayers,
       maxPlayers: game.maxPlayers,
       minPlaytime: game.minPlaytime,
@@ -56,11 +56,7 @@ export async function loadUserGames(userEmail: string): Promise<Game[]> {
   }
 }
 
-<<<<<<< HEAD
-export async function addGames(userEmail: string, games: Array<Partial<BoardGame> & { name: string }>): Promise<void> {
-=======
 export async function addGame(userEmail: string, game: BoardGame): Promise<void> {
->>>>>>> dfb5b22bd5e8b9805e62541c2feaf9074f87d6e8
   if (!userEmail) {
     throw new Error('User email is required');
   }
@@ -70,20 +66,9 @@ export async function addGame(userEmail: string, game: BoardGame): Promise<void>
     const gamesRef = ref(db, `games/${userEmail.replace(/\./g, ',')}`);
     
     const snapshot = await get(gamesRef);
-<<<<<<< HEAD
-    let currentGames = [];
-    
-    if (snapshot.exists()) {
-      const data = snapshot.val();
-      currentGames = Array.isArray(data) ? data : [];
-    }
-    
-    const newGames = games.map(game => ({
-=======
     const currentGames = snapshot.exists() ? snapshot.val() : [];
     
     const newGame = {
->>>>>>> dfb5b22bd5e8b9805e62541c2feaf9074f87d6e8
       title: game.name,
       image: game.image_url || 'https://images.unsplash.com/photo-1606503153255-59d5e417dbf0?auto=format&fit=crop&q=80&w=400',
       status: 'available',
@@ -93,15 +78,9 @@ export async function addGame(userEmail: string, game: BoardGame): Promise<void>
       maxPlaytime: game.max_playtime,
       type: game.type || 'boardgame',
       ratings: {}
-<<<<<<< HEAD
-    }));
-
-    await set(gamesRef, [...currentGames, ...newGames]);
-=======
     };
 
     await set(gamesRef, Array.isArray(currentGames) ? [...currentGames, newGame] : [newGame]);
->>>>>>> dfb5b22bd5e8b9805e62541c2feaf9074f87d6e8
   } catch (err) {
     console.error('Error adding game:', err);
     throw err;

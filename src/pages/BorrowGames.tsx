@@ -303,7 +303,7 @@ function BorrowGames() {
       {borrowRequests.length > 0 && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4">My Borrow Requests</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:grid-cols-2 max-md:flex max-md:overflow-x-auto max-md:gap-4 max-md:pb-4 max-md:snap-x max-md:snap-mandatory">
+          <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory">
             {borrowRequests.map((request) => {
               const game = games.find(g => g.id === request.gameId);
               if (!game) return null;
@@ -321,7 +321,7 @@ function BorrowGames() {
         </div>
       )}
 
-      {/* Filters Section */}
+      {/* Filters Section - Temporarily Hidden
       <div className="mb-8 flex flex-wrap gap-4">
         <select
           value={filters.sortBy}
@@ -367,6 +367,7 @@ function BorrowGames() {
           className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
         />
       </div>
+      */}
 
       {/* Friends' Games Section */}
       {friendsGames.length > 0 && (
@@ -375,7 +376,7 @@ function BorrowGames() {
             <Users className="h-6 w-6" />
             Friends' Games
           </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:grid-cols-2 max-md:flex max-md:overflow-x-auto max-md:gap-4 max-md:pb-4 max-md:snap-x max-md:snap-mandatory">
+          <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory">
             {friendsGames.map((game) => (
               <GameCard
                 key={game.id}
@@ -395,7 +396,7 @@ function BorrowGames() {
             <MapPin className="h-6 w-6" />
             Games Near You
           </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:grid-cols-2 max-md:flex max-md:overflow-x-auto max-md:gap-4 max-md:pb-4 max-md:snap-x max-md:snap-mandatory">
+          <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory">
             {nearbyGames.map((game) => (
               <GameCard
                 key={game.id}
@@ -415,7 +416,7 @@ function BorrowGames() {
             <TrendingUp className="h-6 w-6" />
             All Games (Popular)
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory">
             {allGames.map((game) => (
               <GameCard
                 key={game.id}

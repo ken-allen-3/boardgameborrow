@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users } from 'lucide-react';
+import { Users, Clock, Tag } from 'lucide-react';
 
 interface Game {
   id: string;
@@ -49,8 +49,8 @@ const GameCard: React.FC<GameCardProps> = ({ game, onSelect, requestStatus }) =>
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden flex max-md:min-w-[300px] max-md:snap-center">
-      <div className="relative w-48">
+    <div className="bg-white rounded-xl shadow-md overflow-hidden min-w-[300px] snap-center">
+      <div className="relative w-full aspect-[4/3]">
         <img
           src={game.image}
           alt={game.title}
@@ -70,11 +70,11 @@ const GameCard: React.FC<GameCardProps> = ({ game, onSelect, requestStatus }) =>
           </div>
         )}
       </div>
-      <div className="p-4 flex-1">
+      <div className="p-4">
         <h3 className="text-lg font-semibold mb-2 line-clamp-1" title={game.title}>
           {game.title}
         </h3>
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-3">
           {game.owner.photoUrl ? (
             <img
               src={game.owner.photoUrl}
@@ -91,19 +91,24 @@ const GameCard: React.FC<GameCardProps> = ({ game, onSelect, requestStatus }) =>
           </p>
         </div>
         
-        <div className="flex flex-wrap gap-2 mb-2 text-sm text-gray-600">
-          {game.category && (
-            <span className="bg-gray-100 px-2 py-1 rounded-lg">{game.category}</span>
-          )}
+        <div className="flex flex-wrap gap-3 mb-3">
           {formatPlayers(game.minPlayers, game.maxPlayers) && (
-            <span className="bg-gray-100 px-2 py-1 rounded-lg">
-              {formatPlayers(game.minPlayers, game.maxPlayers)}
-            </span>
+            <div className="flex items-center gap-1 text-sm text-gray-600">
+              <Users className="h-4 w-4" />
+              <span>{formatPlayers(game.minPlayers, game.maxPlayers)}</span>
+            </div>
           )}
           {formatPlaytime(game.minPlaytime, game.maxPlaytime) && (
-            <span className="bg-gray-100 px-2 py-1 rounded-lg">
-              {formatPlaytime(game.minPlaytime, game.maxPlaytime)}
-            </span>
+            <div className="flex items-center gap-1 text-sm text-gray-600">
+              <Clock className="h-4 w-4" />
+              <span>{formatPlaytime(game.minPlaytime, game.maxPlaytime)}</span>
+            </div>
+          )}
+          {game.category && (
+            <div className="flex items-center gap-1 text-sm text-gray-600">
+              <Tag className="h-4 w-4" />
+              <span>{game.category}</span>
+            </div>
           )}
         </div>
         

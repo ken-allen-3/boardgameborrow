@@ -30,6 +30,8 @@
 - Enhanced error messages with specific error types
 - Updated Quick Add button styling to use brand colors consistently
 - Improved game selection UI with clear visual feedback
+- Updated Borrow Games page with horizontal scrolling layout and improved card design
+- Temporarily simplified Borrow Games UI by hiding filter/sort options
 
 ### Fixed
 - Game type selection UI not updating properly

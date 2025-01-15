@@ -34,17 +34,21 @@ The onboarding process guides new users through setting up their account and int
 
 ### User Flow
 1. Registration/Login
-2. Welcome screen
-3. Profile completion
-4. Address collection
-5. Friend connections
-6. Feature tutorial
+2. Welcome screen (Step1Welcome)
+3. Game Type Selection (StepGameTypes)
+4. Quick Add Games (StepQuickAddGames)
+5. Location Setup (StepLocation)
+6. Completion (Step6Completion)
+   - Success message with confetti animation
+   - Animated "magic AI camera" text with rainbow gradient
+   - Start exploring button
 
 ### State Management
-- Progress tracking
-- Step completion
-- User preferences
-- Tutorial state
+- Progress tracking through currentStep state
+- Total steps configuration (5 steps)
+- Selected game categories state
+- Confetti animation state
+- Window size tracking for confetti
 
 ### Data Storage
 - User profile data
@@ -55,10 +59,13 @@ The onboarding process guides new users through setting up their account and int
 ## Best Practices
 
 ### User Experience
-- Clear progress indicators
-- Skip options available
-- Non-blocking design
-- Helpful tooltips
+- Clear progress indicators showing current step/total steps
+- Skip options available for game selection
+- Non-blocking design allowing users to proceed at their pace
+- Helpful tooltips and descriptive text
+- Engaging animations and visual feedback
+  - Confetti celebration on completion
+  - Rainbow gradient animation for key features
 
 ### Data Collection
 - Progressive data gathering

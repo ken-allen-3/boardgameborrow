@@ -10,12 +10,12 @@ function OnboardingFlow() {
   const { setShowWelcome } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const totalSteps = 4;
+  const totalSteps = 5;
 
   const handleNext = () => {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
-    } else {
+    } else if (currentStep === totalSteps) {
       setShowWelcome(false);
     }
   };

@@ -52,7 +52,11 @@ function Step6Completion({ onNext }: Step6CompletionProps) {
         </h2>
         
         <p className="text-lg text-gray-600 mb-8">
-          Have fun exploring the app! You're ready to start borrowing, lending, and making memories. Try using our magic AI camera to scan in the rest of your board game collection all at once!
+          Have fun exploring the app! You're ready to start borrowing, lending, and making memories. Try using our{' '}
+          <span className="inline-block animate-gradient bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 bg-[length:200%_auto] bg-clip-text text-transparent font-bold">
+            magic AI camera
+          </span>{' '}
+          to scan in the rest of your board game collection all at once!
         </p>
 
         <button

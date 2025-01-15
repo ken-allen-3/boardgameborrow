@@ -1,5 +1,6 @@
 import React from 'react';
 import { Users, Clock, Tag } from 'lucide-react';
+import { SampleContentTag } from './SampleContentTag';
 
 interface Game {
   id: string;
@@ -23,6 +24,7 @@ interface Game {
   category?: string;
   distance?: number;
   isFriend?: boolean;
+  isDemo?: boolean;
 }
 
 interface GameCardProps {
@@ -59,7 +61,9 @@ const GameCard: React.FC<GameCardProps> = ({ game, onSelect, requestStatus }) =>
             e.currentTarget.src = '/board-game-placeholder.png';
           }}
         />
-        {game.isFriend && (
+        {game.isDemo ? (
+          <SampleContentTag />
+        ) : game.isFriend && (
           <div className="absolute top-2 right-2 bg-indigo-100 p-1 rounded-full">
             <Users className="h-5 w-5 text-indigo-600" />
           </div>
@@ -124,10 +128,16 @@ const GameCard: React.FC<GameCardProps> = ({ game, onSelect, requestStatus }) =>
           </div>
         ) : (
           <button
-            onClick={() => onSelect(game)}
-            className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
+            onClick={() => !game.isDemo && onSelect(game)}
+            className={`w-full px-4 py-2 rounded-lg transition ${
+              game.isDemo 
+                ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+            }`}
+            disabled={game.isDemo}
+            title={game.isDemo ? "Sample games cannot be borrowed" : undefined}
           >
-            Request to Borrow
+            {game.isDemo ? "Sample Game" : "Request to Borrow"}
           </button>
         )}
       </div>

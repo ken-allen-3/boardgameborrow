@@ -3,7 +3,6 @@ import { Users, Clock } from 'lucide-react';
 import { gameDataService, type GameData } from '../../services/gameDataService';
 import { addGame } from '../../services/gameService';
 import { useAuth } from '../../contexts/AuthContext';
-
 interface StepQuickAddGamesProps {
   selectedCategories: string[];
   onComplete: (selectedGames: GameData[]) => void;
@@ -41,7 +40,7 @@ function StepQuickAddGames({ selectedCategories, onComplete, currentStep, totalS
           await gameDataService.fetchGameDetails(game.id);
         }
       }
-      
+
       setIsLoading(false);
     };
     loadGames();
@@ -106,10 +105,12 @@ function StepQuickAddGames({ selectedCategories, onComplete, currentStep, totalS
 
   return (
     <div className="quick-add-games relative min-h-screen">
-      <div className="px-4 pb-32">
-        <h2 className="text-2xl font-bold mb-3">Kickstart Your Game Library</h2>
-        <p className="text-gray-600 mb-6">Let's add some games you already own to help you start borrowing and lending faster! We've pulled popular games from your favorite categories below. Select any you own, and we'll add them to your library.</p>
-        <p className="text-gray-500 text-sm mb-6">No pressure to add everything now—you can update your library anytime!</p>
+      <div className="pb-32">
+        <div className="px-4">
+          <h2 className="text-2xl font-bold mb-3">Kickstart Your Game Library</h2>
+          <p className="text-gray-600 mb-6">Here are some popular games right now. Tap to select any of the games you already own.</p>
+          <p className="text-gray-500 text-sm mb-6">No pressure to add everything now—you can update your library anytime!</p>
+        </div>
         
         {isLoading ? (
           <div className="flex justify-center items-center min-h-[200px]">
@@ -119,16 +120,16 @@ function StepQuickAddGames({ selectedCategories, onComplete, currentStep, totalS
           <div className="space-y-12">
             {filteredCategories.map(category => (
               <div key={category.key} className="category-section">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4 px-4">
                   <h3 className="text-xl font-semibold">{category.label}</h3>
                   <div className="text-sm text-gray-500">Scroll to see more →</div>
                 </div>
                 
-                <div className="flex overflow-x-auto space-x-4 pb-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 -mx-4 px-4">
+                <div className="flex overflow-x-auto gap-4 pb-4 px-4">
                   {getTopGames(category.key).map(game => (
                     <div 
                       key={game.id}
-                      className={`game-card flex-none min-w-[300px] bg-white rounded-xl shadow-md overflow-hidden cursor-pointer transition-all duration-200 snap-center ${
+                      className={`game-card flex-none w-[200px] bg-white rounded-xl shadow-md overflow-hidden cursor-pointer transition-all duration-200 ${
                         selectedGames.includes(game.id) 
                           ? 'ring-2 ring-brand-blue-600' 
                           : 'hover:shadow-lg'

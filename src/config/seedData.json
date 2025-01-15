@@ -1,0 +1,528 @@
+{
+  "groups": [
+    {
+      "id": "g1",
+      "name": "Family Game Night Club",
+      "description": "A welcoming group for families who love playing board games together. All ages welcome!",
+      "visibility": "public",
+      "theme": "family",
+      "coverImage": "https://source.unsplash.com/random/800x400/?family,boardgame",
+      "members": {
+        "u1": {
+          "role": "owner",
+          "joinedAt": "2023-01-01T00:00:00Z",
+          "name": "Sarah Parker",
+          "canInviteOthers": true
+        }
+      },
+      "createdAt": "2023-01-01T00:00:00Z",
+      "updatedAt": "2023-01-01T00:00:00Z"
+    },
+    {
+      "id": "g2", 
+      "name": "Strategy Enthusiasts",
+      "description": "For players who love deep strategic games and complex decision making.",
+      "visibility": "public",
+      "theme": "strategy",
+      "coverImage": "https://source.unsplash.com/random/800x400/?strategy,chess",
+      "members": {
+        "u2": {
+          "role": "owner",
+          "joinedAt": "2023-01-01T00:00:00Z",
+          "name": "Michael Chen",
+          "canInviteOthers": true
+        }
+      },
+      "createdAt": "2023-01-01T00:00:00Z",
+      "updatedAt": "2023-01-01T00:00:00Z"
+    },
+    {
+      "id": "g3",
+      "name": "Party Game Pros",
+      "description": "Join us for fun, laughter, and exciting party games!",
+      "visibility": "public", 
+      "theme": "party",
+      "coverImage": "https://source.unsplash.com/random/800x400/?party,fun",
+      "members": {
+        "u3": {
+          "role": "owner",
+          "joinedAt": "2023-01-01T00:00:00Z",
+          "name": "Alex Rodriguez",
+          "canInviteOthers": true
+        }
+      },
+      "createdAt": "2023-01-01T00:00:00Z",
+      "updatedAt": "2023-01-01T00:00:00Z"
+    }
+  ],
+  "games": [
+    {
+      "id": "224517",
+      "name": "Brass: Birmingham",
+      "description": "Build networks, develop industries, and navigate the industrial revolution in Birmingham.",
+      "thumb_url": "https://cf.geekdo-images.com/x3zxjr-Vw5iU4yDPg70Jgw__thumb/img/-17KkOmxbTu2slJi9Hell_6EgHU=/fit-in/200x150/filters:strip_icc()/pic3490053.jpg",
+      "image_url": "https://cf.geekdo-images.com/x3zxjr-Vw5iU4yDPg70Jgw__original/img/oqRmN6tXDNPsHnGPXUV_vEWxPmU=/0x0/filters:format(jpeg)/pic3490053.jpg",
+      "year_published": 2018,
+      "min_players": 2,
+      "max_players": 4,
+      "min_playtime": 60,
+      "max_playtime": 120,
+      "min_age": 14,
+      "categories": ["Economic", "Industry", "Strategy"],
+      "mechanics": ["Network Building", "Hand Management"],
+      "isDemo": true
+    },
+    {
+      "id": "161936",
+      "name": "Pandemic Legacy: Season 1",
+      "description": "Mutating diseases are spreading across the world - can you save humanity?",
+      "thumb_url": "https://cf.geekdo-images.com/hXvN1K3yUup_yfPHDCgvPw__thumb/img/lHic0OlgDWvFwxZWCorreQKu5Qk=/fit-in/200x150/filters:strip_icc()/pic2452831.png",
+      "image_url": "https://cf.geekdo-images.com/hXvN1K3yUup_yfPHDCgvPw__original/img/Pn-0qzMUoU_qnJ1VH-JXHPTQXMo=/0x0/filters:format(png)/pic2452831.png",
+      "year_published": 2015,
+      "min_players": 2,
+      "max_players": 4,
+      "min_playtime": 60,
+      "max_playtime": 60,
+      "min_age": 13,
+      "categories": ["Medical", "Strategy"],
+      "mechanics": ["Cooperative Play", "Hand Management"],
+      "isDemo": true
+    },
+    {
+      "id": "342942",
+      "name": "Ark Nova",
+      "description": "Plan and build a modern, scientifically managed zoo.",
+      "thumb_url": "https://cf.geekdo-images.com/SoU8p28Sk1s8MSvoM4N8pQ__thumb/img/TiNaVGGEjP0nHCk6HIkMMoH2r80=/fit-in/200x150/filters:strip_icc()/pic6293412.jpg",
+      "image_url": "https://cf.geekdo-images.com/SoU8p28Sk1s8MSvoM4N8pQ__original/img/qR1EvTSNPjDa-0-8kHj5kqAF0l0=/0x0/filters:format(jpeg)/pic6293412.jpg",
+      "year_published": 2021,
+      "min_players": 1,
+      "max_players": 4,
+      "min_playtime": 90,
+      "max_playtime": 150,
+      "min_age": 14,
+      "categories": ["Animals", "Strategy"],
+      "mechanics": ["Card Drafting", "Worker Placement"],
+      "isDemo": true
+    },
+    {
+      "id": "174430",
+      "name": "Gloomhaven",
+      "description": "Vanquish monsters with strategic cardplay. Fulfill your quest to leave your legacy!",
+      "thumb_url": "https://cf.geekdo-images.com/sZYp_3BTDGjh2unaZfZmuA__thumb/img/veqFeP4d_3zNhFc3GNBkV95rBEA=/fit-in/200x150/filters:strip_icc()/pic2437871.jpg",
+      "image_url": "https://cf.geekdo-images.com/sZYp_3BTDGjh2unaZfZmuA__original/img/iL8b64R6Q7CPWK_U5wiv2VxKAx0=/0x0/filters:format(jpeg)/pic2437871.jpg",
+      "year_published": 2017,
+      "min_players": 1,
+      "max_players": 4,
+      "min_playtime": 60,
+      "max_playtime": 120,
+      "min_age": 14,
+      "categories": ["Adventure", "Fantasy"],
+      "mechanics": ["Cooperative Play", "Campaign"],
+      "isDemo": true
+    },
+    {
+      "id": "233078",
+      "name": "Twilight Imperium: Fourth Edition",
+      "description": "Build an intergalactic empire through trade, research, conquest and grand politics.",
+      "thumb_url": "https://cf.geekdo-images.com/7xfJb0pJzP2IdGXK8AJKlA__thumb/img/D-0lXKz_fKGjuRhc0G8qFWAZvR4=/fit-in/200x150/filters:strip_icc()/pic3727516.jpg",
+      "image_url": "https://cf.geekdo-images.com/7xfJb0pJzP2IdGXK8AJKlA__original/img/GKueTbkCk2Ramf6ai8mDj-BP6cI=/0x0/filters:format(jpeg)/pic3727516.jpg",
+      "year_published": 2017,
+      "min_players": 3,
+      "max_players": 6,
+      "min_playtime": 240,
+      "max_playtime": 480,
+      "min_age": 14,
+      "categories": ["Science Fiction", "Strategy"],
+      "mechanics": ["Area Control", "Trading"],
+      "isDemo": true
+    },
+    {
+      "id": "316554",
+      "name": "Dune: Imperium",
+      "description": "Combine deck-building and worker placement in the epic sci-fi world of Dune.",
+      "thumb_url": "https://cf.geekdo-images.com/PhjygpWSo-0labGrPBMyyg__thumb/img/JGgY-nBGJn6NJe3m_1GvKC5QVC0=/fit-in/200x150/filters:strip_icc()/pic5666597.jpg",
+      "image_url": "https://cf.geekdo-images.com/PhjygpWSo-0labGrPBMyyg__original/img/mPZvf5sVvmY16r-Ccqc_MGTV9EU=/0x0/filters:format(jpeg)/pic5666597.jpg",
+      "year_published": 2020,
+      "min_players": 1,
+      "max_players": 4,
+      "min_playtime": 60,
+      "max_playtime": 120,
+      "min_age": 14,
+      "categories": ["Science Fiction", "Strategy"],
+      "mechanics": ["Deck Building", "Worker Placement"],
+      "isDemo": true
+    },
+    {
+      "id": "167791",
+      "name": "Terraforming Mars",
+      "description": "Compete to transform Mars into a habitable planet by playing project cards.",
+      "thumb_url": "https://cf.geekdo-images.com/wg9oOLcsKvDesSUO9BgeFg__thumb/img/D9gHkUJZhgA1RMQ6c_9EuK2oGEo=/fit-in/200x150/filters:strip_icc()/pic3536616.jpg",
+      "image_url": "https://cf.geekdo-images.com/wg9oOLcsKvDesSUO9BgeFg__original/img/tEV0LOIn5LJ1kSZFXD4yb3Qjj8o=/0x0/filters:format(jpeg)/pic3536616.jpg",
+      "year_published": 2016,
+      "min_players": 1,
+      "max_players": 5,
+      "min_playtime": 120,
+      "max_playtime": 120,
+      "min_age": 12,
+      "categories": ["Science Fiction", "Economic"],
+      "mechanics": ["Card Drafting", "Engine Building"],
+      "isDemo": true
+    },
+    {
+      "id": "266192",
+      "name": "Wingspan",
+      "description": "Attract a beautiful and diverse collection of birds to your wildlife preserve.",
+      "thumb_url": "https://cf.geekdo-images.com/yLZJCVLlIx4c7eJEWUNJ7w__thumb/img/VNToqgS2-pOGU6MuvIkMPKn_y-s=/fit-in/200x150/filters:strip_icc()/pic4458123.jpg",
+      "image_url": "https://cf.geekdo-images.com/yLZJCVLlIx4c7eJEWUNJ7w__original/img/cC_WpVMUxYp4QCqm_0sK0VP8kZg=/0x0/filters:format(jpeg)/pic4458123.jpg",
+      "year_published": 2019,
+      "min_players": 1,
+      "max_players": 5,
+      "min_playtime": 40,
+      "max_playtime": 70,
+      "min_age": 10,
+      "categories": ["Animals", "Card Game"],
+      "mechanics": ["Card Drafting", "Dice Rolling"],
+      "isDemo": true
+    },
+    {
+      "id": "324856",
+      "name": "The Crew: Mission Deep Sea",
+      "description": "Work together to complete underwater missions in this cooperative trick-taking game.",
+      "thumb_url": "https://cf.geekdo-images.com/VuBqZ1sMaDAVVHF_OEJP4g__thumb/img/S0lYay4CGz0sFfGHk-vQVj2B8Nk=/fit-in/200x150/filters:strip_icc()/pic5988903.jpg",
+      "image_url": "https://cf.geekdo-images.com/VuBqZ1sMaDAVVHF_OEJP4g__original/img/YKxRzSxk_TdwMvKr5pbYHZBHlW0=/0x0/filters:format(jpeg)/pic5988903.jpg",
+      "year_published": 2021,
+      "min_players": 2,
+      "max_players": 5,
+      "min_playtime": 20,
+      "max_playtime": 20,
+      "min_age": 10,
+      "categories": ["Card Game", "Cooperative"],
+      "mechanics": ["Trick-taking", "Communication Limits"],
+      "isDemo": true
+    },
+    {
+      "id": "199792",
+      "name": "Everdell",
+      "description": "Build a city of critters and constructions in this worker placement game.",
+      "thumb_url": "https://cf.geekdo-images.com/fjE7V5LNq31yVEW_yuqI-Q__thumb/img/Cf_mYxR_VvdjTEPXseSurni2JNI=/fit-in/200x150/filters:strip_icc()/pic3918905.png",
+      "image_url": "https://cf.geekdo-images.com/fjE7V5LNq31yVEW_yuqI-Q__original/img/IXvvs-HF8JF8JlqFVlhAzaD7JIM=/0x0/filters:format(png)/pic3918905.png",
+      "year_published": 2018,
+      "min_players": 1,
+      "max_players": 4,
+      "min_playtime": 40,
+      "max_playtime": 80,
+      "min_age": 13,
+      "categories": ["Animals", "Fantasy"],
+      "mechanics": ["Worker Placement", "Card Drafting"],
+      "isDemo": true
+    },
+    {
+      "id": "240980",
+      "name": "Blood on the Clocktower",
+      "description": "A social deduction game where a demon-haunted village tries to find the evil among them.",
+      "thumb_url": "https://cf.geekdo-images.com/PzVHQN_D5mKz6VP8EHhYEQ__thumb/img/Nt5OqXRjvKs1ET7Rkv0RLLzF-JA=/fit-in/200x150/filters:strip_icc()/pic4561731.jpg",
+      "image_url": "https://cf.geekdo-images.com/PzVHQN_D5mKz6VP8EHhYEQ__original/img/YQ_RfZwVK0_iCZNR8yBx9yBvvhU=/0x0/filters:format(jpeg)/pic4561731.jpg",
+      "year_published": 2019,
+      "min_players": 5,
+      "max_players": 20,
+      "min_playtime": 30,
+      "max_playtime": 40,
+      "min_age": 14,
+      "categories": ["Party Game", "Deduction"],
+      "mechanics": ["Social Deduction", "Storytelling"],
+      "isDemo": true
+    },
+    {
+      "id": "225694",
+      "name": "Decrypto",
+      "description": "Give coded clues to your teammates while intercepting your opponents' messages.",
+      "thumb_url": "https://cf.geekdo-images.com/hHZWXnUTMYDEsxRGyLvpng__thumb/img/DaCmVHLz_YwZ6TqWGZoV8ZE0L-k=/fit-in/200x150/filters:strip_icc()/pic3759421.jpg",
+      "image_url": "https://cf.geekdo-images.com/hHZWXnUTMYDEsxRGyLvpng__original/img/w6X_w5F5DiJ4FhZAeXYz2TW_K7k=/0x0/filters:format(jpeg)/pic3759421.jpg",
+      "year_published": 2018,
+      "min_players": 3,
+      "max_players": 8,
+      "min_playtime": 15,
+      "max_playtime": 45,
+      "min_age": 12,
+      "categories": ["Party Game", "Word Game"],
+      "mechanics": ["Communication Limits", "Team Play"],
+      "isDemo": true
+    },
+    {
+      "id": "178900",
+      "name": "Codenames",
+      "description": "Give one-word clues to help your team identify your agents without revealing opponent agents.",
+      "thumb_url": "https://cf.geekdo-images.com/F_KDEu0GjdClml8N7c8Imw__thumb/img/yl8iXxSNwguMeg3KkmfFO9SMVVc=/fit-in/200x150/filters:strip_icc()/pic2582929.jpg",
+      "image_url": "https://cf.geekdo-images.com/F_KDEu0GjdClml8N7c8Imw__original/img/7Rt_JwC7s0Gn5c0nOzcyVGUf0Eg=/0x0/filters:format(jpeg)/pic2582929.jpg",
+      "year_published": 2015,
+      "min_players": 2,
+      "max_players": 8,
+      "min_playtime": 15,
+      "max_playtime": 15,
+      "min_age": 14,
+      "categories": ["Party Game", "Word Game"],
+      "mechanics": ["Memory", "Team Play"],
+      "isDemo": true
+    },
+    {
+      "id": "373106",
+      "name": "Sky Team",
+      "description": "Work together as pilot and co-pilot to safely land your plane.",
+      "thumb_url": "https://cf.geekdo-images.com/85t1wkwgvh3d2mmjsRcDrw__thumb/img/tE6QpFpRvTbz7kboh1kBL5LHHzI=/fit-in/200x150/filters:strip_icc()/pic6739709.jpg",
+      "image_url": "https://cf.geekdo-images.com/85t1wkwgvh3d2mmjsRcDrw__original/img/WoL53YQvhN4x9V7TBvHIk5C_YqY=/0x0/filters:format(jpeg)/pic6739709.jpg",
+      "year_published": 2023,
+      "min_players": 2,
+      "max_players": 2,
+      "min_playtime": 20,
+      "max_playtime": 20,
+      "min_age": 10,
+      "categories": ["Aviation", "Cooperative"],
+      "mechanics": ["Cooperative Play", "Real-time"],
+      "isDemo": true
+    },
+    {
+      "id": "285774",
+      "name": "Marvel Champions: The Card Game",
+      "description": "Join forces with other players and thwart the schemes of iconic Marvel villains!",
+      "thumb_url": "https://cf.geekdo-images.com/kRvUgYiaOq07kC67ZK5UoQ__thumb/img/Cv2DZYPrwtxvp0kRmWlB-_N7o3E=/fit-in/200x150/filters:strip_icc()/pic4900321.jpg",
+      "image_url": "https://cf.geekdo-images.com/kRvUgYiaOq07kC67ZK5UoQ__original/img/HVJ9k6U5CdgwGkxkYAqO0bqVhMY=/0x0/filters:format(jpeg)/pic4900321.jpg",
+      "year_published": 2019,
+      "min_players": 1,
+      "max_players": 4,
+      "min_playtime": 45,
+      "max_playtime": 90,
+      "min_age": 14,
+      "categories": ["Card Game", "Superhero"],
+      "mechanics": ["Cooperative Play", "Hand Management"],
+      "isDemo": true
+    },
+    {
+      "id": "295947",
+      "name": "Cascadia",
+      "description": "Create the most harmonious ecosystem in the Pacific Northwest.",
+      "thumb_url": "https://cf.geekdo-images.com/MjeJZfulbsM1DSV3DrGJYA__thumb/img/B-2q2ch7VGqZ7TNCD8VHGPs74cI=/fit-in/200x150/filters:strip_icc()/pic5100691.jpg",
+      "image_url": "https://cf.geekdo-images.com/MjeJZfulbsM1DSV3DrGJYA__original/img/D8DxnJxHfUr6qR3OqSu4Zk6fk3k=/0x0/filters:format(jpeg)/pic5100691.jpg",
+      "year_published": 2021,
+      "min_players": 1,
+      "max_players": 4,
+      "min_playtime": 30,
+      "max_playtime": 45,
+      "min_age": 10,
+      "categories": ["Animals", "Nature"],
+      "mechanics": ["Pattern Building", "Tile Placement"],
+      "isDemo": true
+    },
+    {
+      "id": "244521",
+      "name": "The Quacks of Quedlinburg",
+      "description": "Push your luck brewing potions by pulling ingredients from your bag.",
+      "thumb_url": "https://cf.geekdo-images.com/pH5LgRL4mNRon-2NsSDb3Q__thumb/img/AlKHHhV4xQ6O4vhhJf0R_0AYCRw=/fit-in/200x150/filters:strip_icc()/pic4474567.jpg",
+      "image_url": "https://cf.geekdo-images.com/pH5LgRL4mNRon-2NsSDb3Q__original/img/GJ9QJVEFPjvIKu8vg_SJrnWM-tE=/0x0/filters:format(jpeg)/pic4474567.jpg",
+      "year_published": 2018,
+      "min_players": 2,
+      "max_players": 4,
+      "min_playtime": 45,
+      "max_playtime": 45,
+      "min_age": 10,
+      "categories": ["Medieval", "Family Game"],
+      "mechanics": ["Bag Building", "Push Your Luck"],
+      "isDemo": true
+    },
+    {
+      "id": "284083",
+      "name": "The Crew: The Quest for Planet Nine",
+      "description": "Work together in this cooperative trick-taking game to complete space missions.",
+      "thumb_url": "https://cf.geekdo-images.com/98LnQShydr11OBKS46xY-Q__thumb/img/UYQCM3Nqb3NhxB9-dzqOx9r9ZvI=/fit-in/200x150/filters:strip_icc()/pic5687013.jpg",
+      "image_url": "https://cf.geekdo-images.com/98LnQShydr11OBKS46xY-Q__original/img/0wN8Vf7rl9sZ7Uv_qw3qKg8TkZM=/0x0/filters:format(jpeg)/pic5687013.jpg",
+      "year_published": 2019,
+      "min_players": 2,
+      "max_players": 5,
+      "min_playtime": 20,
+      "max_playtime": 20,
+      "min_age": 10,
+      "categories": ["Card Game", "Space"],
+      "mechanics": ["Cooperative Play", "Trick-taking"],
+      "isDemo": true
+    },
+    {
+      "id": "230802",
+      "name": "Azul",
+      "description": "Compete to build the most beautiful mosaic wall for the Portuguese Royal Palace.",
+      "thumb_url": "https://cf.geekdo-images.com/tz19PfklMdAdjxV9WArraA__thumb/img/tLTFoB3pIGZpbxmYcEHEFzuAh0k=/fit-in/200x150/filters:strip_icc()/pic3718275.jpg",
+      "image_url": "https://cf.geekdo-images.com/tz19PfklMdAdjxV9WArraA__original/img/dXB1665q4BWF6NM5hased632tEY=/0x0/filters:format(jpeg)/pic3718275.jpg",
+      "year_published": 2017,
+      "min_players": 2,
+      "max_players": 4,
+      "min_playtime": 30,
+      "max_playtime": 45,
+      "min_age": 8,
+      "categories": ["Abstract", "Family Game"],
+      "mechanics": ["Pattern Building", "Tile Placement"],
+      "isDemo": true
+    },
+    {
+      "id": "201808",
+      "name": "Clank!: A Deck-Building Adventure",
+      "description": "Sneak into a dragon's lair to steal precious artifacts without making too much noise.",
+      "thumb_url": "https://cf.geekdo-images.com/DPjV1iI0ygo5Bl3XLNRiIg__thumb/img/H8qVVqGGWPvlYZp9G3UjXl2GLVk=/fit-in/200x150/filters:strip_icc()/pic4449526.jpg",
+      "image_url": "https://cf.geekdo-images.com/DPjV1iI0ygo5Bl3XLNRiIg__original/img/0PNbwJCPS_JOPwOZXTl3t2NNlZ8=/0x0/filters:format(jpeg)/pic4449526.jpg",
+      "year_published": 2016,
+      "min_players": 2,
+      "max_players": 4,
+      "min_playtime": 30,
+      "max_playtime": 60,
+      "min_age": 12,
+      "categories": ["Adventure", "Fantasy"],
+      "mechanics": ["Deck Building", "Push Your Luck"],
+      "isDemo": true
+    }
+  ],
+  "gameNights": [
+    {
+      "id": "gn1",
+      "hostId": "u1",
+      "title": "Family Game Night Extravaganza",
+      "coverImage": "https://source.unsplash.com/random/800x400/?family,games",
+      "date": "2024-02-15T18:00:00Z",
+      "location": "Community Center",
+      "description": "Join us for a fun evening of family-friendly board games! All ages welcome.",
+      "maxPlayers": 20,
+      "suggestedGames": ["266192", "324856", "373106"],
+      "attendees": {
+        "u1": {
+          "status": "going",
+          "canInviteOthers": true
+        }
+      },
+      "inviteSettings": {
+        "allowInvites": true,
+        "defaultInvitePermission": true
+      },
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "gn2",
+      "hostId": "u2",
+      "title": "Strategy Game Night",
+      "coverImage": "https://source.unsplash.com/random/800x400/?strategy,board",
+      "date": "2024-02-20T19:00:00Z",
+      "location": "Local Game Store",
+      "description": "An evening dedicated to complex strategy games. Bring your thinking cap!",
+      "maxPlayers": 12,
+      "suggestedGames": ["224517", "161936", "342942"],
+      "attendees": {
+        "u2": {
+          "status": "going",
+          "canInviteOthers": true
+        }
+      },
+      "inviteSettings": {
+        "allowInvites": true,
+        "defaultInvitePermission": true
+      },
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "gn3",
+      "hostId": "u3",
+      "title": "Party Game Marathon",
+      "coverImage": "https://source.unsplash.com/random/800x400/?party,celebration",
+      "date": "2024-02-25T20:00:00Z",
+      "location": "Recreation Center",
+      "description": "Non-stop party games, laughter, and fun! Perfect for social gamers.",
+      "maxPlayers": 30,
+      "suggestedGames": ["240980", "225694", "178900"],
+      "attendees": {
+        "u3": {
+          "status": "going",
+          "canInviteOthers": true
+        }
+      },
+      "inviteSettings": {
+        "allowInvites": true,
+        "defaultInvitePermission": true
+      },
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "u1",
+      "email": "sarah.parker@example.com",
+      "firstName": "Sarah",
+      "lastName": "Parker",
+      "photoUrl": "https://source.unsplash.com/random/400x400/?woman,portrait",
+      "location": "Seattle, WA",
+      "coordinates": {
+        "latitude": 47.6062,
+        "longitude": -122.3321
+      },
+      "isAdmin": false,
+      "hasCompletedOnboarding": true,
+      "createdAt": "2023-01-01T00:00:00Z",
+      "lastLogin": "2024-01-01T00:00:00Z",
+      "onboardingProgress": {
+        "hasGames": true,
+        "hasBorrowed": true,
+        "hasJoinedGroup": true,
+        "hasAttendedGameNight": true,
+        "hasFriends": true,
+        "hasLocation": true,
+        "onboardingDismissed": true
+      }
+    },
+    {
+      "id": "u2",
+      "email": "michael.chen@example.com", 
+      "firstName": "Michael",
+      "lastName": "Chen",
+      "photoUrl": "https://source.unsplash.com/random/400x400/?man,portrait",
+      "location": "San Francisco, CA",
+      "coordinates": {
+        "latitude": 37.7749,
+        "longitude": -122.4194
+      },
+      "isAdmin": false,
+      "hasCompletedOnboarding": true,
+      "createdAt": "2023-01-01T00:00:00Z",
+      "lastLogin": "2024-01-01T00:00:00Z",
+      "onboardingProgress": {
+        "hasGames": true,
+        "hasBorrowed": true,
+        "hasJoinedGroup": true,
+        "hasAttendedGameNight": true,
+        "hasFriends": true,
+        "hasLocation": true,
+        "onboardingDismissed": true
+      }
+    },
+    {
+      "id": "u3",
+      "email": "alex.rodriguez@example.com",
+      "firstName": "Alex",
+      "lastName": "Rodriguez",
+      "photoUrl": "https://source.unsplash.com/random/400x400/?person,portrait",
+      "location": "Austin, TX",
+      "coordinates": {
+        "latitude": 30.2672,
+        "longitude": -97.7431
+      },
+      "isAdmin": false,
+      "hasCompletedOnboarding": true,
+      "createdAt": "2023-01-01T00:00:00Z",
+      "lastLogin": "2024-01-01T00:00:00Z",
+      "onboardingProgress": {
+        "hasGames": true,
+        "hasBorrowed": true,
+        "hasJoinedGroup": true,
+        "hasAttendedGameNight": true,
+        "hasFriends": true,
+        "hasLocation": true,
+        "onboardingDismissed": true
+      }
+    }
+  ]
+}

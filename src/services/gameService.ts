@@ -1,5 +1,6 @@
 import { getDatabase, ref, get, set } from 'firebase/database';
 import { BoardGame } from '../types/boardgame';
+import { seedDataService } from './seedDataService';
 
 export interface Game {
   id: string;
@@ -59,6 +60,10 @@ export async function loadUserGames(userEmail: string): Promise<Game[]> {
 export async function addGame(userEmail: string, game: BoardGame): Promise<void> {
   if (!userEmail) {
     throw new Error('User email is required');
+  }
+
+  if (seedDataService.isSeededContent(game.id)) {
+    throw new Error('Cannot add sample content to your collection');
   }
 
   try {

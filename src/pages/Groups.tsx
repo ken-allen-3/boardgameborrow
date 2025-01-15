@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Plus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { Group } from '../types/group';
+import { Group, GroupVisibility, GroupTheme, GroupRole, GroupMember } from '../types/group';
+import { seedDataService } from '../services/seedDataService';
 import { getUserGroups, getAllPublicGroups, createGroup, leaveGroup, createGroupInvite, requestToJoinGroup } from '../services/groupService';
 import { logError, createAppError } from '../utils/errorUtils';
 import ErrorMessage from '../components/ErrorMessage';
@@ -31,9 +32,26 @@ function Groups() {
 
     try {
       const groups = await getAllPublicGroups();
+      // Get seeded groups and combine with public groups
+      const seededGroups = seedDataService.getSeededGroups();
+      // Convert seeded groups to match Group interface
+      const convertedSeededGroups = seededGroups.map(group => ({
+        ...group,
+        visibility: group.visibility as GroupVisibility,
+        theme: group.theme as GroupTheme,
+        members: Object.entries(group.members).reduce<Record<string, GroupMember>>((acc, [key, value]) => ({
+          ...acc,
+          [key]: {
+            ...value,
+            role: value.role as GroupRole
+          }
+        }), {})
+      }));
+      const allGroups = [...groups, ...convertedSeededGroups];
+      
       // Filter out groups user is already a member of
       const userKey = currentUser.email.replace(/\./g, ',');
-      setPublicGroups(groups.filter(group => !group.members[userKey]));
+      setPublicGroups(allGroups.filter(group => !group.members?.[userKey]));
     } catch (err) {
       console.error('Error loading public groups:', err);
     }
@@ -138,6 +156,12 @@ function Groups() {
     if (!currentUser?.email) return;
 
     try {
+      // Prevent joining seeded groups
+      if (seedDataService.isSeededContent(groupId)) {
+        setError('Sample groups cannot be joined');
+        return;
+      }
+
       await requestToJoinGroup(groupId, currentUser.email);
       setSuccess('Join request sent successfully!');
       await loadPublicGroups(); // Refresh public groups list

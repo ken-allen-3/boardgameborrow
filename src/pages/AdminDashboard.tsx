@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getAllUsers, getAllGames, getActiveBorrows, getUpcomingGameNights } from '../services/adminService';
 import { UserProfile } from '../types/user';
 import UserManagement from '../components/admin/UserManagement';
+import { seedDataService } from '../services/seedDataService';
 
 interface DashboardMetrics {
   totalUsers: number;
@@ -123,6 +124,26 @@ const AdminDashboard: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Demo Content Management */}
+      <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <h2 className="text-xl font-bold mb-4">Demo Content Settings</h2>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-medium">Sample Games Visibility</h3>
+            <p className="text-sm text-gray-500">Toggle visibility of sample games across the platform</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={seedDataService.isEnabled()}
+              onChange={(e) => seedDataService.setEnabled(e.target.checked)}
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+          </label>
         </div>
       </div>
 

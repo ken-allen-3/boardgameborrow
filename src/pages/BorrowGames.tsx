@@ -9,6 +9,7 @@ import { getUserProfile } from '../services/userService';
 import BorrowRequestModal from '../components/BorrowRequestModal';
 import ErrorMessage from '../components/ErrorMessage';
 import SuccessMessage from '../components/SuccessMessage';
+import BorrowGames from '../components/BorrowGames';
 import GameCard from '../components/GameCard';
 
 interface Game {
@@ -51,7 +52,7 @@ interface BorrowRequestInput {
   message: string;
 }
 
-function BorrowGames() {
+function BorrowGamesPage() {
   const [games, setGames] = useState<Game[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
@@ -282,20 +283,6 @@ function BorrowGames() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Available Games</h1>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search games or owners..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-          />
-        </div>
-      </div>
-
       {error && <ErrorMessage message={error} />}
       {success && <SuccessMessage message={success} />}
 
@@ -321,113 +308,10 @@ function BorrowGames() {
         </div>
       )}
 
-      {/* Filters Section - Temporarily Hidden
-      <div className="mb-8 flex flex-wrap gap-4">
-        <select
-          value={filters.sortBy}
-          onChange={(e) => setFilters({ ...filters, sortBy: e.target.value as Filters['sortBy'] })}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-        >
-          <option value="friends">Friends First</option>
-          <option value="distance">Distance</option>
-          <option value="popularity">Popularity</option>
-        </select>
-
-        <select
-          value={filters.availability}
-          onChange={(e) => setFilters({ ...filters, availability: e.target.value as Filters['availability'] })}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-        >
-          <option value="all">All Games</option>
-          <option value="available">Available</option>
-          <option value="unavailable">Unavailable</option>
-        </select>
-
-        <input
-          type="number"
-          placeholder="Player Count"
-          value={filters.playerCount || ''}
-          onChange={(e) => setFilters({ ...filters, playerCount: e.target.value ? Number(e.target.value) : undefined })}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-        />
-
-        <input
-          type="number"
-          placeholder="Min Playtime (min)"
-          value={filters.minPlaytime || ''}
-          onChange={(e) => setFilters({ ...filters, minPlaytime: e.target.value ? Number(e.target.value) : undefined })}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-        />
-
-        <input
-          type="number"
-          placeholder="Max Playtime (min)"
-          value={filters.maxPlaytime || ''}
-          onChange={(e) => setFilters({ ...filters, maxPlaytime: e.target.value ? Number(e.target.value) : undefined })}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-        />
-      </div>
-      */}
-
-      {/* Friends' Games Section */}
-      {friendsGames.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Users className="h-6 w-6" />
-            Friends' Games
-          </h2>
-          <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory">
-            {friendsGames.map((game) => (
-              <GameCard
-                key={game.id}
-                game={game}
-                onSelect={setSelectedGame}
-                requestStatus={getGameRequestStatus(game.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Games Near You Section */}
-      {nearbyGames.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <MapPin className="h-6 w-6" />
-            Games Near You
-          </h2>
-          <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory">
-            {nearbyGames.map((game) => (
-              <GameCard
-                key={game.id}
-                game={game}
-                onSelect={setSelectedGame}
-                requestStatus={getGameRequestStatus(game.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* All Games Section */}
-      {allGames.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <TrendingUp className="h-6 w-6" />
-            All Games (Popular)
-          </h2>
-          <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory">
-            {allGames.map((game) => (
-              <GameCard
-                key={game.id}
-                game={game}
-                onSelect={setSelectedGame}
-                requestStatus={getGameRequestStatus(game.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      <BorrowGames 
+        userGames={filteredGames}
+        onSelectGame={setSelectedGame}
+      />
 
       {selectedGame && (
         <BorrowRequestModal
@@ -436,14 +320,8 @@ function BorrowGames() {
           onSubmit={handleBorrowRequest}
         />
       )}
-
-      {filteredGames.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-gray-600">No available games found matching your search.</p>
-        </div>
-      )}
     </div>
   );
 }
 
-export default BorrowGames;
+export default BorrowGamesPage;

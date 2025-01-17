@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import GameCard from './GameCard';
 import { seedDataService } from '../services/seedDataService';
 
@@ -32,15 +32,31 @@ interface BorrowGamesProps {
   onSelectGame: (game: Game) => void;
 }
 
+const GAME_CATEGORIES = [
+  'All',
+  'Strategy',
+  'Family Game',
+  'Party Game',
+  'Card Game',
+  'Adventure',
+  'Fantasy',
+  'Economic',
+  'Science Fiction',
+  'Abstract',
+  'Cooperative'
+];
+
 const BorrowGames: React.FC<BorrowGamesProps> = ({ userGames, onSelectGame }) => {
   const [seededGames, setSeededGames] = useState<Game[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('All');
 
   useEffect(() => {
     // Transform seeded games to match Game interface
-    const transformedGames = seedDataService.getSeededGames().map(game => ({
+    const transformedGames = seedDataService.getSeededGames().map((game, index) => ({
       id: game.id,
       title: game.name,
-      image: game.image_url,
+      // Cycle through the 4 placeholder images
+      image: `/board-game-placeholder-${(index % 4) + 1}.webp`,
       owner: {
         email: 'demo@example.com',
         firstName: 'Demo',
@@ -58,19 +74,53 @@ const BorrowGames: React.FC<BorrowGamesProps> = ({ userGames, onSelectGame }) =>
     setSeededGames(transformedGames);
   }, []);
 
+  const filteredSeededGames = useMemo(() => {
+    if (selectedCategory === 'All') return seededGames;
+    return seededGames.filter(game => 
+      game.category && game.category === selectedCategory
+    );
+  }, [seededGames, selectedCategory]);
+
+  const filteredUserGames = useMemo(() => {
+    if (selectedCategory === 'All') return userGames;
+    return userGames.filter(game => 
+      game.category && game.category === selectedCategory
+    );
+  }, [userGames, selectedCategory]);
+
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Category Filter */}
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold mb-4">Filter by Category</h2>
+        <div className="flex overflow-x-auto gap-2 pb-2 snap-x snap-mandatory whitespace-nowrap">
+          {GAME_CATEGORIES.map(category => (
+            <button
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors snap-start shrink-0
+                ${selectedCategory === category
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+      </div>
       {/* Popular Games Section */}
-      {seededGames.length > 0 && (
+      {filteredSeededGames.length > 0 && (
         <div className="mb-12">
           <h2 className="text-2xl font-bold mb-6">Popular Games</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {seededGames.map(game => (
-              <GameCard
-                key={game.id}
-                game={game}
-                onSelect={onSelectGame}
-              />
+          <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory">
+            {filteredSeededGames.map(game => (
+              <div key={game.id} className="w-72 shrink-0 snap-start">
+                <GameCard
+                  game={game}
+                  onSelect={onSelectGame}
+                />
+              </div>
             ))}
           </div>
         </div>
@@ -79,13 +129,14 @@ const BorrowGames: React.FC<BorrowGamesProps> = ({ userGames, onSelectGame }) =>
       {/* Available Games Section */}
       <div>
         <h2 className="text-2xl font-bold mb-6">Available Games</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {userGames.map(game => (
-            <GameCard
-              key={game.id}
-              game={game}
-              onSelect={onSelectGame}
-            />
+          <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory">
+          {filteredUserGames.map(game => (
+              <div key={game.id} className="w-72 shrink-0 snap-start">
+                <GameCard
+                  game={game}
+                  onSelect={onSelectGame}
+                />
+              </div>
           ))}
         </div>
       </div>

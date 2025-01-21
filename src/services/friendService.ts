@@ -179,6 +179,54 @@ async function getUserEmailById(userId: string): Promise<string | null> {
 }
 
 // Helper function to check if a friendship exists
+export async function getSentRequests(userId: string): Promise<FriendProfile[]> {
+  console.log('Getting sent requests for user:', userId);
+  try {
+    const friendshipsRef = ref(db, `friendships/${userId}`);
+    const snapshot = await get(friendshipsRef);
+    console.log('Friendships snapshot:', snapshot.val());
+    
+    if (!snapshot.exists()) {
+      return [];
+    }
+
+    const friendships = snapshot.val();
+    console.log('Parsed friendships:', friendships);
+    const sentProfiles: FriendProfile[] = [];
+
+    for (const [friendId, friendship] of Object.entries(friendships)) {
+      console.log('Processing friendship:', { friendId, friendship });
+      const typedFriendship = friendship as Friendship;
+      if (typedFriendship.status === 'sent') {
+        console.log('Found sent request to:', friendId);
+        try {
+          const friendEmail = await getUserEmailById(friendId);
+          if (friendEmail) {
+            const profile = await getUserProfile(friendEmail);
+            sentProfiles.push({
+              userId: friendId,
+              email: friendEmail,
+              firstName: profile.firstName,
+              lastName: profile.lastName,
+              photoUrl: profile.photoUrl,
+              status: typedFriendship.status,
+              createdAt: typedFriendship.createdAt,
+              updatedAt: typedFriendship.updatedAt
+            });
+          }
+        } catch (error) {
+          console.error(`Error fetching friend profile for ${friendId}:`, error);
+        }
+      }
+    }
+
+    return sentProfiles;
+  } catch (error) {
+    console.error('Error getting sent requests:', error);
+    throw new Error('Failed to get sent requests');
+  }
+}
+
 export async function checkFriendshipStatus(userId: string, friendId: string): Promise<'none' | 'pending' | 'sent' | 'accepted'> {
   try {
     const friendshipRef = ref(db, `friendships/${userId}/${friendId}`);

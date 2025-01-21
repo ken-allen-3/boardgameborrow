@@ -5,6 +5,7 @@ import { FriendProfile } from '../types/friend';
 import {
   getFriendsList,
   getPendingRequests,
+  getSentRequests,
   sendFriendRequest,
   acceptFriendRequest,
   declineFriendRequest,
@@ -12,16 +13,20 @@ import {
 } from '../services/friendService';
 import FriendsList from '../components/friends/FriendsList';
 import FriendRequestsList from '../components/friends/FriendRequestsList';
+import SentRequestsList from '../components/friends/SentRequestsList';
 import AddFriendModal from '../components/friends/AddFriendModal';
 import InviteFriendModal from '../components/friends/InviteFriendModal';
 import LoadingScreen from '../components/LoadingScreen';
 import ErrorMessage from '../components/ErrorMessage';
+import SuccessMessage from '../components/SuccessMessage';
 
 const Friends = () => {
   const [friends, setFriends] = useState<FriendProfile[]>([]);
   const [pendingRequests, setPendingRequests] = useState<FriendProfile[]>([]);
+  const [sentRequests, setSentRequests] = useState<FriendProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showAddFriend, setShowAddFriend] = useState(false);
   const [showInviteFriend, setShowInviteFriend] = useState(false);
 
@@ -46,14 +51,16 @@ const Friends = () => {
 
     try {
       console.log('Fetching friends and pending requests...');
-      const [friendsList, requestsList] = await Promise.all([
+      const [friendsList, requestsList, sentList] = await Promise.all([
         getFriendsList(userId),
-        getPendingRequests(userId)
+        getPendingRequests(userId),
+        getSentRequests(userId)
       ]);
-      console.log('Fetched data:', { friendsList, requestsList });
+      console.log('Fetched data:', { friendsList, requestsList, sentList });
 
       setFriends(friendsList);
       setPendingRequests(requestsList);
+      setSentRequests(sentList);
     } catch (err) {
       setError('Failed to load friends data. Please try again.');
     } finally {
@@ -68,6 +75,8 @@ const Friends = () => {
       await sendFriendRequest(userId, toUserId);
       await loadFriendsData();
       setError(null);
+      setSuccessMessage('Friend request sent successfully!');
+      setTimeout(() => setSuccessMessage(null), 3000); // Clear after 3 seconds
     } catch (err) {
       setError('Failed to send friend request. Please try again.');
     }
@@ -137,14 +146,25 @@ const Friends = () => {
         </div>
 
         {error && <ErrorMessage message={error} />}
+        {successMessage && <SuccessMessage message={successMessage} />}
 
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Friend Requests</h2>
-          <FriendRequestsList
-            requests={pendingRequests}
-            onAcceptRequest={handleAcceptRequest}
-            onDeclineRequest={handleDeclineRequest}
-          />
+        <div className="space-y-8">
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Friend Requests</h2>
+            <FriendRequestsList
+              requests={pendingRequests}
+              onAcceptRequest={handleAcceptRequest}
+              onDeclineRequest={handleDeclineRequest}
+            />
+          </div>
+
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Sent Requests</h2>
+            <SentRequestsList
+              requests={sentRequests}
+              onCancelRequest={handleDeclineRequest}
+            />
+          </div>
         </div>
 
         <div className="mt-8">

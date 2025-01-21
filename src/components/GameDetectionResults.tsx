@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, ChevronRight, Loader2, AlertCircle, Check, ChevronDown, ChevronUp, Search } from 'lucide-react';
+import { X, ChevronRight, Loader2, Check, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { BoardGame } from '../types/boardgame';
 import { analyzeShelfImage, findMatchingGames, DetectedGame, VisionServiceError, manualGameSearch } from '../services/visionService';
+import ErrorMessage from './ErrorMessage';
 
 interface GameDetectionResultsProps {
   photoData: string;
@@ -13,7 +14,7 @@ function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectio
   const [detectedGames, setDetectedGames] = useState<DetectedGame[]>([]);
   const [selectedGames, setSelectedGames] = useState<Map<string, BoardGame>>(new Map());
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{message: string; code?: string} | null>(null);
   const [processingStep, setProcessingStep] = useState<string>('Analyzing image...');
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   const [debugInfo, setDebugInfo] = useState<{
@@ -45,15 +46,29 @@ function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectio
         switch (err.code) {
           case 'NO_GAMES_DETECTED':
           case 'LOW_CONFIDENCE':
-            setError(`${err.message}. Try manual search instead.`);
+            setError({
+              message: `${err.message}. Try manual search instead.`,
+              code: err.code
+            });
             setShowManualSearch(true);
             break;
+          case 'RATE_LIMIT_ERROR':
+            setError({
+              message: err.message,
+              code: err.code
+            });
+            break;
           default:
-            setError(err.message);
+            setError({
+              message: err.message,
+              code: err.code
+            });
         }
         setDebugInfo(err.details || {});
       } else {
-        setError(err.message || 'Failed to process image. Please try again.');
+        setError({
+          message: err.message || 'Failed to process image. Please try again.'
+        });
       }
     } finally {
       setLoading(false);
@@ -90,8 +105,19 @@ function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectio
     try {
       const results = await manualGameSearch(query);
       setManualSearchResults(results);
+      setError(null);
     } catch (err: any) {
-      setError(err.message);
+      if (err instanceof VisionServiceError) {
+        setError({
+          message: err.message,
+          code: err.code
+        });
+      } else {
+        setError({
+          message: err.message || 'An error occurred during search'
+        });
+      }
+      setManualSearchResults([]);
     } finally {
       setManualSearchLoading(false);
     }
@@ -108,15 +134,9 @@ function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectio
         </div>
         <div className="flex-1 overflow-auto p-4">
           <div className="max-w-lg mx-auto">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <div className="text-red-600 mb-4">
-              <p className="font-semibold mb-2">Failed to process image</p>
-              <pre className="text-left text-sm bg-red-50 p-4 rounded-lg overflow-auto whitespace-pre-wrap">
-                {error}
-              </pre>
-            </div>
+            <ErrorMessage message={error.message} code={error.code} />
 
-            <div className="mb-4">
+            <div className="mb-4 mt-4">
               <button
                 onClick={() => setShowDebugInfo(!showDebugInfo)}
                 className="flex items-center justify-between w-full px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
@@ -228,9 +248,7 @@ function GameDetectionResults({ photoData, onClose, onGameSelect }: GameDetectio
             </div>
 
             {error && (
-              <div className="text-red-500 text-sm p-2 bg-red-50 rounded-lg">
-                {error}
-              </div>
+              <ErrorMessage message={error.message} code={error.code} />
             )}
 
             <div className="space-y-2">

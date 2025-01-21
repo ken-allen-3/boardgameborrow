@@ -68,6 +68,7 @@ boardgameborrow/
 - Group creation and management
 - Game night organization
 - Borrowing system with request management
+- Real-time in-app notifications
 
 ### 4. Location Services
 - Geocoding integration
@@ -82,6 +83,7 @@ boardgameborrow/
 src/services/
 ├── adminService.ts        # Admin operations
 ├── apiService.ts          # External API handling
+├── notificationService.ts # In-app notifications
 ├── boardGameService.ts    # BGG integration
 ├── borrowRequestService.ts # Borrow management
 ├── friendService.ts       # Friend connections
@@ -122,6 +124,7 @@ server/functions/
 ## State Management
 
 The app uses a combination of:
+- NotificationContext for real-time notifications
 - React Context for global state
 - Firebase Realtime Database for persistent data
 - Local storage for preferences

@@ -53,9 +53,13 @@ export async function makeApiRequest(endpoint: string, params: Record<string, st
       console.error('[API] Request failed:', error);
       
       if (error.response?.status === 429) {
+        const operation = endpoint.includes('search') ? 'game search' : 
+                         endpoint.includes('thing') ? 'game details' : 
+                         'BoardGameGeek API';
         throw createAppError(
-          'Too many requests. Please try again in a few minutes.',
-          'RATE_LIMIT_ERROR'
+          `The BoardGameGeek API is currently rate limited. Please wait a few minutes before trying another ${operation}.`,
+          'RATE_LIMIT_ERROR',
+          { operation, endpoint }
         );
       }
       

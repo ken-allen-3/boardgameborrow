@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Loader2, AlertCircle, Star, TrendingUp, Check, ChevronRight } from 'lucide-react';
+import { X, Search, Loader2, Star, TrendingUp, Check, ChevronRight } from 'lucide-react';
 import { searchGames, getPopularGames } from '../services/boardGameService';
 import { BoardGame } from '../types/boardgame';
 import { useDebounce } from '../hooks/useDebounce';
+import ErrorMessage from './ErrorMessage';
 
 interface GameSearchModalProps {
   onClose: () => void;
@@ -25,15 +26,19 @@ function GameSearchModal({ onClose, onGameSelect }: GameSearchModalProps) {
           pageId: `${game.id}-popular`
         }));
         setResults(gamesWithPageIds);
-      } catch (error) {
-        setError('Failed to load popular games');
+      } catch (error: any) {
+        setError({
+          message: 'Failed to load popular games',
+          code: error.code
+        });
       } finally {
         setLoading(false);
       }
     };
     loadPopularGames();
   }, []);
-  const [error, setError] = useState<string | null>(null);
+  
+  const [error, setError] = useState<{message: string; code?: string} | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -94,7 +99,9 @@ function GameSearchModal({ onClose, onGameSelect }: GameSearchModalProps) {
       }
       
       if (games.items.length === 0 && newSearch) {
-        setError('No games found matching your search.');
+        setError({
+          message: 'No games found matching your search.'
+        });
       }
     } catch (err: any) {
       const errorMessage = err.message || 'An error occurred while searching games.';
@@ -103,11 +110,16 @@ function GameSearchModal({ onClose, onGameSelect }: GameSearchModalProps) {
       if (retryCount < 2 && errorMessage.includes('temporarily unavailable')) {
         setRetryCount(prev => prev + 1);
         setTimeout(() => handleSearch(newSearch), 2000 * Math.pow(2, retryCount));
-        setError('Search request failed. Retrying...');
+        setError({
+          message: 'Search request failed. Retrying...'
+        });
         return;
       }
 
-      setError(errorMessage);
+      setError({
+        message: errorMessage,
+        code: err.code
+      });
       if (newSearch) {
         setResults([]);
       }
@@ -189,10 +201,7 @@ function GameSearchModal({ onClose, onGameSelect }: GameSearchModalProps) {
           </div>
 
           {error && (
-            <div className="flex items-center justify-center gap-2 text-red-600 py-4">
-              <AlertCircle className="h-5 w-5" />
-              <span>{error}</span>
-            </div>
+            <ErrorMessage message={error.message} code={error.code} />
           )}
 
           <div className="space-y-4">

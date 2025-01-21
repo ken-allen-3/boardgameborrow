@@ -20,7 +20,7 @@ export interface DetectedGame {
 
 export class VisionServiceError extends Error {
   constructor(
-    public code: 'VISION_API_ERROR' | 'NETWORK_ERROR' | 'NO_GAMES_DETECTED' | 'LOW_CONFIDENCE' | 'VALIDATION_ERROR',
+    public code: 'VISION_API_ERROR' | 'NETWORK_ERROR' | 'NO_GAMES_DETECTED' | 'LOW_CONFIDENCE' | 'VALIDATION_ERROR' | 'RATE_LIMIT_ERROR',
     message: string,
     public details?: any
   ) {
@@ -109,8 +109,11 @@ export async function findMatchingGames(detectedGames: DetectedGame[]): Promise<
             matches: items,
             status
           } as DetectedGame;
-        } catch (error) {
+        } catch (error: any) {
           console.error(`Error finding matches for ${game.title}:`, error);
+          if (error.code === 'RATE_LIMIT_ERROR') {
+            throw error; // Re-throw rate limit errors to stop processing
+          }
           const failedGame: DetectedGame = {
             ...game,
             matches: [],
@@ -141,6 +144,13 @@ export async function manualGameSearch(query: string): Promise<BoardGame[]> {
     const { items } = await searchGames(query);
     return items;
   } catch (error: any) {
+    if (error.code === 'RATE_LIMIT_ERROR') {
+      throw createVisionError(
+        'RATE_LIMIT_ERROR',
+        'The BoardGameGeek API is currently rate limited. Please wait a few minutes before trying another search.',
+        error.context
+      );
+    }
     throw createVisionError('VISION_API_ERROR', `Manual search failed: ${error.message}`);
   }
 }

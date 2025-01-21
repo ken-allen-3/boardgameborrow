@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import OnboardingFlow from './components/onboarding/OnboardingFlow';
 import { BugReportProvider } from './contexts/BugReportContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import { LoadingPlaceholder } from './components/LoadingStates';
 import Navbar from './components/Navbar';
@@ -76,7 +77,9 @@ function App() {
       <ErrorBoundary>
         <BrowserRouter>
           <BugReportProvider>
+            <NotificationProvider>
               <AppRoutes />
+            </NotificationProvider>
           </BugReportProvider>
         </BrowserRouter>
       </ErrorBoundary>

@@ -1,6 +1,7 @@
 import { getDatabase, ref, set, get, update, remove, query, orderByChild, equalTo } from 'firebase/database';
 import { Friendship, FriendProfile } from '../types/friend';
 import { getUserProfile } from './userService';
+import { notificationService } from './notificationService';
 
 const db = getDatabase();
 
@@ -24,6 +25,18 @@ export async function sendFriendRequest(fromUserId: string, toUserId: string): P
   try {
     console.log('Updating Firebase with:', updates);
     await update(ref(db), updates);
+    
+    // Create notification for the recipient
+    const senderProfile = await getUserProfile(fromUserId.replace(/,/g, '.'));
+    await notificationService.createNotification(toUserId, {
+      userId: toUserId,
+      type: 'FRIEND_REQUEST',
+      title: 'New Friend Request',
+      message: `${senderProfile.firstName} ${senderProfile.lastName} sent you a friend request`,
+      read: false,
+      data: { senderId: fromUserId }
+    });
+    
     console.log('Friend request sent successfully');
   } catch (error) {
     console.error('Error sending friend request:', error);

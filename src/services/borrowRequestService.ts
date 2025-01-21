@@ -1,5 +1,6 @@
 import { getDatabase, ref, set, get, update } from 'firebase/database';
-import { updateOnboardingProgress } from './userService';
+import { updateOnboardingProgress, getUserProfile } from './userService';
+import { notificationService } from './notificationService';
 
 export interface BorrowRequest {
   id: string;
@@ -31,6 +32,21 @@ export async function createBorrowRequest(request: Omit<BorrowRequest, 'id' | 'c
     // Update onboarding progress when user makes their first borrow request
     await updateOnboardingProgress(request.borrowerId, {
       hasBorrowed: true
+    });
+
+    // Create notification for the game owner
+    const borrowerProfile = await getUserProfile(request.borrowerId);
+    await notificationService.createNotification(request.ownerId, {
+      userId: request.ownerId,
+      type: 'BORROW_REQUEST',
+      title: 'New Borrow Request',
+      message: `${borrowerProfile.firstName} ${borrowerProfile.lastName} wants to borrow ${request.gameName}`,
+      read: false,
+      data: {
+        senderId: request.borrowerId,
+        gameId: request.gameId,
+        requestId: requestId
+      }
     });
     
     return requestId;

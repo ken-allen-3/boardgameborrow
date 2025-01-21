@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { NotificationsDropdown } from './NotificationsDropdown';
 import { Dice6, Library, PlayCircle, Users, LogOut, Bug, Menu, X, UserCircle, Calendar, Settings, UserPlus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useBugReport } from '../contexts/BugReportContext';
@@ -89,6 +90,10 @@ function Navbar() {
           <span>Admin Dashboard</span>
         </Link>
       )}
+
+      <div className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2">
+        <NotificationsDropdown />
+      </div>
 
       <button
         onClick={() => {

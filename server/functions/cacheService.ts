@@ -1,4 +1,5 @@
 import { db } from './index';
+import * as admin from 'firebase-admin';
 
 interface CacheEntry {
   data: string;  // XML response data
@@ -16,15 +17,55 @@ export const generateCacheKey = (endpoint: string, params: Record<string, any>):
 export const isCacheValid = (entry: CacheEntry): boolean => 
   Date.now() - entry.timestamp < CACHE_TTL;
 
+// Metric counters
+let cacheHits = 0;
+let cacheMisses = 0;
+let rateLimitErrors = 0;
+let totalRequests = 0;
+
 export const logApiEvent = (type: string, data: any) => {
+  const timestamp = new Date().toISOString();
+  
+  // Update metrics
+  totalRequests++;
+  switch(type) {
+    case 'cache_hit':
+      cacheHits++;
+      break;
+    case 'cache_miss':
+      cacheMisses++;
+      break;
+    case 'api_error':
+      if (data.error?.includes('429')) {
+        rateLimitErrors++;
+      }
+      break;
+  }
+
+  // Log metrics every 100 requests
+  if (totalRequests % 100 === 0) {
+    const hitRatio = (cacheHits / totalRequests) * 100;
+    console.log(JSON.stringify({
+      type: 'metrics_summary',
+      timestamp,
+      cacheHits,
+      cacheMisses,
+      rateLimitErrors,
+      hitRatio: `${hitRatio.toFixed(2)}%`,
+      totalRequests
+    }));
+  }
+
+  // Log the original event
   console.log(JSON.stringify({
     type,
-    timestamp: new Date().toISOString(),
+    timestamp,
     ...data
   }));
 };
 
 export async function getCacheEntry(cacheKey: string): Promise<CacheEntry | null> {
+  const startTime = Date.now();
   try {
     const doc = await db
       .collection(CACHE_COLLECTION)
@@ -35,9 +76,23 @@ export async function getCacheEntry(cacheKey: string): Promise<CacheEntry | null
       return null;
     }
 
-    return doc.data() as CacheEntry;
+    const result = doc.data() as CacheEntry;
+    const duration = Date.now() - startTime;
+    logApiEvent('cache_performance', { 
+      operation: 'getCacheEntry',
+      duration,
+      success: true
+    });
+    return result;
   } catch (error) {
     logApiEvent('cache_error', { error, operation: 'get', cacheKey });
+    const duration = Date.now() - startTime;
+    logApiEvent('cache_performance', { 
+      operation: 'getCacheEntry',
+      duration,
+      success: false,
+      error: error.message
+    });
     return null;
   }
 }
@@ -46,6 +101,8 @@ export async function setCacheEntry(
   cacheKey: string, 
   entry: CacheEntry
 ): Promise<void> {
+  const startTime = Date.now();
+  let error: any = null;
   try {
     await db
       .collection(CACHE_COLLECTION)
@@ -57,8 +114,17 @@ export async function setCacheEntry(
       endpoint: entry.endpoint,
       timestamp: entry.timestamp
     });
-  } catch (error) {
+  } catch (err) {
+    error = err;
     logApiEvent('cache_error', { error, operation: 'set', cacheKey });
+  } finally {
+    const duration = Date.now() - startTime;
+    logApiEvent('cache_performance', { 
+      operation: 'setCacheEntry',
+      duration,
+      success: !error,
+      error: error?.message
+    });
   }
 }
 
@@ -69,6 +135,8 @@ export async function handleCachedApiRequest(
 ): Promise<string> {
   const cacheKey = generateCacheKey(endpoint, params);
 
+  const startTime = Date.now();
+  
   // Try cache first
   try {
     const cachedEntry = await getCacheEntry(cacheKey);
@@ -99,6 +167,12 @@ export async function handleCachedApiRequest(
         params
       });
       
+      const duration = Date.now() - startTime;
+      logApiEvent('cache_performance', { 
+        operation: 'handleCachedApiRequest',
+        duration,
+        success: true
+      });
       return response;
     } catch (error: any) {
       logApiEvent('api_error', { 
@@ -117,5 +191,12 @@ export async function handleCachedApiRequest(
     }
   }
 
+  const duration = Date.now() - startTime;
+  logApiEvent('cache_performance', { 
+    operation: 'handleCachedApiRequest',
+    duration,
+    success: false,
+    error: 'Max retries exceeded'
+  });
   throw new Error('Max retries exceeded');
 }

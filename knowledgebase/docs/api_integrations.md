@@ -38,24 +38,66 @@ graph TD
 
 ## Firebase Cloud Functions
 
+### Caching Architecture
+
+The system implements a Firestore-based caching system to optimize API requests and handle rate limiting:
+
+```typescript
+interface CacheEntry {
+  data: string;      // XML response data
+  timestamp: number; // Entry creation time
+  endpoint: string;  // API endpoint
+  params: Record<string, any>; // Request parameters
+}
+
+// Cache configuration
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_COLLECTION = 'api-cache';
+```
+
 ### Endpoints
 
 1. Game Search Function
 ```typescript
-export const bggSearch = functions.https.onRequest((request, response) => {
-  // Handles BGG API /search endpoint
-  // Implements caching and rate limiting
-  // Returns XML response
-});
+export const bggSearch = functions
+  .runWith({
+    timeoutSeconds: 60,
+    memory: "256MB",
+    minInstances: 0
+  })
+  .https.onRequest(async (request, response) => {
+    // Checks Firestore cache first
+    // Falls back to BGG API with retry mechanism
+    // Implements automatic cache population
+    // Returns XML response
+  });
 ```
 
 2. Game Details Function
 ```typescript
-export const bggGameDetails = functions.https.onRequest((request, response) => {
-  // Handles BGG API /thing endpoint
-  // Implements caching and rate limiting
-  // Returns XML response
-});
+export const bggGameDetails = functions
+  .runWith({
+    timeoutSeconds: 60,
+    memory: "256MB",
+    minInstances: 0
+  })
+  .https.onRequest(async (request, response) => {
+    // Checks Firestore cache first
+    // Falls back to BGG API with retry mechanism
+    // Implements automatic cache population
+    // Returns XML response
+  });
+```
+
+3. Cache Cleanup Function
+```typescript
+export const cleanupExpiredCache = functions.pubsub
+  .schedule('every 24 hours')
+  .onRun(async () => {
+    // Removes expired cache entries
+    // Maintains optimal cache size
+    // Logs cleanup operations
+  });
 ```
 
 3. Image Analysis Function
@@ -67,25 +109,70 @@ export const analyzeImage = functions.https.onRequest(async (req, res) => {
 });
 ```
 
-### Rate Limiting Implementation
+### Caching and Rate Limit Handling
 
-The system implements a Firestore-based rate limiting middleware:
+The system implements a sophisticated caching and rate limiting strategy:
 
+1. Cache-First Approach
 ```typescript
-export const rateLimiter = functions.https.onRequest(async (req, res) => {
-  const ip = req.ip || req.headers['x-forwarded-for'];
-  const key = `ratelimit_${ip}`;
+async function handleCachedApiRequest(
+  endpoint: string,
+  params: Record<string, any>,
+  apiFn: () => Promise<string>
+): Promise<string> {
+  const cacheKey = generateCacheKey(endpoint, params);
   
-  // Window: 1 minute
-  // Max Requests: 30 per minute
-  const windowSize = 60 * 1000;
-  const maxRequests = 30;
+  // Check cache first
+  const cachedEntry = await getCacheEntry(cacheKey);
+  if (cachedEntry && isCacheValid(cachedEntry)) {
+    return cachedEntry.data;
+  }
   
-  // Track requests in Firestore
-  const requests = doc.exists ? 
-    doc.data()!.requests.filter((time: number) => time > now - windowSize) : 
-    [];
+  // Cache miss - call API with retries
+  const response = await callWithRetries(apiFn);
+  await setCacheEntry(cacheKey, {
+    data: response,
+    timestamp: Date.now(),
+    endpoint,
+    params
+  });
+  
+  return response;
+}
+```
+
+2. Retry Mechanism
+```typescript
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second base delay
+
+// Exponential backoff for retries
+for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+  try {
+    return await apiFn();
+  } catch (error) {
+    if (error.response?.status === 429 || attempt === MAX_RETRIES) {
+      throw error;
+    }
+    await delay(RETRY_DELAY * attempt);
+  }
+}
+```
+
+3. Cache Maintenance
+```typescript
+// Automatic cleanup of expired entries
+const snapshot = await db
+  .collection('api-cache')
+  .where('timestamp', '<', now - CACHE_TTL)
+  .get();
+
+const batch = db.batch();
+snapshot.docs.forEach(doc => {
+  batch.delete(doc.ref);
 });
+
+await batch.commit();
 ```
 
 ## Game Detection System
@@ -160,11 +247,7 @@ private calculateConfidence(params: ConfidenceParams): number {
 
 ### Caching System
 
-The frontend implements a sophisticated caching system with:
-- TTL-based expiration
-- Size limits
-- Version control
-- Performance tracking
+The frontend maintains a secondary cache layer for improved performance:
 
 ```typescript
 class PersistentCache<T> {
@@ -175,6 +258,15 @@ class PersistentCache<T> {
   private readonly CACHE_VERSION = '1.0';
   private readonly CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
   private readonly MAX_CACHE_SIZE = 100;
+  
+  // Fallback to Cloud Functions cache on miss
+  async get(key: string): Promise<T | null> {
+    const cached = this.getFromLocalCache(key);
+    if (cached) return cached;
+    
+    // Fetch from Cloud Function (which checks Firestore cache)
+    return this.fetchFromApi(key);
+  }
 }
 ```
 

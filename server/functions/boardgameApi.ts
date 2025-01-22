@@ -1,21 +1,38 @@
-import * as functions from 'firebase-functions';
+import { onRequest, HttpsOptions } from 'firebase-functions/v2/https';
+import type { Request, Response } from 'express';
 import * as cors from 'cors';
 import axios from 'axios';
-import { handleCachedApiRequest } from './cacheService';
+import { handleCachedApiRequest, logApiEvent } from './cacheService';
 
 const corsHandler = cors({ origin: true });
 const BGG_BASE_URL = 'https://boardgamegeek.com/xmlapi2';
 
-export const searchGames = functions.https.onRequest((request, response) => {
+const functionConfig: HttpsOptions = {
+  timeoutSeconds: 30,
+  memory: '256MiB',
+  minInstances: 0
+};
+
+export const searchGames = onRequest(functionConfig, async (request: Request, response: Response) => {
   return corsHandler(request, response, async () => {
+    const startTime = Date.now();
     try {
       if (request.method !== 'GET') {
+        logApiEvent('api_error', { 
+          error: 'Method not allowed',
+          method: request.method
+        });
         return response.status(405).json({ error: 'Method not allowed' });
       }
 
-      const { query, type = 'boardgame', exact } = request.query;
+      const query = request.query.query as string;
+      const type = (request.query.type as string) || 'boardgame';
+      const exact = request.query.exact as string;
       
       if (!query) {
+        logApiEvent('api_error', { 
+          error: 'Missing query parameter'
+        });
         return response.status(400).json({ error: 'Query parameter is required' });
       }
 
@@ -31,8 +48,22 @@ export const searchGames = functions.https.onRequest((request, response) => {
       );
 
       response.set('Content-Type', 'application/xml');
+      const duration = Date.now() - startTime;
+      logApiEvent('api_success', {
+        operation: 'searchGames',
+        duration,
+        query
+      });
       response.send(xmlData);
     } catch (error: any) {
+      const duration = Date.now() - startTime;
+      const failedQuery = request.query.query as string;
+      logApiEvent('api_error', {
+        operation: 'searchGames',
+        duration,
+        error: error.message,
+        query: failedQuery
+      });
       console.error('BGG API Error:', error);
       response.status(500).json({
         error: 'Failed to fetch data from BoardGameGeek',
@@ -42,16 +73,24 @@ export const searchGames = functions.https.onRequest((request, response) => {
   });
 });
 
-export const getGameDetails = functions.https.onRequest((request, response) => {
+export const getGameDetails = onRequest(functionConfig, async (request: Request, response: Response) => {
   return corsHandler(request, response, async () => {
+    const startTime = Date.now();
     try {
       if (request.method !== 'GET') {
+        logApiEvent('api_error', { 
+          error: 'Method not allowed',
+          method: request.method
+        });
         return response.status(405).json({ error: 'Method not allowed' });
       }
 
-      const { id } = request.query;
+      const id = request.query.id as string;
       
       if (!id) {
+        logApiEvent('api_error', { 
+          error: 'Missing game ID'
+        });
         return response.status(400).json({ error: 'Game ID is required' });
       }
 
@@ -67,8 +106,22 @@ export const getGameDetails = functions.https.onRequest((request, response) => {
       );
 
       response.set('Content-Type', 'application/xml');
+      const duration = Date.now() - startTime;
+      logApiEvent('api_success', {
+        operation: 'getGameDetails',
+        duration,
+        gameId: id as string
+      });
       response.send(xmlData);
     } catch (error: any) {
+      const duration = Date.now() - startTime;
+      const failedId = request.query.id as string;
+      logApiEvent('api_error', {
+        operation: 'getGameDetails',
+        duration,
+        error: error.message,
+        gameId: failedId
+      });
       console.error('BGG API Error:', error);
       response.status(500).json({
         error: 'Failed to fetch game details from BoardGameGeek',

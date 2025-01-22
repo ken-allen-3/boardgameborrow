@@ -12,7 +12,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import MyGames from './pages/MyGames';
 import BorrowGames from './pages/BorrowGames';
-import Groups from './pages/Groups';
+import ComingSoon from './pages/ComingSoon';
 import GameNights from './pages/GameNights';
 import Profile from './pages/Profile';
 import Friends from './pages/Friends';
@@ -48,7 +48,7 @@ function AppRoutes() {
           {/* Protected Routes */}
           <Route path="/my-games" element={currentUser ? <MyGames /> : <Navigate to="/login" />} />
           <Route path="/borrow" element={currentUser ? <BorrowGames /> : <Navigate to="/login" />} />
-          <Route path="/groups" element={currentUser ? <Groups /> : <Navigate to="/login" />} />
+          <Route path="/groups" element={currentUser ? <ComingSoon /> : <Navigate to="/login" />} />
           <Route path="/game-nights" element={currentUser ? <GameNights /> : <Navigate to="/login" />} />
           <Route path="/profile" element={currentUser ? <Profile /> : <Navigate to="/login" />} />
           <Route path="/friends" element={currentUser ? <Friends /> : <Navigate to="/login" />} />

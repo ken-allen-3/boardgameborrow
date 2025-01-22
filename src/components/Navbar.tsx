@@ -43,15 +43,14 @@ function Navbar() {
         <span>Borrow Games</span>
       </Link>
       
-      <Link
-        to="/groups"
-        className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2"
+      <div
+        className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2 cursor-not-allowed opacity-60"
         data-tutorial="groups-link"
-        onClick={() => setIsOpen(false)}
       >
         <Users className="h-5 w-5" />
         <span>Groups</span>
-      </Link>
+        <span className="text-xs bg-brand-blue-100 text-brand-blue-600 px-2 py-0.5 rounded-full">Coming Soon!</span>
+      </div>
 
       <Link
         to="/friends"

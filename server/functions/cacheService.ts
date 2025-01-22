@@ -91,7 +91,7 @@ export async function getCacheEntry(cacheKey: string): Promise<CacheEntry | null
       operation: 'getCacheEntry',
       duration,
       success: false,
-      error: error.message
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
     return null;
   }

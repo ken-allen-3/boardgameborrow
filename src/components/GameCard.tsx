@@ -58,7 +58,7 @@ const GameCard: React.FC<GameCardProps> = ({ game, onSelect, requestStatus }) =>
           alt={game.title}
           className="w-full h-full object-cover"
           onError={(e) => {
-            e.currentTarget.src = '/board-game-placeholder.png';
+            e.currentTarget.src = `/board-game-placeholder-${(Math.floor(Math.random() * 4) + 1)}.webp`;
           }}
         />
         {game.isDemo ? (

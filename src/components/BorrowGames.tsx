@@ -51,17 +51,16 @@ const BorrowGames: React.FC<BorrowGamesProps> = ({ userGames, onSelectGame }) =>
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   useEffect(() => {
-    // Transform seeded games to match Game interface
-    const transformedGames = seedDataService.getSeededGames().map((game, index) => ({
-      id: game.id,
-      title: game.name,
-      // Cycle through the 4 placeholder images
-      image: `/board-game-placeholder-${(index % 4) + 1}.webp`,
+      // Transform seeded games to match Game interface
+      const transformedGames = seedDataService.getSeededGames().map(game => ({
+        id: game.id,
+        title: game.name,
+        image: game.thumb_url,
       owner: {
         email: 'demo@example.com',
         firstName: 'Demo',
         lastName: 'User',
-        photoUrl: 'https://source.unsplash.com/random/400x400/?person'
+        photoUrl: `/profile-placeholder-${(Math.floor(Math.random() * 3) + 1)}.png`
       },
       available: true,
       minPlayers: game.min_players,

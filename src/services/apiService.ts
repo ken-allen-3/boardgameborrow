@@ -30,13 +30,11 @@ export async function makeApiRequest(endpoint: string, params: Record<string, st
 
   console.log('[API] Making request:', { endpoint, params });
 
-  // If endpoint starts with http, use it directly (for BGG API)
-  const url = endpoint.startsWith('http') ? endpoint : `${FUNCTIONS_BASE_URL}/${endpoint}`;
+  const url = `${FUNCTIONS_BASE_URL}/${endpoint}`;
 
   const request = axios.get(url, { 
     params,
-    // Add XML response type for BGG API
-    responseType: endpoint.includes('boardgamegeek.com') ? 'text' : 'json'
+    responseType: 'text' // All BGG responses come as XML through our Firebase Functions
   })
     .then((response: AxiosResponse) => {
       const xmlData = response.data;

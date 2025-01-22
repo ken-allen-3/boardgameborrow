@@ -148,7 +148,7 @@ export async function getGamesByCategory(categoryId: string): Promise<BoardGame[
       
       // Search for games in this category
       // Use the collection endpoint to get top rated games
-      const collectionXmlText = await makeApiRequest(`https://boardgamegeek.com/xmlapi2/collection`, {
+      const collectionXmlText = await makeApiRequest('getCollection', {
         username: 'BGGBot', // BGG's official bot account that has all games
         subtype: 'boardgame',
         stats: '1',
@@ -287,7 +287,7 @@ export async function getGameById(id: string): Promise<BoardGame> {
     }
 
     try {
-      const xmlText = await makeApiRequest(`https://boardgamegeek.com/xmlapi2/thing`, {
+      const xmlText = await makeApiRequest('getGameDetails', {
         id,
         stats: '1',
         versions: '0'  // Exclude version info to reduce response size
@@ -451,7 +451,7 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
       // Try exact match first
       let xmlText;
       try {
-        xmlText = await makeApiRequest(`https://boardgamegeek.com/xmlapi2/search`, {
+        xmlText = await makeApiRequest('searchGames', {
           query,
           type: 'boardgame',
           exact: '1'
@@ -490,7 +490,7 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
       if (gameIds.length === 0) {
         let regularXmlText;
         try {
-          regularXmlText = await makeApiRequest(`https://boardgamegeek.com/xmlapi2/search`, {
+          regularXmlText = await makeApiRequest('searchGames', {
             query,
             type: 'boardgame'
           });

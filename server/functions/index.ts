@@ -1,17 +1,38 @@
-import * as functions from 'firebase-functions';
-import * as admin from 'firebase-admin';
-import { searchGames, getGameDetails } from './boardgameApi';
+import { initializeApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+import * as functions from 'firebase-functions/v1';
 import { GameDetectionService } from '../services/gameDetection';
+import { searchGames, getGameDetails } from './boardgameApi';
+import { logApiEvent } from './cacheService';
 
 // Initialize Firebase Admin
-admin.initializeApp();
+initializeApp();
+
+// Initialize Firestore
+export const db = getFirestore();
 
 // Initialize services
 const gameDetectionService = new GameDetectionService();
 
-// Export the functions
-export const bggSearch = searchGames;
-export const bggGameDetails = getGameDetails;
+// Log function initialization
+logApiEvent('function_init', { timestamp: Date.now() });
+
+// Export the functions with configuration
+export const bggSearch = functions
+  .runWith({
+    timeoutSeconds: 60,
+    memory: "256MB" as const,
+    minInstances: 0
+  })
+  .https.onRequest(searchGames);
+
+export const bggGameDetails = functions
+  .runWith({
+    timeoutSeconds: 60,
+    memory: "256MB" as const,
+    minInstances: 0
+  })
+  .https.onRequest(getGameDetails);
 
 // Vision API endpoint
 export const analyzeImage = functions.https.onRequest(async (req, res) => {
@@ -56,43 +77,34 @@ export const analyzeImage = functions.https.onRequest(async (req, res) => {
   }
 });
 
-// Add rate limiting middleware
-export const rateLimiter = functions.https.onRequest(async (req, res) => {
-  // Set CORS headers
-  res.set('Access-Control-Allow-Origin', '*');
-  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.set('Access-Control-Allow-Headers', 'Content-Type, Accept');
-  res.set('Access-Control-Max-Age', '3600');
-
-  if (req.method === 'OPTIONS') {
-    res.status(204).send('');
-    return;
-  }
-
-  const ip = req.ip || req.headers['x-forwarded-for'];
-  const key = `ratelimit_${ip}`;
-  
-  try {
-    const doc = await admin.firestore().collection('ratelimits').doc(key).get();
+// Scheduled cache cleanup
+export const cleanupExpiredCache = functions.pubsub
+  .schedule('every 24 hours')
+  .onRun(async () => {
+    const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
     const now = Date.now();
-    const windowSize = 60 * 1000; // 1 minute
-    const maxRequests = 30; // 30 requests per minute
-    
-    let requests = doc.exists ? doc.data()!.requests.filter((time: number) => time > now - windowSize) : [];
-    
-    if (requests.length >= maxRequests) {
-      res.status(429).json({ error: 'Too many requests, please try again later.' });
-      return;
+
+    try {
+      const snapshot = await db
+        .collection('api-cache')
+        .where('timestamp', '<', now - CACHE_TTL)
+        .get();
+
+      const batch = db.batch();
+      snapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+      
+      logApiEvent('cache_cleanup', {
+        entriesRemoved: snapshot.size,
+        timestamp: now
+      });
+    } catch (error) {
+      logApiEvent('cache_cleanup_error', {
+        error,
+        timestamp: now
+      });
     }
-    
-    requests.push(now);
-    await admin.firestore().collection('ratelimits').doc(key).set({ requests });
-    
-    // Continue to the actual function
-    res.status(200).send('Rate limit check passed');
-  } catch (error) {
-    console.error('Rate limiting error:', error);
-    // Allow the request if rate limiting fails
-    res.status(200).send('Rate limit check passed (error fallback)');
-  }
-});
+  });

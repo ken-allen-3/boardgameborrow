@@ -1,309 +1,304 @@
 # API Integrations
 
-## Board Game Geek API
+## Architecture Overview
 
-### Overview
-Integration with BoardGameGeek's XML API2 for game data retrieval.
+The application uses a hybrid architecture combining Firebase Cloud Functions with client-side API integration:
+
+1. Cloud Functions Layer
+   - Handles BGG API communication
+   - Provides game detection capabilities
+   - Implements rate limiting and CORS
+   - Manages API response caching
+
+2. Client Layer
+   - Implements sophisticated caching
+   - Handles request queuing
+   - Provides batch processing
+   - Manages error handling and retries
+
+```mermaid
+graph TD
+    A[Client Application] --> B[Cloud Functions Layer]
+    B --> C[BoardGameGeek API]
+    B --> D[OpenAI API]
+    A --> E[Firebase Services]
+    
+    subgraph "Cloud Functions"
+    B --> F[Rate Limiting]
+    B --> G[CORS Handling]
+    B --> H[Game Detection]
+    end
+    
+    subgraph "Client Features"
+    A --> I[Request Queue]
+    A --> J[Cache System]
+    A --> K[Batch Processing]
+    end
+```
+
+## Firebase Cloud Functions
 
 ### Endpoints
+
+1. Game Search Function
 ```typescript
-const BGG_BASE_URL = 'https://boardgamegeek.com/xmlapi2';
-
-// Search games
-GET /search?query={searchTerm}&type=boardgame
-
-// Get game details
-GET /thing?id={gameId}&stats=1
-```
-
-### Implementation
-```typescript
-// Game search service
-async function searchGames(query: string): Promise<GameSearchResult[]> {
-  const response = await axios.get(`${BGG_BASE_URL}/search`, {
-    params: {
-      query,
-      type: 'boardgame'
-    }
-  });
-  return parseXMLResponse(response.data);
-}
-
-// Game details service
-async function getGameDetails(gameId: string): Promise<GameDetails> {
-  const response = await axios.get(`${BGG_BASE_URL}/thing`, {
-    params: {
-      id: gameId,
-      stats: 1
-    }
-  });
-  return parseXMLResponse(response.data);
-}
-```
-
-## Google Cloud Vision API
-
-### Overview
-Used for board game image recognition and text extraction.
-
-### Configuration
-```typescript
-const vision = new ImageAnnotatorClient({
-  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS
+export const bggSearch = functions.https.onRequest((request, response) => {
+  // Handles BGG API /search endpoint
+  // Implements caching and rate limiting
+  // Returns XML response
 });
 ```
 
-### Features Used
-- Text Detection (OCR)
-- Image Labeling
-- Web Detection
-- Object Detection (Beta)
-
-### Implementation
+2. Game Details Function
 ```typescript
-async function detectGameFromImage(imageBuffer: Buffer) {
-  const [result] = await vision.textDetection(imageBuffer);
-  const [labelResult] = await vision.labelDetection(imageBuffer);
-  const [objectResult] = await vision.objectLocalization(imageBuffer);
-  return processVisionResults(result, labelResult, objectResult);
+export const bggGameDetails = functions.https.onRequest((request, response) => {
+  // Handles BGG API /thing endpoint
+  // Implements caching and rate limiting
+  // Returns XML response
+});
+```
+
+3. Image Analysis Function
+```typescript
+export const analyzeImage = functions.https.onRequest(async (req, res) => {
+  // Handles image analysis using Vision API
+  // Processes annotations using GameDetectionService
+  // Returns detected games with confidence scores
+});
+```
+
+### Rate Limiting Implementation
+
+The system implements a Firestore-based rate limiting middleware:
+
+```typescript
+export const rateLimiter = functions.https.onRequest(async (req, res) => {
+  const ip = req.ip || req.headers['x-forwarded-for'];
+  const key = `ratelimit_${ip}`;
+  
+  // Window: 1 minute
+  // Max Requests: 30 per minute
+  const windowSize = 60 * 1000;
+  const maxRequests = 30;
+  
+  // Track requests in Firestore
+  const requests = doc.exists ? 
+    doc.data()!.requests.filter((time: number) => time > now - windowSize) : 
+    [];
+});
+```
+
+## Game Detection System
+
+### Overview
+
+The game detection system uses a hybrid approach combining AI-based detection with rule-based processing:
+
+1. AI-Based Detection
+```typescript
+async function detectGamesWithAI(text: string): Promise<DetectedGame[]> {
+  // Uses OpenAI GPT-4 for intelligent game detection
+  // Processes text with context-aware prompting
+  // Returns structured game data with confidence scores
 }
 ```
 
-## Email Service Integration
-
-### SendGrid Implementation
+2. Rule-Based Detection
 ```typescript
-const sgMail = require('@sendgrid/mail');
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+class GameDetectionService {
+  // Known publishers database
+  private readonly KNOWN_PUBLISHERS = new Set([
+    'hasbro', 'asmodee', 'fantasy flight', // etc.
+  ]);
 
-async function sendEmail(to: string, template: string, data: any) {
-  const msg = {
-    to,
-    from: 'noreply@boardgameborrow.com',
-    templateId: getTemplateId(template),
-    dynamicTemplateData: data
-  };
-  return sgMail.send(msg);
+  // Known games database
+  private readonly KNOWN_GAMES = new Set([
+    'sushi go', 'love letter', 'splendor', // etc.
+  ]);
+
+  // Pattern matching for game titles
+  private readonly GAME_PATTERNS = [
+    /^(.*?)\s*(?:card game|board game|game|tm)$/i,
+    /^(.*?)\s*(?:ages?\s*\d+[\+]?)$/i,
+    // etc.
+  ];
 }
 ```
 
-### Email Templates
-1. Welcome Email
-2. Borrow Request
-3. Game Return Reminder
-4. Game Night Invitation
-5. Friend Request
-6. Game Night Update
-7. Game Suggestion Notification
+### Confidence Scoring System
 
-## Firebase Services
+The system uses multiple factors to calculate confidence scores:
 
-### Authentication
 ```typescript
-import { getAuth } from 'firebase/auth';
+interface ConfidenceParams {
+  block: TextBlock;
+  hasPublisher: boolean;
+  hasMetadata: boolean;
+  group: TextBlock[];
+  isKnownGame?: boolean;
+}
 
-const auth = getAuth();
+private calculateConfidence(params: ConfidenceParams): number {
+  let confidence = 0.5;
+  
+  // Size-based confidence
+  if (params.block.area > 5000) confidence += 0.2;
+  
+  // Publisher and metadata confidence
+  if (params.hasPublisher) confidence += 0.2;
+  if (params.hasMetadata) confidence += 0.1;
+  
+  // Known game confidence
+  if (params.isKnownGame) confidence += 0.3;
+  
+  // Additional factors...
+  return Math.min(confidence, 1.0);
+}
 ```
 
-### Cloud Storage
-```typescript
-import { getStorage } from 'firebase/storage';
+## Frontend Integration
 
-const storage = getStorage();
+### Caching System
+
+The frontend implements a sophisticated caching system with:
+- TTL-based expiration
+- Size limits
+- Version control
+- Performance tracking
+
+```typescript
+class PersistentCache<T> {
+  private readonly key: string;
+  private cache: Map<string, CacheEntry<T>>;
+  
+  // Cache configuration
+  private readonly CACHE_VERSION = '1.0';
+  private readonly CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+  private readonly MAX_CACHE_SIZE = 100;
+}
 ```
 
-### Cloud Functions
+### Request Queuing
+
+Implements request queuing to handle concurrent API calls:
+
 ```typescript
-export const processGameImage = functions.storage
-  .object()
-  .onFinalize(async (object) => {
-    // Image processing logic
+const requestQueue = new Map<string, Promise<any>>();
+
+// Queue management in makeApiRequest
+if (requestQueue.has(cacheKey)) {
+  return requestQueue.get(cacheKey);
+}
+
+const request = axios.get(/*...*/)
+  .finally(() => {
+    requestQueue.delete(cacheKey);
   });
+
+requestQueue.set(cacheKey, request);
 ```
 
-## Geocoding API
+### Batch Processing
 
-### Google Maps Integration
+Implements efficient batch processing for multiple game requests:
+
 ```typescript
-const geocoder = new google.maps.Geocoder();
-
-async function geocodeAddress(address: string) {
-  const result = await geocoder.geocode({ address });
-  return {
-    lat: result.geometry.location.lat(),
-    lng: result.geometry.location.lng()
-  };
+async function processBatch<T>(
+  items: T[],
+  processor: (item: T) => Promise<any>,
+  batchSize = BATCH_SIZE,
+  delay = BATCH_DELAY
+): Promise<any[]> {
+  // Process items in smaller batches
+  // Implements delays between batches
+  // Handles errors per batch
 }
 ```
 
-## Rate Limiting
+## Error Handling & Recovery
 
-### Implementation
+### Error Types
+
 ```typescript
-const rateLimit = {
-  bgg: {
-    windowMs: 1000,
-    maxRequests: 2,
-    retryAfter: 2000,
-    maxRetries: 3
-  },
-  vision: {
-    windowMs: 60000,
-    maxRequests: 100,
-    retryAfter: 60000,
-    maxRetries: 2
-  },
-  geocoding: {
-    windowMs: 1000,
-    maxRequests: 50,
-    retryAfter: 1000,
-    maxRetries: 3
-  }
-};
-
-// Rate limiter implementation
-class RateLimiter {
-  private requests: Map<string, number[]> = new Map();
-
-  canMakeRequest(api: keyof typeof rateLimit): boolean {
-    const now = Date.now();
-    const config = rateLimit[api];
-    const requests = this.requests.get(api) || [];
-    
-    // Remove old requests outside the window
-    const validRequests = requests.filter(time => now - time < config.windowMs);
-    
-    if (validRequests.length < config.maxRequests) {
-      this.requests.set(api, [...validRequests, now]);
-      return true;
-    }
-    
-    return false;
-  }
-}
-```
-
-## Error Handling
-
-### API Error Types
-```typescript
-interface ApiError {
+interface AppError extends Error {
   code: string;
-  message: string;
-  details?: any;
-  retryable: boolean;
-  retryAfter?: number;
+  context?: Record<string, any>;
 }
 
 const ErrorCodes = {
-  BGG_TIMEOUT: 'BGG_TIMEOUT',
-  BGG_RATE_LIMIT: 'BGG_RATE_LIMIT',
-  VISION_QUOTA_EXCEEDED: 'VISION_QUOTA_EXCEEDED',
-  VISION_INVALID_IMAGE: 'VISION_INVALID_IMAGE',
-  INVALID_GAME_DATA: 'INVALID_GAME_DATA',
-  GEOCODING_ERROR: 'GEOCODING_ERROR',
-  NETWORK_ERROR: 'NETWORK_ERROR',
-  AUTHENTICATION_ERROR: 'AUTHENTICATION_ERROR'
+  RATE_LIMIT_ERROR: 'RATE_LIMIT_ERROR',
+  API_ERROR: 'API_ERROR',
+  XML_PARSE_ERROR: 'XML_PARSE_ERROR',
+  GAME_FETCH_ERROR: 'GAME_FETCH_ERROR',
+  NOT_FOUND_ERROR: 'NOT_FOUND_ERROR'
 };
-
-const RetryableErrors = new Set([
-  ErrorCodes.BGG_TIMEOUT,
-  ErrorCodes.BGG_RATE_LIMIT,
-  ErrorCodes.NETWORK_ERROR
-]);
 ```
 
-### Error Handling Implementation
+### Error Recovery
+
+The system implements sophisticated error recovery:
+
+1. Rate Limit Handling
 ```typescript
-async function handleApiError(error: any, api: string): Promise<ApiError> {
-  const errorResponse: ApiError = {
-    code: 'UNKNOWN_ERROR',
-    message: error.message,
-    retryable: false
-  };
+if (error.response?.status === 429) {
+  const operation = endpoint.includes('search') ? 'game search' : 
+                   endpoint.includes('thing') ? 'game details' : 
+                   'BoardGameGeek API';
+  throw createAppError(
+    `The BoardGameGeek API is currently rate limited. Please wait a few minutes before trying another ${operation}.`,
+    'RATE_LIMIT_ERROR',
+    { operation, endpoint }
+  );
+}
+```
 
-  if (error.response) {
-    const status = error.response.status;
-    errorResponse.code = getErrorCode(status);
-    errorResponse.message = error.response.data.message || 'API Error';
-    errorResponse.details = error.response.data;
-    
-    // Handle rate limiting
-    if (status === 429) {
-      errorResponse.code = `${api.toUpperCase()}_RATE_LIMIT`;
-      errorResponse.retryable = true;
-      errorResponse.retryAfter = parseInt(error.response.headers['retry-after']) * 1000;
-    }
-    
-    // Handle specific API errors
-    if (api === 'bgg' && status === 202) {
-      errorResponse.code = ErrorCodes.BGG_TIMEOUT;
-      errorResponse.retryable = true;
-      errorResponse.retryAfter = 5000;
-    }
-  }
-
-  errorResponse.retryable = RetryableErrors.has(errorResponse.code);
-  return errorResponse;
+2. Cache Management
+```typescript
+// Cache invalidation on error
+if (error.code === 'NOT_FOUND_ERROR') {
+  notFoundCache.set(id, true, 'game-details');
 }
 
-// Retry mechanism
-async function withRetry<T>(
-  operation: () => Promise<T>,
-  api: keyof typeof rateLimit,
-  maxRetries = rateLimit[api].maxRetries
-): Promise<T> {
-  let lastError: ApiError;
-  
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await operation();
-    } catch (error) {
-      lastError = await handleApiError(error, api);
-      
-      if (!lastError.retryable || attempt === maxRetries) {
-        throw lastError;
-      }
-      
-      const delay = lastError.retryAfter || rateLimit[api].retryAfter;
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-  }
-  
-  throw lastError!;
+// Cache bypass on error
+if (error.status >= 500) {
+  cache.delete(cacheKey);
 }
+```
+
+## Performance Monitoring
+
+The system includes comprehensive performance monitoring:
+
+```typescript
+// Performance measurement
+export async function searchGames(query: string): Promise<SearchResults> {
+  return measurePerformance('search-games', async () => {
+    // Search implementation
+  });
+}
+
+// Cache operation tracking
+trackCacheOperation(cacheName, 'hit', { key });
+trackCacheOperation(cacheName, 'miss', { key });
+trackCacheOperation(cacheName, 'evict', { reason: 'expired' });
 ```
 
 ## Testing
 
-### API Mocks
-```typescript
-const mockBggResponse = {
-  items: {
-    item: [
-      {
-        id: '123',
-        name: { value: 'Test Game' }
-      }
-    ]
-  }
-};
-```
-
 ### Integration Tests
+
 ```typescript
-describe('BGG API Integration', () => {
-  it('should fetch game details', async () => {
-    const details = await getGameDetails('123');
-    expect(details).toHaveProperty('name');
+describe('API Integration', () => {
+  it('should handle rate limiting', async () => {
+    const results = await Promise.allSettled(
+      Array(5).fill(null).map(() => searchGames('Catan'))
+    );
+    expect(results.some(r => r.status === 'fulfilled')).toBe(true);
   });
   
-  it('should handle rate limiting', async () => {
-    const rateLimiter = new RateLimiter();
-    const promises = Array(5).fill(null).map(() => 
-      withRetry(() => getGameDetails('123'), 'bgg')
-    );
-    const results = await Promise.allSettled(promises);
-    expect(results.some(r => r.status === 'fulfilled')).toBe(true);
+  it('should use cache for repeated requests', async () => {
+    const first = await getGameById('123');
+    const second = await getGameById('123');
+    expect(second).toEqual(first);
   });
 });

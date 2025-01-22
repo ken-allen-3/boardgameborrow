@@ -1,0 +1,17 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // API cache collection
+    match /api-cache/{document=**} {
+      // Only allow access from Cloud Functions
+      allow read, write: if false;
+    }
+    
+    // Rate limiting collection
+    match /ratelimits/{document=**} {
+      // Only allow access from Cloud Functions
+      allow read, write: if false;
+    }
+  }
+}

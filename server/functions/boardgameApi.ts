@@ -1,11 +1,9 @@
 import * as functions from 'firebase-functions';
 import * as cors from 'cors';
 import axios from 'axios';
+import { handleCachedApiRequest } from './cacheService';
 
 const corsHandler = cors({ origin: true });
-
-// Cache configuration
-const CACHE_DURATION = 24 * 60 * 60; // 24 hours in seconds
 const BGG_BASE_URL = 'https://boardgamegeek.com/xmlapi2';
 
 export const searchGames = functions.https.onRequest((request, response) => {
@@ -21,21 +19,19 @@ export const searchGames = functions.https.onRequest((request, response) => {
         return response.status(400).json({ error: 'Query parameter is required' });
       }
 
-      // Make request to BGG API
-      const bggResponse = await axios.get(`${BGG_BASE_URL}/search`, {
-        params: {
-          query,
-          type,
-          exact
+      const xmlData = await handleCachedApiRequest(
+        'search',
+        { query, type, exact },
+        async () => {
+          const bggResponse = await axios.get(`${BGG_BASE_URL}/search`, {
+            params: { query, type, exact }
+          });
+          return bggResponse.data;
         }
-      });
+      );
 
-      // Set cache headers
-      response.set('Cache-Control', `public, max-age=${CACHE_DURATION}`);
-      
-      // Return the XML response
       response.set('Content-Type', 'application/xml');
-      response.send(bggResponse.data);
+      response.send(xmlData);
     } catch (error: any) {
       console.error('BGG API Error:', error);
       response.status(500).json({
@@ -59,21 +55,19 @@ export const getGameDetails = functions.https.onRequest((request, response) => {
         return response.status(400).json({ error: 'Game ID is required' });
       }
 
-      // Make request to BGG API
-      const bggResponse = await axios.get(`${BGG_BASE_URL}/thing`, {
-        params: {
-          id,
-          stats: 1,
-          versions: 0
+      const xmlData = await handleCachedApiRequest(
+        'game-details',
+        { id, stats: 1, versions: 0 },
+        async () => {
+          const bggResponse = await axios.get(`${BGG_BASE_URL}/thing`, {
+            params: { id, stats: 1, versions: 0 }
+          });
+          return bggResponse.data;
         }
-      });
+      );
 
-      // Set cache headers
-      response.set('Cache-Control', `public, max-age=${CACHE_DURATION}`);
-      
-      // Return the XML response
       response.set('Content-Type', 'application/xml');
-      response.send(bggResponse.data);
+      response.send(xmlData);
     } catch (error: any) {
       console.error('BGG API Error:', error);
       response.status(500).json({

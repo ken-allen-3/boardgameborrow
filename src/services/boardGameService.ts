@@ -9,6 +9,8 @@ import { measurePerformance, trackCacheOperation } from '../utils/performanceUti
 const CACHE_VERSION = '1.0';
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 const MAX_CACHE_SIZE = 100; // Maximum number of games to cache
+const BATCH_SIZE = 10;
+const BATCH_DELAY = 1000; // 1 second delay between batches
 
 interface CacheEntry<T> {
   version: string;
@@ -102,8 +104,8 @@ class PersistentCache<T> {
 const searchCache = new PersistentCache<BoardGame[]>('bgb-search-cache');
 const gameCache = new PersistentCache<BoardGame>('bgb-game-cache');
 const popularGamesCache = new PersistentCache<BoardGame[]>('bgb-popular-cache');
+const notFoundCache = new PersistentCache<boolean>('bgb-notfound-cache');
 
-const BATCH_SIZE = 10;
 const POPULAR_GAMES_IDS = [
   '174430', // Gloomhaven
   '161936', // Pandemic Legacy: Season 1
@@ -128,121 +130,6 @@ const CATEGORY_IDS = {
 };
 
 const categoryCache = new PersistentCache<BoardGame[]>('bgb-category-cache');
-
-export async function getGamesByCategory(categoryId: string): Promise<BoardGame[]> {
-  return measurePerformance('get-category-games', async () => {
-    console.log(`[BGG] Fetching games for category ${categoryId}`);
-    
-    // Check cache first
-    const cached = categoryCache.get(categoryId, 'category-games');
-    if (cached) {
-      console.log(`[BGG] Returning cached games for category ${categoryId}`);
-      return cached;
-    }
-
-    try {
-      // Use search endpoint with category-specific parameters
-      // Get hot games
-      // Clear cache to ensure fresh data
-      categoryCache.clear();
-      
-      // Search for games in this category
-      // Use the collection endpoint to get top rated games
-      const collectionXmlText = await makeApiRequest('getCollection', {
-        username: 'BGGBot', // BGG's official bot account that has all games
-        subtype: 'boardgame',
-        stats: '1',
-        rated: '1',
-        categoryid: categoryId
-      });
-
-      console.log(`[BGG] Got collection response`);
-      
-      const doc = await parseXML(collectionXmlText);
-      const items = Array.from(doc.getElementsByTagName('item'));
-      
-      // Get IDs of games, sorted by rank
-      const gameIds = items
-        .map(item => item.getAttribute('id'))
-        .filter((id): id is string => typeof id === 'string')
-        .slice(0, 30); // Get 30 games to ensure we have enough after filtering
-
-      console.log(`[BGG] Found ${gameIds.length} potential games`);
-
-      // Get full details for each game
-      console.log(`[BGG] Fetching details for ${gameIds.length} games`);
-      
-      const games = await processBatch(
-        gameIds,
-        async (id) => {
-          try {
-            return await getGameById(id);
-          } catch (error) {
-            console.error(`[BGG] Error fetching game ${id}:`, error);
-            return null;
-          }
-        }
-      );
-
-      // Filter and sort games
-      const validGames = games
-        .filter((game): game is BoardGame => game !== null)
-        .filter(game => {
-          // More lenient category matching
-          const gameCategories = game.categories.map(cat => cat.id);
-          const relatedCategories = getRelatedCategories(categoryId);
-          return gameCategories.some(catId => relatedCategories.includes(catId));
-        })
-        .sort((a, b) => {
-          // Prioritize exact category matches
-          const aExact = a.categories.some(cat => cat.id === categoryId);
-          const bExact = b.categories.some(cat => cat.id === categoryId);
-          if (aExact !== bExact) return aExact ? -1 : 1;
-          
-          // Then sort by rank
-          return (a.rank || 999999) - (b.rank || 999999);
-        })
-        .slice(0, 20); // Ensure exactly 20 games
-
-      console.log(`[BGG] Found ${validGames.length} valid games for category ${categoryId}`);
-      
-      // Cache the results
-      if (validGames.length === 20) {
-        categoryCache.set(categoryId, validGames, 'category-games');
-      }
-      
-      return validGames;
-    } catch (error) {
-      console.error('Failed to fetch games by category:', error);
-      throw createAppError(
-        'Failed to fetch games for category',
-        'CATEGORY_FETCH_ERROR',
-        { categoryId }
-      );
-    }
-  });
-}
-
-// Helper function to get related categories
-function getRelatedCategories(categoryId: string): string[] {
-  // Define related categories for better matching
-  const relatedCategories: Record<string, string[]> = {
-    '1015': ['1015', '1021'], // Strategy + Strategy Games
-    '1016': ['1016', '1041'], // Family + Children's Games
-    '1030': ['1030', '1032'], // Party + Card Game
-    '1010': ['1010', '1046'], // Thematic + Adventure
-    '1019': ['1019', '1051'], // Wargames + Wargame
-    '1009': ['1009', '1028']  // Abstract + Abstract Strategy
-  };
-  
-  return relatedCategories[categoryId] || [categoryId];
-}
-
-export function getCategoryId(category: string): string {
-  return CATEGORY_IDS[category as keyof typeof CATEGORY_IDS] || '';
-}
-
-const BATCH_DELAY = 1000; // 1 second delay between batches
 
 interface SearchResults {
   items: BoardGame[];
@@ -277,6 +164,25 @@ async function processBatch<T>(
   return results;
 }
 
+// Helper function to get related categories
+function getRelatedCategories(categoryId: string): string[] {
+  // Define related categories for better matching
+  const relatedCategories: Record<string, string[]> = {
+    '1015': ['1015', '1021'], // Strategy + Strategy Games
+    '1016': ['1016', '1041'], // Family + Children's Games
+    '1030': ['1030', '1032'], // Party + Card Game
+    '1010': ['1010', '1046'], // Thematic + Adventure
+    '1019': ['1019', '1051'], // Wargames + Wargame
+    '1009': ['1009', '1028']  // Abstract + Abstract Strategy
+  };
+  
+  return relatedCategories[categoryId] || [categoryId];
+}
+
+export function getCategoryId(category: string): string {
+  return CATEGORY_IDS[category as keyof typeof CATEGORY_IDS] || '';
+}
+
 export async function getGameById(id: string): Promise<BoardGame> {
   return measurePerformance('get-game-details', async () => {
     // Check cache first
@@ -286,8 +192,13 @@ export async function getGameById(id: string): Promise<BoardGame> {
       return cachedGame;
     }
 
+    // Check if game is known to not exist
+    if (notFoundCache.get(id, 'game-details')) {
+      throw createAppError('Game not found', 'NOT_FOUND_ERROR', { id });
+    }
+
     try {
-      const xmlText = await makeApiRequest('getGameDetails', {
+      const xmlText = await makeApiRequest('game-details', {
         id,
         stats: '1',
         versions: '0'  // Exclude version info to reduce response size
@@ -297,6 +208,7 @@ export async function getGameById(id: string): Promise<BoardGame> {
       const item = doc.querySelector('item');
 
       if (!item) {
+        notFoundCache.set(id, true, 'game-details');
         throw createAppError('Game not found', 'NOT_FOUND_ERROR', { id });
       }
 
@@ -394,6 +306,9 @@ export async function getGameById(id: string): Promise<BoardGame> {
       gameCache.set(id, game, 'game-details');
       return game;
     } catch (error: any) {
+      if (error.code === 'NOT_FOUND_ERROR') {
+        notFoundCache.set(id, true, 'game-details');
+      }
       const appError = new Error('Error fetching game details') as AppError;
       appError.name = 'AppError';
       appError.code = 'GAME_FETCH_ERROR';
@@ -448,10 +363,15 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
     try {
       console.log('[BGG Search] Starting search for:', query);
       
+      // Skip search if query is too short or contains invalid characters
+      if (query.length < 2 || !/^[a-zA-Z0-9\s-]+$/.test(query)) {
+        return { items: [], hasMore: false };
+      }
+
       // Try exact match first
       let xmlText;
       try {
-        xmlText = await makeApiRequest('searchGames', {
+        xmlText = await makeApiRequest('search-games', {
           query,
           type: 'boardgame',
           exact: '1'
@@ -488,11 +408,15 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
       
       // If no exact matches found, try regular search
       if (gameIds.length === 0) {
+        // Add delay before regular search to respect rate limits
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         let regularXmlText;
         try {
-          regularXmlText = await makeApiRequest('searchGames', {
+          regularXmlText = await makeApiRequest('search-games', {
             query,
-            type: 'boardgame'
+            type: 'boardgame',
+            limit: '30' // Limit results to reduce subsequent detail requests
           });
           console.log('[BGG Search] Regular search response received');
         } catch (error: any) {
@@ -529,9 +453,14 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
       
       console.log('[BGG Search] Total game IDs found:', gameIds.length);
       
-      // Process game IDs in batches
+      // Limit number of games to process and prioritize by relevance
+      const limitedGameIds = gameIds
+        .slice(0, 30) // Limit to top 30 results
+        .filter(id => !notFoundCache.get(id, 'game-details')); // Skip known missing games
+
+      // Process game IDs in smaller batches with increased delay
       const games = await processBatch(
-        gameIds,
+        limitedGameIds,
         async (id) => {
           try {
             return await getGameById(id);
@@ -544,7 +473,9 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
             });
             return null;
           }
-        }
+        },
+        5, // Reduce batch size
+        2000 // Increase delay between batches
       );
 
       const validGames = games.filter((game): game is BoardGame => game !== null);
@@ -552,7 +483,7 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
       
       // Sort results with exact matches first
       const exactMatches = new RegExp(`^${query}$`, 'i');
-      const sortedGames = games.sort((a, b) => {
+      const sortedGames = validGames.sort((a, b) => {
         // Exact matches first
         const aExact = exactMatches.test(a.name);
         const bExact = exactMatches.test(b.name);
@@ -579,12 +510,14 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
       const pageResults = sortedGames.slice(startIdx, endIdx);
       
       // Cache the page results
-      searchCache.set(cacheKey, pageResults, 'search-results');
-      
-      // Cache individual games for faster retrieval
-      pageResults.forEach(game => {
-        gameCache.set(game.id, game, 'game-details');
-      });
+      if (pageResults.length > 0) {
+        searchCache.set(cacheKey, pageResults, 'search-results');
+        
+        // Cache individual games for faster retrieval
+        pageResults.forEach(game => {
+          gameCache.set(game.id, game, 'game-details');
+        });
+      }
       
       return {
         items: pageResults,

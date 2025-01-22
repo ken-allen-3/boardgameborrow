@@ -1,38 +1,23 @@
 import React, { useState } from 'react';
-import { X, Calendar, MapPin, Users, Dice6 } from 'lucide-react';
+import { X, Calendar, MapPin, Users } from 'lucide-react';
 import { Game } from '../../services/gameService';
-import { getUsersByEmail } from '../../services/userService';
+import { GameNight } from '../../types/gameNight';
 import CoverImageSelector from './CoverImageSelector';
-import InviteUsersList from './InviteUsersList';
 
-interface CreateGameNightModalProps {
+interface EditGameNightModalProps {
+  gameNight: GameNight;
   onClose: () => void;
-  onSubmit: (data: {
-    title: string;
-    date: string;
-    location: string;
-    description?: string;
-    maxPlayers?: number;
-    suggestedGames: string[];
-    inviteSettings: {
-      allowInvites: boolean;
-      defaultInvitePermission: boolean;
-    };
-    invitees: { email: string; canInviteOthers: boolean }[];
-  }) => Promise<void>;
+  onSubmit: (updates: Partial<GameNight>) => Promise<void>;
   userGames: Game[];
 }
 
-function CreateGameNightModal({ onClose, onSubmit, userGames }: CreateGameNightModalProps) {
-  const [title, setTitle] = useState('');
-  const [coverImage, setCoverImage] = useState('');
-  const [date, setDate] = useState('');
-  const [location, setLocation] = useState('');
-  const [description, setDescription] = useState('');
-  const [maxPlayers, setMaxPlayers] = useState<number>();
-  const [allowInvites, setAllowInvites] = useState(true);
-  const [defaultInvitePermission, setDefaultInvitePermission] = useState(false);
-  const [invitees, setInvitees] = useState<Map<string, boolean>>(new Map());
+function EditGameNightModal({ gameNight, onClose, onSubmit, userGames }: EditGameNightModalProps) {
+  const [title, setTitle] = useState(gameNight.title);
+  const [coverImage, setCoverImage] = useState(gameNight.coverImage || '');
+  const [date, setDate] = useState(gameNight.date);
+  const [location, setLocation] = useState(gameNight.location);
+  const [description, setDescription] = useState(gameNight.description || '');
+  const [maxPlayers, setMaxPlayers] = useState<number | undefined>(gameNight.maxPlayers);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,30 +43,26 @@ function CreateGameNightModal({ onClose, onSubmit, userGames }: CreateGameNightM
 
     setLoading(true);
     try {
-      // Prepare data object, ensuring maxPlayers is a number or null
-      const gameNightData = {
-        title: title.trim(),
-        coverImage,
-        date,
-        location: location.trim(),
-        description: description.trim(),
-        maxPlayers: maxPlayers,
-        suggestedGames: [],
-        inviteSettings: {
-          allowInvites,
-          defaultInvitePermission
-        },
-        invitees: Array.from(invitees.entries()).map(([email, canInvite]) => ({
-          email,
-          canInviteOthers: canInvite
-        }))
-      };
+      // Only include changed fields in updates
+      const updates: Partial<GameNight> = {};
+      
+      if (title !== gameNight.title) updates.title = title.trim();
+      if (coverImage !== gameNight.coverImage) updates.coverImage = coverImage;
+      if (date !== gameNight.date) updates.date = date;
+      if (location !== gameNight.location) updates.location = location.trim();
+      if (description !== gameNight.description) updates.description = description.trim();
+      if (maxPlayers !== gameNight.maxPlayers) updates.maxPlayers = maxPlayers;
 
-      // Always include inviteSettings, using default values if not specified
-      await onSubmit(gameNightData);
+      // Only submit if there are actual changes
+      if (Object.keys(updates).length === 0) {
+        onClose();
+        return;
+      }
+
+      await onSubmit(updates);
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to create game night');
+      setError(err.message || 'Failed to update game night');
     } finally {
       setLoading(false);
     }
@@ -93,7 +74,7 @@ function CreateGameNightModal({ onClose, onSubmit, userGames }: CreateGameNightM
     <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-lg w-full max-w-md my-8">
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">Plan Game Night</h2>
+          <h2 className="text-lg font-semibold">Edit Game Night</h2>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
             <X className="h-5 w-5" />
           </button>
@@ -190,40 +171,6 @@ function CreateGameNightModal({ onClose, onSubmit, userGames }: CreateGameNightM
             </div>
           </div>
 
-          <InviteUsersList
-            selectedUsers={invitees}
-            onUsersChange={setInvitees}
-            defaultInvitePermission={defaultInvitePermission}
-          />
-
-          <div className="space-y-3">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={allowInvites}
-                onChange={(e) => setAllowInvites(e.target.checked)}
-                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-              />
-              <span className="text-sm font-medium text-gray-700">
-                Allow attendees to invite others
-              </span>
-            </label>
-
-            {allowInvites && (
-              <label className="flex items-center gap-2 ml-6">
-                <input
-                  type="checkbox"
-                  checked={defaultInvitePermission}
-                  onChange={(e) => setDefaultInvitePermission(e.target.checked)}
-                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                />
-                <span className="text-sm text-gray-700">
-                  Let invited users invite others by default
-                </span>
-              </label>
-            )}
-          </div>
-
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
@@ -237,7 +184,7 @@ function CreateGameNightModal({ onClose, onSubmit, userGames }: CreateGameNightM
               disabled={loading}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
             >
-              {loading ? 'Creating...' : 'Create Game Night'}
+              {loading ? 'Updating...' : 'Update Game Night'}
             </button>
           </div>
         </form>
@@ -246,4 +193,4 @@ function CreateGameNightModal({ onClose, onSubmit, userGames }: CreateGameNightM
   );
 }
 
-export default CreateGameNightModal;
+export default EditGameNightModal;

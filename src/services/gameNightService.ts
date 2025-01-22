@@ -193,6 +193,36 @@ export async function cancelGameNight(id: string, hostEmail: string): Promise<vo
   await remove(ref(db, `gameNights/${id}`));
 }
 
+export async function updateGameNight(
+  id: string,
+  hostEmail: string,
+  updates: Partial<Omit<GameNight, 'id' | 'hostId' | 'createdAt' | 'updatedAt' | 'attendees'>>
+): Promise<void> {
+  const db = getDatabase();
+  const gameNight = await getGameNight(id);
+  
+  if (!gameNight) {
+    throw new Error('Game night not found');
+  }
+  
+  if (gameNight.hostId !== hostEmail.replace(/\./g, ',')) {
+    throw new Error('Only the host can update a game night');
+  }
+
+  const gameNightRef = ref(db, `gameNights/${id}`);
+  const now = new Date().toISOString();
+  
+  try {
+    await update(gameNightRef, {
+      ...updates,
+      updatedAt: now
+    });
+  } catch (error) {
+    console.error('Failed to update game night:', error);
+    throw new Error('Failed to update game night. Please try again.');
+  }
+}
+
 export async function suggestGamesForGameNight(
   gameNightId: string,
   gameIds: string[]

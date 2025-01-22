@@ -10,7 +10,8 @@ import {
   cancelGameNight,
   inviteUsers,
   suggestGamesForGameNight,
-  getAvailableGamesForGameNight
+  getAvailableGamesForGameNight,
+  updateGameNight
 } from '../services/gameNightService';
 import CreateGameNightModal from '../components/gameNight/CreateGameNightModal';
 import GameNightCard from '../components/gameNight/GameNightCard';
@@ -61,6 +62,10 @@ function GameNights() {
     maxPlayers?: number;
     suggestedGames: string[];
     invitees: { email: string; canInviteOthers: boolean }[];
+    inviteSettings: {
+      allowInvites: boolean;
+      defaultInvitePermission: boolean;
+    };
   }) => {
     if (!currentUser?.email) return;
 
@@ -90,6 +95,19 @@ function GameNights() {
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError('Failed to update response. Please try again.');
+    }
+  };
+
+  const handleEdit = async (gameNightId: string, updates: Partial<GameNight>) => {
+    if (!currentUser?.email) return;
+
+    try {
+      await updateGameNight(gameNightId, currentUser.email, updates);
+      await loadData();
+      setSuccess('Game night updated successfully!');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to update game night');
     }
   };
 
@@ -214,6 +232,11 @@ function GameNights() {
                     ? () => handleCancel(night.id)
                     : undefined
                 }
+                onEdit={
+                  night.hostId === currentUser!.email!.replace(/\./g, ',')
+                    ? (updates) => handleEdit(night.id, updates)
+                    : undefined
+                }
               />
             ))}
           </div>
@@ -231,6 +254,20 @@ function GameNights() {
                 games={userGames}
                 currentUserEmail={currentUser!.email!}
                 onRespond={(status) => handleRespond(night.id, status)}
+                onSuggestGames={async (gameIds) => {
+                  try {
+                    const availableGames = await getAvailableGamesForGameNight(night.id);
+                    setAvailableGames(availableGames);
+                    await handleSuggestGames(night.id, gameIds);
+                  } catch (err: any) {
+                    setError(err.message || 'Failed to load available games');
+                  }
+                }}
+                onEdit={
+                  night.hostId === currentUser!.email!.replace(/\./g, ',')
+                    ? (updates) => handleEdit(night.id, updates)
+                    : undefined
+                }
               />
             ))}
           </div>

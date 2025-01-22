@@ -67,6 +67,10 @@ boardgameborrow/
 - Friend connections
 - Group creation and management
 - Game night organization
+  - Creation and editing of game nights
+  - Attendee management and invites
+  - Game suggestions system
+  - Host controls for event management
 - Borrowing system with request management
 - Real-time in-app notifications
 

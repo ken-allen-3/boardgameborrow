@@ -10,7 +10,7 @@
   - [x] Basic game night creation with title, date, location
   - [x] Cover image selection
   - [x] Attendee management (going/maybe/declined)
-  - [ ] Edit/update existing game nights
+  - [x] Edit/update existing game nights
   - [ ] Recurring game night support
 
 - Game Integration

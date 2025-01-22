@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Calendar, MapPin, Users, Dice6, Clock } from 'lucide-react';
+import { Calendar, MapPin, Users, Dice6, Clock, Edit2 } from 'lucide-react';
 import { GameNight } from '../../types/gameNight';
 import { Game } from '../../services/gameService';
 import { suggestGamesForGameNight } from '../../services/gameNightService';
 import InviteUsersModal from './InviteUsersModal';
 import SuggestGamesModal from './SuggestGamesModal';
+import EditGameNightModal from './EditGameNightModal';
 
 interface GameNightCardProps {
   gameNight: GameNight;
@@ -14,6 +15,7 @@ interface GameNightCardProps {
   onInviteUsers?: (invitees: { email: string; canInviteOthers: boolean }[]) => Promise<void>;
   onSuggestGames: (gameIds: string[]) => Promise<void>;
   onCancel?: () => void;
+  onEdit?: (updates: Partial<GameNight>) => Promise<void>;
 }
 
 function GameNightCard({ 
@@ -23,16 +25,18 @@ function GameNightCard({
   onRespond,
   onInviteUsers,
   onSuggestGames: handleSuggestGames,
-  onCancel 
+  onCancel,
+  onEdit 
 }: GameNightCardProps) {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showSuggestGamesModal, setShowSuggestGamesModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const userKey = currentUserEmail.replace(/\./g, ',');
   const isHost = gameNight.hostId === userKey;
   const userResponse = gameNight.attendees[userKey]?.status;
   const attendeeCounts = {
     going: Object.values(gameNight.attendees).filter(a => a.status === 'going').length,
-    invited: Object.values(gameNight.attendees).filter(a => !a.status || a.status === 'pending').length,
+    invited: Object.values(gameNight.attendees).filter(a => !a.status || a.status === ('pending' as any)).length,
     declined: Object.values(gameNight.attendees).filter(a => a.status === 'declined').length
   };
   const canInviteOthers = isHost || (gameNight.inviteSettings?.allowInvites && gameNight.attendees[userKey]?.canInviteOthers);
@@ -159,13 +163,26 @@ function GameNightCard({
           </button>
         )}
 
-        {isHost && onCancel && (
-          <button
-            onClick={onCancel}
-            className="w-full mt-4 px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50"
-          >
-            Cancel Game Night
-          </button>
+        {isHost && (
+          <div className="space-y-4 mt-4">
+            {onEdit && new Date(gameNight.date) > new Date() && (
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="w-full px-4 py-2 border border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50 flex items-center justify-center gap-2"
+              >
+                <Edit2 className="h-5 w-5" />
+                Edit Game Night
+              </button>
+            )}
+            {onCancel && (
+              <button
+                onClick={onCancel}
+                className="w-full px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50"
+              >
+                Cancel Game Night
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -186,7 +203,16 @@ function GameNightCard({
         />
       )}
 
-      {showInviteModal && (
+      {showEditModal && (
+        <EditGameNightModal
+          gameNight={gameNight}
+          onClose={() => setShowEditModal(false)}
+          onSubmit={onEdit!}
+          userGames={games}
+        />
+      )}
+
+      {showInviteModal && onInviteUsers && (
         <InviteUsersModal
           onClose={() => setShowInviteModal(false)}
           onInvite={onInviteUsers}

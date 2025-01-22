@@ -446,47 +446,109 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
     }
 
     try {
+      console.log('[BGG Search] Starting search for:', query);
+      
       // Try exact match first
-      // Clear all caches to ensure fresh data
-      searchCache.clear();
-      gameCache.clear();
+      let xmlText;
+      try {
+        xmlText = await makeApiRequest(`https://boardgamegeek.com/xmlapi2/search`, {
+          query,
+          type: 'boardgame',
+          exact: '1'
+        });
+        console.log('[BGG Search] Exact search response received');
+      } catch (error: any) {
+        console.error('[BGG Search] Exact search failed:', {
+          error: error.message,
+          status: error.status,
+          response: error.response
+        });
+        throw error;
+      }
       
-      const xmlText = await makeApiRequest(`https://boardgamegeek.com/xmlapi2/search`, {
-        query,
-        type: 'boardgame',
-        exact: '1'
-      });
-      
-      const doc = await parseXML(xmlText);
+      let doc;
+      try {
+        doc = await parseXML(xmlText);
+        console.log('[BGG Search] XML parsed successfully');
+      } catch (error) {
+        console.error('[BGG Search] XML parsing failed:', error);
+        throw createAppError(
+          'Failed to parse search results',
+          'XML_PARSE_ERROR',
+          { query, error }
+        );
+      }
+
       const items = Array.from(doc.getElementsByTagName('item'));
-      const gameIds = items
+      let gameIds = items
         .map(item => item.getAttribute('id'))
         .filter((id): id is string => typeof id === 'string');
       
+      console.log('[BGG Search] Exact matches found:', gameIds.length);
+      
       // If no exact matches found, try regular search
       if (gameIds.length === 0) {
-        const regularXmlText = await makeApiRequest(`https://boardgamegeek.com/xmlapi2/search`, {
-          query,
-          type: 'boardgame'
-        });
+        let regularXmlText;
+        try {
+          regularXmlText = await makeApiRequest(`https://boardgamegeek.com/xmlapi2/search`, {
+            query,
+            type: 'boardgame'
+          });
+          console.log('[BGG Search] Regular search response received');
+        } catch (error: any) {
+          console.error('[BGG Search] Regular search failed:', {
+            error: error.message,
+            status: error.status,
+            response: error.response
+          });
+          throw error;
+        }
         
-        const regularDoc = await parseXML(regularXmlText);
-        const regularItems = Array.from(regularDoc.getElementsByTagName('item'));
-        gameIds.push(...regularItems
-          .map(item => item.getAttribute('id'))
-          .filter((id): id is string => typeof id === 'string')
-        );
+        try {
+          const regularDoc = await parseXML(regularXmlText);
+          console.log('[BGG Search] Regular search XML parsed successfully');
+          const regularItems = Array.from(regularDoc.getElementsByTagName('item'));
+          const regularIds = regularItems
+            .map(item => item.getAttribute('id'))
+            .filter((id): id is string => typeof id === 'string');
+          console.log('[BGG Search] Regular matches found:', regularIds.length);
+          gameIds = regularIds;
+        } catch (error) {
+          console.error('[BGG Search] Regular search XML parsing failed:', error);
+          throw createAppError(
+            'Failed to parse search results',
+            'XML_PARSE_ERROR',
+            { query, error }
+          );
+        }
       }
       
       if (gameIds.length === 0) {
         return { items: [], hasMore: false };
       }
       
-      // Process game IDs in batches to avoid rate limiting
+      console.log('[BGG Search] Total game IDs found:', gameIds.length);
+      
+      // Process game IDs in batches
       const games = await processBatch(
         gameIds,
-        id => getGameById(id)
+        async (id) => {
+          try {
+            return await getGameById(id);
+          } catch (error: any) {
+            console.error('[BGG Search] Failed to fetch game details:', {
+              gameId: id,
+              error: error.message,
+              status: error.status,
+              response: error.response
+            });
+            return null;
+          }
+        }
       );
+
+      const validGames = games.filter((game): game is BoardGame => game !== null);
+      console.log('[BGG Search] Successfully fetched games:', validGames.length);
       
       // Sort results with exact matches first
       const exactMatches = new RegExp(`^${query}$`, 'i');
@@ -529,21 +591,45 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
         hasMore: endIdx < sortedGames.length
       };
     } catch (error: any) {
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred while searching games';
-      const appError = new Error('Error searching games') as AppError;
+      // Enhanced error logging
+      console.error('[BGG Search] Search failed:', {
+        query,
+        error: error.message,
+        code: error.code,
+        status: error.status,
+        response: error.response,
+        stack: error.stack
+      });
+
+      // Create more specific error messages based on the error type
+      let errorMessage = 'An error occurred while searching games';
+      let errorCode = 'SEARCH_ERROR';
+
+      if (error.status === 429) {
+        errorMessage = 'Too many requests. Please wait a moment and try again.';
+        errorCode = 'RATE_LIMIT_ERROR';
+      } else if (error.status >= 500) {
+        errorMessage = 'BoardGameGeek service is temporarily unavailable. Please try again later.';
+        errorCode = 'SERVICE_UNAVAILABLE';
+      } else if (error.code === 'XML_PARSE_ERROR') {
+        errorMessage = 'Failed to process search results. Please try again.';
+        errorCode = 'PARSE_ERROR';
+      }
+
+      const appError = new Error(errorMessage) as AppError;
       appError.name = 'AppError';
-      appError.code = 'SEARCH_ERROR';
+      appError.code = errorCode;
       appError.context = {
-        error: errorMessage,
-        query
+        query,
+        originalError: {
+          message: error.message,
+          status: error.status,
+          code: error.code
+        }
       };
       logError(appError);
       
-      throw createAppError(
-        'An error occurred while fetching game data. Please try again.',
-        'SEARCH_ERROR',
-        { query }
-      );
+      throw createAppError(errorMessage, errorCode, { query });
     }
   });
 }

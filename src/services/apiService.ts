@@ -30,7 +30,7 @@ export async function makeApiRequest(endpoint: string, params: Record<string, st
 
   console.log('[API] Making request:', { endpoint, params });
 
-  const url = `${FUNCTIONS_BASE_URL}/${endpoint}`;
+  const url = `${FUNCTIONS_BASE_URL}/${endpoint === 'game-details' ? 'getGameDetails' : 'searchGames'}`;
 
   const request = axios.get(url, { 
     params,

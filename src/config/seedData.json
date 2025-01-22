@@ -6,7 +6,7 @@
       "description": "A welcoming group for families who love playing board games together. All ages welcome!",
       "visibility": "public",
       "theme": "family",
-      "coverImage": "https://source.unsplash.com/random/800x400/?family,boardgame",
+      "coverImage": "/board-game-placeholder-1.webp",
       "members": {
         "u1": {
           "role": "owner",
@@ -24,7 +24,7 @@
       "description": "For players who love deep strategic games and complex decision making.",
       "visibility": "public",
       "theme": "strategy",
-      "coverImage": "https://source.unsplash.com/random/800x400/?strategy,chess",
+      "coverImage": "/board-game-placeholder-2.webp",
       "members": {
         "u2": {
           "role": "owner",
@@ -42,7 +42,7 @@
       "description": "Join us for fun, laughter, and exciting party games!",
       "visibility": "public", 
       "theme": "party",
-      "coverImage": "https://source.unsplash.com/random/800x400/?party,fun",
+      "coverImage": "/board-game-placeholder-3.webp",
       "members": {
         "u3": {
           "role": "owner",
@@ -382,7 +382,7 @@
       "id": "gn1",
       "hostId": "u1",
       "title": "Family Game Night Extravaganza",
-      "coverImage": "https://source.unsplash.com/random/800x400/?family,games",
+      "coverImage": "/board-game-placeholder-1.webp",
       "date": "2024-02-15T18:00:00Z",
       "location": "Community Center",
       "description": "Join us for a fun evening of family-friendly board games! All ages welcome.",
@@ -405,7 +405,7 @@
       "id": "gn2",
       "hostId": "u2",
       "title": "Strategy Game Night",
-      "coverImage": "https://source.unsplash.com/random/800x400/?strategy,board",
+      "coverImage": "/board-game-placeholder-2.webp",
       "date": "2024-02-20T19:00:00Z",
       "location": "Local Game Store",
       "description": "An evening dedicated to complex strategy games. Bring your thinking cap!",
@@ -428,7 +428,7 @@
       "id": "gn3",
       "hostId": "u3",
       "title": "Party Game Marathon",
-      "coverImage": "https://source.unsplash.com/random/800x400/?party,celebration",
+      "coverImage": "/board-game-placeholder-3.webp",
       "date": "2024-02-25T20:00:00Z",
       "location": "Recreation Center",
       "description": "Non-stop party games, laughter, and fun! Perfect for social gamers.",
@@ -454,7 +454,7 @@
       "email": "sarah.parker@example.com",
       "firstName": "Sarah",
       "lastName": "Parker",
-      "photoUrl": "https://source.unsplash.com/random/400x400/?woman,portrait",
+      "photoUrl": "/profile-placeholder-1.png",
       "location": "Seattle, WA",
       "coordinates": {
         "latitude": 47.6062,
@@ -479,7 +479,7 @@
       "email": "michael.chen@example.com", 
       "firstName": "Michael",
       "lastName": "Chen",
-      "photoUrl": "https://source.unsplash.com/random/400x400/?man,portrait",
+      "photoUrl": "/profile-placeholder-2.png",
       "location": "San Francisco, CA",
       "coordinates": {
         "latitude": 37.7749,
@@ -504,7 +504,7 @@
       "email": "alex.rodriguez@example.com",
       "firstName": "Alex",
       "lastName": "Rodriguez",
-      "photoUrl": "https://source.unsplash.com/random/400x400/?person,portrait",
+      "photoUrl": "/profile-placeholder-3.png",
       "location": "Austin, TX",
       "coordinates": {
         "latitude": 30.2672,

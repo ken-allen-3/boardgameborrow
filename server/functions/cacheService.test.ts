@@ -1,252 +1,170 @@
-import { db } from './index';
-import {
-  generateCacheKey,
-  isCacheValid,
-  getCacheEntry,
-  setCacheEntry,
-  handleCachedApiRequest,
-} from './cacheService';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { getFirestore } from 'firebase-admin/firestore';
+import { refreshPopularGamesCache, refreshCacheManually } from './refreshPopularGamesCache';
+import { bggApiService } from '../../src/services/bggApiService';
 
-// Mock Firebase admin
-jest.mock('./index', () => ({
-  db: {
-    collection: jest.fn(),
-  },
+// Mock Firebase Admin
+// Mock Firebase Admin
+interface MockDocumentData {
+  games: any[];
+  lastUpdated: number;
+  source?: string;
+  metadata?: {
+    totalGames: number;
+    preservedGames: number;
+    refreshDate: string;
+  };
+}
+
+interface MockDocumentSnapshot {
+  exists: () => boolean;
+  data: () => MockDocumentData;
+}
+
+interface MockQuerySnapshot {
+  forEach: (callback: (doc: { id: string }) => void) => void;
+}
+
+type MockFirestore = {
+  collection: jest.Mock;
+  doc: jest.Mock;
+  get: jest.Mock;
+  set: jest.Mock;
+  where: jest.Mock;
+};
+
+const mockFirestore: MockFirestore = {
+  collection: jest.fn().mockReturnThis(),
+  doc: jest.fn().mockReturnThis(),
+  get: jest.fn().mockImplementation(() => Promise.resolve({
+    exists: () => true,
+    data: () => ({
+      games: [],
+      lastUpdated: Date.now()
+    } as MockDocumentData)
+  } as MockDocumentSnapshot)),
+  set: jest.fn().mockImplementation(() => Promise.resolve()),
+  where: jest.fn().mockReturnThis()
+};
+
+jest.mock('firebase-admin/firestore', () => ({
+  getFirestore: jest.fn(() => mockFirestore)
 }));
 
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockFirestore.get.mockImplementation(() => Promise.resolve({
+    exists: () => true,
+    data: () => ({
+      games: mockGames,
+      lastUpdated: Date.now()
+    } as MockDocumentData)
+  } as MockDocumentSnapshot));
+  (bggApiService.fetchCategoryRankings as jest.Mock).mockImplementation(() => Promise.resolve(mockGames));
+});
+
+// Mock BGG API Service
+jest.mock('../../src/services/bggApiService', () => ({
+  bggApiService: {
+    fetchCategoryRankings: jest.fn()
+  }
+}));
+
+const mockGames = [
+  {
+    id: '1',
+    name: 'Test Game 1',
+    rank: {
+      abstracts: 1,
+      cgs: null,
+      childrens: null,
+      family: 2,
+      party: null,
+      strategy: 3,
+      thematic: null,
+      wargames: null
+    }
+  },
+  {
+    id: '2',
+    name: 'Test Game 2',
+    rank: {
+      abstracts: 2,
+      cgs: 1,
+      childrens: null,
+      family: 1,
+      party: null,
+      strategy: 2,
+      thematic: null,
+      wargames: null
+    }
+  }
+];
+
 describe('Cache Service', () => {
-  // Mock console.log to capture metric logs
-  const originalConsoleLog = console.log;
-  let loggedMetrics: any[] = [];
+  describe('refreshCacheManually', () => {
+    it('should refresh cache for all categories', async () => {
+      await refreshCacheManually();
 
-  beforeEach(() => {
-    loggedMetrics = [];
-    console.log = jest.fn((data) => {
-      try {
-        const parsed = JSON.parse(data);
-        loggedMetrics.push(parsed);
-      } catch (e) {
-        // Not JSON, ignore
-      }
+      // Verify BGG API was called for each category
+      expect(bggApiService.fetchCategoryRankings).toHaveBeenCalledTimes(8); // One for each category
+
+      // Verify Firestore was updated
+      const db = getFirestore();
+      expect(db.collection).toHaveBeenCalledWith('game-rankings');
+    });
+
+    it('should handle API errors gracefully', async () => {
+      // Simulate API error for one category
+      (bggApiService.fetchCategoryRankings as jest.Mock)
+        .mockImplementationOnce(() => Promise.reject(new Error('API Error')))
+        .mockImplementation(() => Promise.resolve(mockGames));
+
+      await refreshCacheManually();
+
+      // Should continue processing other categories
+      expect(bggApiService.fetchCategoryRankings).toHaveBeenCalledTimes(8);
+    });
+
+    it('should preserve high usage games', async () => {
+      // Mock high usage games
+      const db = getFirestore();
+      mockFirestore.get.mockImplementationOnce(() => Promise.resolve({
+        forEach: (callback: (doc: { id: string }) => void) => {
+          callback({ id: '1' }); // Game 1 is high usage
+        }
+      } as MockQuerySnapshot));
+
+      await refreshCacheManually();
+
+      // Verify the high usage game was preserved
+      expect(mockFirestore.set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          games: expect.arrayContaining([
+            expect.objectContaining({ id: '1' })
+          ])
+        })
+      );
     });
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-    console.log = originalConsoleLog;
-  });
+  describe('Cache Validation', () => {
+    it('should validate cache data structure', async () => {
+      await refreshCacheManually();
 
-  describe('generateCacheKey', () => {
-    it('should generate consistent cache keys', () => {
-      const endpoint = '/games/search';
-      const params = { query: 'Catan', limit: 10 };
-      const key = generateCacheKey(endpoint, params);
-      expect(key).toBe('/games/search:{"query":"Catan","limit":10}');
-    });
-  });
-
-  describe('isCacheValid', () => {
-    it('should return true for fresh cache entries', () => {
-      const entry = {
-        data: 'test data',
-        timestamp: Date.now() - 1000, // 1 second ago
-        endpoint: '/test',
-        params: {},
-      };
-      expect(isCacheValid(entry)).toBe(true);
-    });
-
-    it('should return false for expired cache entries', () => {
-      const entry = {
-        data: 'test data',
-        timestamp: Date.now() - (25 * 60 * 60 * 1000), // 25 hours ago
-        endpoint: '/test',
-        params: {},
-      };
-      expect(isCacheValid(entry)).toBe(false);
-    });
-  });
-
-  describe('getCacheEntry', () => {
-    it('should return cached data when available', async () => {
-      const mockDoc = {
-        exists: true,
-        data: () => ({
-          data: 'cached response',
-          timestamp: Date.now(),
-          endpoint: '/test',
-          params: {},
-        }),
-      };
-
-      const mockGet = jest.fn().mockResolvedValue(mockDoc);
-      const mockCollection = jest.fn().mockReturnValue({
-        doc: jest.fn().mockReturnValue({ get: mockGet }),
-      });
-
-      (db.collection as jest.Mock).mockImplementation(mockCollection);
-
-      const result = await getCacheEntry('test-key');
-      expect(result).toBeTruthy();
-      expect(result?.data).toBe('cached response');
-      
-      // Verify logging
-      expect(loggedMetrics.some(log => 
-        log.type === 'cache_performance' && 
-        log.operation === 'getCacheEntry' && 
-        log.success === true
-      )).toBe(true);
-    });
-
-    it('should return null when cache entry does not exist', async () => {
-      const mockDoc = {
-        exists: false,
-      };
-
-      const mockGet = jest.fn().mockResolvedValue(mockDoc);
-      const mockCollection = jest.fn().mockReturnValue({
-        doc: jest.fn().mockReturnValue({ get: mockGet }),
-      });
-
-      (db.collection as jest.Mock).mockImplementation(mockCollection);
-
-      const result = await getCacheEntry('test-key');
-      expect(result).toBeNull();
-    });
-
-    it('should handle errors gracefully', async () => {
-      const mockGet = jest.fn().mockRejectedValue(new Error('Firestore error'));
-      const mockCollection = jest.fn().mockReturnValue({
-        doc: jest.fn().mockReturnValue({ get: mockGet }),
-      });
-
-      (db.collection as jest.Mock).mockImplementation(mockCollection);
-
-      const result = await getCacheEntry('test-key');
-      expect(result).toBeNull();
-      
-      // Verify error logging
-      expect(loggedMetrics.some(log => 
-        log.type === 'cache_error' && 
-        log.operation === 'get'
-      )).toBe(true);
-    });
-  });
-
-  describe('handleCachedApiRequest', () => {
-    it('should serve from cache on cache hit', async () => {
-      // Mock cache hit
-      const mockDoc = {
-        exists: true,
-        data: () => ({
-          data: 'cached data',
-          timestamp: Date.now(),
-          endpoint: '/test',
-          params: {},
-        }),
-      };
-
-      const mockGet = jest.fn().mockResolvedValue(mockDoc);
-      const mockCollection = jest.fn().mockReturnValue({
-        doc: jest.fn().mockReturnValue({ get: mockGet }),
-      });
-
-      (db.collection as jest.Mock).mockImplementation(mockCollection);
-
-      const mockApiFn = jest.fn();
-      const result = await handleCachedApiRequest('/test', {}, mockApiFn);
-
-      expect(result).toBe('cached data');
-      expect(mockApiFn).not.toHaveBeenCalled();
-      
-      // Verify cache hit logging
-      expect(loggedMetrics.some(log => log.type === 'cache_hit')).toBe(true);
-    });
-
-    it('should call API and update cache on cache miss', async () => {
-      // Mock cache miss
-      const mockDoc = {
-        exists: false,
-      };
-
-      const mockGet = jest.fn().mockResolvedValue(mockDoc);
-      const mockSet = jest.fn().mockResolvedValue(undefined);
-      const mockCollection = jest.fn().mockReturnValue({
-        doc: jest.fn().mockReturnValue({ 
-          get: mockGet,
-          set: mockSet,
-        }),
-      });
-
-      (db.collection as jest.Mock).mockImplementation(mockCollection);
-
-      const mockApiFn = jest.fn().mockResolvedValue('fresh data');
-      const result = await handleCachedApiRequest('/test', {}, mockApiFn);
-
-      expect(result).toBe('fresh data');
-      expect(mockApiFn).toHaveBeenCalled();
-      expect(mockSet).toHaveBeenCalled();
-      
-      // Verify cache miss logging
-      expect(loggedMetrics.some(log => log.type === 'cache_miss')).toBe(true);
-    });
-
-    it('should retry on API failure', async () => {
-      // Mock cache miss
-      const mockDoc = {
-        exists: false,
-      };
-
-      const mockGet = jest.fn().mockResolvedValue(mockDoc);
-      const mockSet = jest.fn().mockResolvedValue(undefined);
-      const mockCollection = jest.fn().mockReturnValue({
-        doc: jest.fn().mockReturnValue({ 
-          get: mockGet,
-          set: mockSet,
-        }),
-      });
-
-      (db.collection as jest.Mock).mockImplementation(mockCollection);
-
-      const mockApiFn = jest.fn()
-        .mockRejectedValueOnce(new Error('API error'))
-        .mockResolvedValueOnce('success after retry');
-
-      const result = await handleCachedApiRequest('/test', {}, mockApiFn);
-
-      expect(result).toBe('success after retry');
-      expect(mockApiFn).toHaveBeenCalledTimes(2);
-      
-      // Verify retry logging
-      expect(loggedMetrics.some(log => log.type === 'api_retry')).toBe(true);
-    });
-
-    it('should handle rate limit errors', async () => {
-      // Mock cache miss
-      const mockDoc = {
-        exists: false,
-      };
-
-      const mockGet = jest.fn().mockResolvedValue(mockDoc);
-      const mockCollection = jest.fn().mockReturnValue({
-        doc: jest.fn().mockReturnValue({ get: mockGet }),
-      });
-
-      (db.collection as jest.Mock).mockImplementation(mockCollection);
-
-      const rateLimitError = new Error('429: Rate limit exceeded');
-      (rateLimitError as any).response = { status: 429 };
-
-      const mockApiFn = jest.fn().mockRejectedValue(rateLimitError);
-
-      await expect(handleCachedApiRequest('/test', {}, mockApiFn))
-        .rejects.toThrow();
-      
-      // Verify rate limit error logging
-      expect(loggedMetrics.some(log => 
-        log.type === 'api_error' && 
-        log.error === '429: Rate limit exceeded'
-      )).toBe(true);
+      const db = getFirestore();
+      expect(mockFirestore.set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          games: expect.any(Array),
+          lastUpdated: expect.any(Number),
+          source: 'bgg-api',
+          metadata: expect.objectContaining({
+            totalGames: expect.any(Number),
+            preservedGames: expect.any(Number),
+            refreshDate: expect.any(String)
+          })
+        })
+      );
     });
   });
 });

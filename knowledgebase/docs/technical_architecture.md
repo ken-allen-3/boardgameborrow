@@ -83,13 +83,45 @@ Board Game Borrow is a full-stack application built with:
    - Code splitting
    - Lazy loading
    - Image optimization
-   - Caching strategies
+   - Local memory caching for game data
+   - Session-based cache management
 
 2. **Backend**
-   - API rate limiting
-   - Data caching
-   - Efficient queries
-   - Background processing
+   - Two-tier caching architecture:
+     * Firebase collections for server-side caching
+     * Local memory cache for fast access
+   - Monthly cache refresh via Cloud Functions
+   - Dynamic cache updates based on usage patterns
+   - Intelligent preservation of frequently accessed data
+   - API rate limiting with automatic retries
+   - Background processing for cache updates
+
+3. **Caching Strategy**
+   - Game rankings cached by category and month
+   - Individual game details cached with usage metrics
+   - Fallback to CSV data when API unavailable
+   - Cache monitoring and analytics
+   - See [Caching Architecture](./caching_architecture.md) for details
+
+## Data Collections
+
+### Firebase Collections
+
+1. **Core Data**
+   - /users: User profiles and preferences
+   - /games: User-owned games
+   - /groups: Gaming groups
+   - /game-nights: Scheduled events
+
+2. **Cache Collections**
+   - /game-rankings/{category}/{month}: Popular games by category
+   - /game-details/{gameId}: Cached game details with usage metrics
+   - See [Cache Monitoring Setup](./cache_monitoring_setup.md) for monitoring
+
+3. **Analytics**
+   - /analytics/cache: Cache performance metrics
+   - /analytics/api: API usage and errors
+   - /analytics/user-patterns: User behavior analytics
 
 ## Development Workflow
 

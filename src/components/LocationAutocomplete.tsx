@@ -53,7 +53,7 @@ export function LocationAutocomplete({
     try {
       console.log('Fetching locations for query:', query);
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_API_KEY}&types=place,locality,neighborhood,postcode&country=US`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_API_KEY}&types=place,locality,neighborhood,postcode`
       );
 
       if (!response.ok) {
@@ -114,8 +114,15 @@ export function LocationAutocomplete({
 
   const formatSuggestion = (suggestion: GeocodingResult): string => {
     const city = suggestion.text;
-    const state = suggestion.context?.find(ctx => ctx.short_code?.startsWith('US-'))?.short_code?.replace('US-', '');
-    return state ? `${city}, ${state}` : city;
+    const region = suggestion.context?.find(ctx => ctx.id.startsWith('region'))?.text;
+    const country = suggestion.context?.find(ctx => ctx.id.startsWith('country'))?.text;
+    
+    if (region && country) {
+      return `${city}, ${region}, ${country}`;
+    } else if (country) {
+      return `${city}, ${country}`;
+    }
+    return city;
   };
 
   return (

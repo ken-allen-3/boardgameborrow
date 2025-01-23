@@ -1,15 +1,32 @@
 # Cache Monitoring Setup Guide
 
 ## Overview
-This document outlines the monitoring and alerting configuration for the BGG API caching system. The monitoring system tracks cache performance, API rate limits, and function execution times.
+This document outlines the monitoring and alerting configuration for our two-tier caching system:
+1. Firebase-based server cache for game rankings and details
+2. Local memory cache for fast access during user sessions
+
+The monitoring system tracks cache performance across both tiers, BGG API rate limits, and function execution times.
+
+## Cache Architecture Overview
+Our caching system consists of two main components:
+
+1. **Firebase Collections**
+   - `/game-rankings/{category}/{month}`: Monthly rankings by game category
+   - `/game-details/{gameId}`: Individual game details with usage metrics
+
+2. **Local Memory Cache**
+   - In-memory Map for fast access to frequently requested data
+   - Automatically cleared on session initialization
 
 ## Implemented Metrics
 The following metrics are automatically logged by the system:
 
 1. **Cache Performance**
-   - Cache hit/miss ratios (logged every 100 requests)
+   - Server cache hit/miss ratios (logged every 100 requests)
+   - Local cache hit/miss ratios
    - Cache operation durations
    - Cache errors
+   - Game usage frequency metrics
 
 2. **API Performance**
    - Rate limit errors (429 responses)
@@ -20,6 +37,19 @@ The following metrics are automatically logged by the system:
    - Total requests
    - Success/failure rates
    - Response times
+
+## Scheduled Operations
+The following operations are scheduled to maintain cache freshness:
+
+1. **Monthly Cache Refresh**
+   - Runs at midnight on the 1st of each month
+   - Updates game rankings while preserving high-usage games
+   - Logs refresh statistics and any errors
+
+2. **Usage Analytics**
+   - Tracks game access frequency
+   - Identifies high-usage games for preservation
+   - Helps optimize cache refresh strategy
 
 ## Firebase Monitoring Alert Setup
 
@@ -47,11 +77,17 @@ Configure in Firebase Console:
 - Window: 5-minute periods
 - Notification: Medium priority alert
 
-### 4. Cache Error Alert
+### 4. Cache Error Alerts
 Configure in Firebase Console:
 - Navigate to: Functions > Monitoring > Create Alert
-- Metric: Custom Log Entry containing "cache_error"
-- Condition: Count > 10 per hour
+- Metrics to monitor:
+  - Custom Log Entry containing "cache_error"
+  - Monthly refresh failures
+  - Game details fetch failures
+- Conditions:
+  - General cache errors: Count > 10 per hour
+  - Refresh failures: Any failure during monthly refresh
+  - Game details: > 5 fetch failures per minute
 - Notification: Medium priority alert
 
 ## Monitoring Dashboard Setup
@@ -81,6 +117,37 @@ Configure in Firebase Console:
    - Functions: searchGames, getGameDetails
    - Time Range: Last 24 hours
    ```
+
+## Cache Refresh Monitoring
+
+### Monthly Refresh Logs
+```json
+{
+  "type": "cache_refresh",
+  "timestamp": "2025-01-01T00:00:00.000Z",
+  "categories": {
+    "strategy": {
+      "totalGames": 100,
+      "preservedGames": 15,
+      "newGames": 85
+    }
+  },
+  "duration": 180000,
+  "success": true
+}
+```
+
+### Game Usage Logs
+```json
+{
+  "type": "game_usage",
+  "timestamp": "2025-01-22T18:36:41.000Z",
+  "gameId": "123456",
+  "usageCount": 25,
+  "lastAccessed": "2025-01-22T18:36:41.000Z",
+  "source": "bgg-api"
+}
+```
 
 ## Log Format Reference
 

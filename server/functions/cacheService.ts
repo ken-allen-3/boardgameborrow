@@ -152,12 +152,17 @@ export async function handleCachedApiRequest(
   // Cache miss or invalid - call API
   logApiEvent('cache_miss', { endpoint, params });
 
-  const MAX_RETRIES = 3;
-  const RETRY_DELAY = 1000; // 1 second
+  const MAX_RETRIES = 2;  // Reduced from 3 to 2
+  const RETRY_DELAY = 500; // Reduced from 1000 to 500ms
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const response = await apiFn();
+      const response = await Promise.race<string>([
+        apiFn(),
+        new Promise<string>((_, reject) => 
+          setTimeout(() => reject(new Error('BGG API timeout')), 10000)
+        )
+      ]);
       
       // Store in cache
       await setCacheEntry(cacheKey, {

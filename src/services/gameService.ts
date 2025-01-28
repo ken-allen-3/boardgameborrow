@@ -42,7 +42,7 @@ export async function loadUserGames(userEmail: string): Promise<Game[]> {
     return Array.isArray(gamesData) ? gamesData.map((game: any, index: number) => ({
       id: index.toString(),
       title: game.title || 'Untitled Game',
-      image: game.image || 'https://images.unsplash.com/photo-1606503153255-59d5e417dbf0?auto=format&fit=crop&q=80&w=400',
+      image: game.image || '/board-game-placeholder.png',
       status: game.status || 'available',
       borrower: game.borrower,
       rating: game.rating || 0,
@@ -76,12 +76,12 @@ export async function addGame(userEmail: string, game: GameData): Promise<void> 
     
     const newGame = {
       title: game.name,
-      image: game.image || 'https://images.unsplash.com/photo-1606503153255-59d5e417dbf0?auto=format&fit=crop&q=80&w=400',
+      image: game.image || '/board-game-placeholder.png',
       status: 'available',
-      ...(game.playerCount?.min && { minPlayers: game.playerCount.min }),
-      ...(game.playerCount?.max && { maxPlayers: game.playerCount.max }),
-      ...(game.playTime?.min && { minPlaytime: game.playTime.min }),
-      ...(game.playTime?.max && { maxPlaytime: game.playTime.max }),
+      ...(game.playerCount?.min !== undefined ? { minPlayers: game.playerCount.min } : {}),
+      ...(game.playerCount?.max !== undefined ? { maxPlayers: game.playerCount.max } : {}),
+      ...(game.playTime?.min !== undefined ? { minPlaytime: game.playTime.min } : {}),
+      ...(game.playTime?.max !== undefined ? { maxPlaytime: game.playTime.max } : {}),
       type: game.type || 'boardgame',
       description: game.description,
       ratings: {}

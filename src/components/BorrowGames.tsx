@@ -62,6 +62,7 @@ const BorrowGames: React.FC<BorrowGamesProps> = ({ userGames, onSelectGame }) =>
         lastName: 'User',
         photoUrl: `/profile-placeholder-${(Math.floor(Math.random() * 3) + 1)}.png`
       },
+      description: game.description,
       available: true,
       minPlayers: game.min_players,
       maxPlayers: game.max_players,

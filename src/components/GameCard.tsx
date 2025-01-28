@@ -1,8 +1,9 @@
-import React from 'react';
-import { Users, Clock, Tag } from 'lucide-react';
+import React, { useState } from 'react';
+import { Users, Clock, Tag, ChevronDown, ChevronUp } from 'lucide-react';
 import { SampleContentTag } from './SampleContentTag';
+import { GameData } from '../types/boardgame';
 
-interface Game {
+interface Game extends Partial<GameData> {
   id: string;
   title: string;
   image: string;
@@ -25,6 +26,7 @@ interface Game {
   distance?: number;
   isFriend?: boolean;
   isDemo?: boolean;
+  description?: string;
 }
 
 interface GameCardProps {
@@ -34,6 +36,7 @@ interface GameCardProps {
 }
 
 const GameCard: React.FC<GameCardProps> = ({ game, onSelect, requestStatus }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const formatPlaytime = (min?: number, max?: number) => {
     if (!min && !max) return null;
     if (min === max) return `${min} min`;
@@ -51,7 +54,7 @@ const GameCard: React.FC<GameCardProps> = ({ game, onSelect, requestStatus }) =>
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden min-w-[300px] snap-center">
+    <div className="bg-white rounded-xl shadow-md overflow-hidden min-w-[300px] snap-center cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
       <div className="relative w-full aspect-[4/3]">
         <img
           src={game.image}
@@ -114,6 +117,27 @@ const GameCard: React.FC<GameCardProps> = ({ game, onSelect, requestStatus }) =>
               <span>{game.category}</span>
             </div>
           )}
+        </div>
+
+        {isExpanded && game.description && (
+          <div className="mt-3 border-t pt-3">
+            <div className="text-sm text-gray-600">
+              <h4 className="font-semibold mb-1">About this game:</h4>
+              <p className="line-clamp-4">{game.description}</p>
+            </div>
+          </div>
+        )}
+        
+        <div className="flex justify-center mt-2">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
         </div>
         
         {requestStatus ? (

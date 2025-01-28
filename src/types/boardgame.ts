@@ -21,6 +21,7 @@ export interface GameData {
     max: number;
   };
   description?: string;
+  type?: string;
 }
 
 export type CategoryKey = keyof GameData['rank'];

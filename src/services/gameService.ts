@@ -1,5 +1,5 @@
 import { getDatabase, ref, get, set } from 'firebase/database';
-import { BoardGame } from '../types/boardgame';
+import { GameData } from '../types/boardgame';
 import { seedDataService } from './seedDataService';
 
 export interface Game {
@@ -14,6 +14,7 @@ export interface Game {
   minPlaytime?: number;
   maxPlaytime?: number;
   type?: string;
+  description?: string;
   ratings?: {
     [gameId: string]: {
       rating: number;
@@ -57,7 +58,7 @@ export async function loadUserGames(userEmail: string): Promise<Game[]> {
   }
 }
 
-export async function addGame(userEmail: string, game: BoardGame): Promise<void> {
+export async function addGame(userEmail: string, game: GameData): Promise<void> {
   if (!userEmail) {
     throw new Error('User email is required');
   }
@@ -75,13 +76,14 @@ export async function addGame(userEmail: string, game: BoardGame): Promise<void>
     
     const newGame = {
       title: game.name,
-      image: game.image_url || 'https://images.unsplash.com/photo-1606503153255-59d5e417dbf0?auto=format&fit=crop&q=80&w=400',
+      image: game.image || 'https://images.unsplash.com/photo-1606503153255-59d5e417dbf0?auto=format&fit=crop&q=80&w=400',
       status: 'available',
-      minPlayers: game.min_players,
-      maxPlayers: game.max_players,
-      minPlaytime: game.min_playtime,
-      maxPlaytime: game.max_playtime,
+      minPlayers: game.playerCount?.min,
+      maxPlayers: game.playerCount?.max,
+      minPlaytime: game.playTime?.min,
+      maxPlaytime: game.playTime?.max,
       type: game.type || 'boardgame',
+      description: game.description,
       ratings: {}
     };
 

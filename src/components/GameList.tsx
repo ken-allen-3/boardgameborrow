@@ -1,7 +1,8 @@
-import React from 'react';
-import { Trash2, ImageOff, Users, Clock, Star, Tag } from 'lucide-react';
+import React, { useState } from 'react';
+import { Trash2, ImageOff, Users, Clock, Tag } from 'lucide-react';
 import { Game } from '../services/gameService';
 import StarRating from './StarRating';
+import FullScreenGameCard from './FullScreenGameCard';
 
 interface GameListProps {
   games: Game[];
@@ -10,6 +11,8 @@ interface GameListProps {
 }
 
 const GameList: React.FC<GameListProps> = ({ games, onDeleteGame, onRateGame }) => {
+  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+
   if (games.length === 0) {
     return (
       <div className="text-center py-8">
@@ -37,78 +40,97 @@ const GameList: React.FC<GameListProps> = ({ games, onDeleteGame, onRateGame }) 
   };
 
   return (
-    <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory">
-      {games.map((game) => (
-        <div key={game.id} className="bg-white rounded-xl shadow-md overflow-hidden min-w-[300px] snap-center">
-          <div className="relative w-full aspect-[4/3]">
-            <img
-              src={game.image}
-              alt={game.title}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.src = '/board-game-placeholder.png';
-              }}
-            />
-            <div className="absolute top-2 right-2">
-              <button 
-                onClick={() => onDeleteGame(game.id)}
-                className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition shadow-lg"
-                title="Delete game"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-          <div className="p-4">
-            <h3 className="text-lg font-semibold mb-2 line-clamp-1" title={game.title}>
-              {game.title}
-            </h3>
-            
-            <div className="flex flex-wrap gap-3 mb-3">
-              {formatPlayers(game.minPlayers, game.maxPlayers) && (
-                <div className="flex items-center gap-1 text-sm text-gray-600">
-                  <Users className="h-4 w-4" />
-                  <span>{formatPlayers(game.minPlayers, game.maxPlayers)}</span>
-                </div>
-              )}
-              
-              {formatPlaytime(game.minPlaytime, game.maxPlaytime) && (
-                <div className="flex items-center gap-1 text-sm text-gray-600">
-                  <Clock className="h-4 w-4" />
-                  <span>{formatPlaytime(game.minPlaytime, game.maxPlaytime)}</span>
-                </div>
-              )}
-              
-              {game.type && (
-                <div className="flex items-center gap-1 text-sm text-gray-600">
-                  <Tag className="h-4 w-4" />
-                  <span>{game.type.replace('boardgame', '').trim() || 'Board Game'}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <StarRating
-                  rating={game.rating || 0}
-                  onChange={onRateGame ? (rating) => onRateGame(game.id, rating) : undefined}
-                  readonly={!onRateGame}
-                  size="sm"
-                />
+    <>
+      {selectedGame && (
+        <FullScreenGameCard
+          game={selectedGame}
+          onClose={() => setSelectedGame(null)}
+          onDelete={onDeleteGame}
+          onRate={onRateGame}
+        />
+      )}
+      <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory">
+        {games.map((game) => (
+          <div 
+            key={game.id} 
+            className="bg-white rounded-xl shadow-md overflow-hidden min-w-[300px] snap-center cursor-pointer"
+            onClick={() => setSelectedGame(game)}
+          >
+            <div className="relative w-full aspect-[4/3]">
+              <img
+                src={game.image}
+                alt={game.title}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = '/board-game-placeholder.png';
+                }}
+              />
+              <div className="absolute top-2 right-2">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteGame(game.id);
+                  }}
+                  className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition shadow-lg"
+                  title="Delete game"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
+            </div>
+            <div className="p-4">
+              <h3 className="text-lg font-semibold mb-2 line-clamp-1" title={game.title}>
+                {game.title}
+              </h3>
               
-              <span className={`px-3 py-1 rounded-full text-sm ${
-                game.status === 'available' 
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-yellow-100 text-yellow-800'
-              }`}>
-                {game.status === 'available' ? 'Available' : `Borrowed by ${game.borrower}`}
-              </span>
+              <div className="flex flex-wrap gap-3 mb-3">
+                {formatPlayers(game.minPlayers, game.maxPlayers) && (
+                  <div className="flex items-center gap-1 text-sm text-gray-600">
+                    <Users className="h-4 w-4" />
+                    <span>{formatPlayers(game.minPlayers, game.maxPlayers)}</span>
+                  </div>
+                )}
+                
+                {formatPlaytime(game.minPlaytime, game.maxPlaytime) && (
+                  <div className="flex items-center gap-1 text-sm text-gray-600">
+                    <Clock className="h-4 w-4" />
+                    <span>{formatPlaytime(game.minPlaytime, game.maxPlaytime)}</span>
+                  </div>
+                )}
+                
+                {game.type && (
+                  <div className="flex items-center gap-1 text-sm text-gray-600">
+                    <Tag className="h-4 w-4" />
+                    <span>{game.type.replace('boardgame', '').trim() || 'Board Game'}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <StarRating
+                    rating={game.rating || 0}
+                    onChange={onRateGame ? (rating) => {
+                      onRateGame(game.id, rating);
+                    } : undefined}
+                    readonly={!onRateGame}
+                    size="sm"
+                  />
+                </div>
+                
+                <span className={`px-3 py-1 rounded-full text-sm ${
+                  game.status === 'available' 
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {game.status === 'available' ? 'Available' : `Borrowed by ${game.borrower}`}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </>
   );
 };
 

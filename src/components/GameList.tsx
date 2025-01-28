@@ -13,6 +13,11 @@ interface GameListProps {
 const GameList: React.FC<GameListProps> = ({ games, onDeleteGame, onRateGame }) => {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
 
+  const handleDelete = (gameId: string) => {
+    setSelectedGame(null); // Close fullscreen view
+    onDeleteGame(gameId);
+  };
+
   if (games.length === 0) {
     return (
       <div className="text-center py-8">
@@ -45,7 +50,7 @@ const GameList: React.FC<GameListProps> = ({ games, onDeleteGame, onRateGame }) 
         <FullScreenGameCard
           game={selectedGame}
           onClose={() => setSelectedGame(null)}
-          onDelete={onDeleteGame}
+          onDelete={handleDelete}
           onRate={onRateGame}
         />
       )}
@@ -69,7 +74,7 @@ const GameList: React.FC<GameListProps> = ({ games, onDeleteGame, onRateGame }) 
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();
-                    onDeleteGame(game.id);
+                    handleDelete(game.id);
                   }}
                   className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition shadow-lg"
                   title="Delete game"

@@ -6,13 +6,15 @@ import CameraCapture from '../components/CameraCapture';
 import LoadingScreen from '../components/LoadingScreen';
 import GameDetectionResults from '../components/GameDetectionResults';
 import GameSearchModal from '../components/GameSearchModal';
-import { BoardGame } from '../types/boardgame';
+import { GameData } from '../types/boardgame';
 import { Game, loadUserGames, addGame, deleteGame } from '../services/gameService';
 import GameList from '../components/GameList';
 import AddGameButton from '../components/AddGameButton';
 import ErrorMessage from '../components/ErrorMessage';
+import SuccessMessage from '../components/SuccessMessage';
 
 const MyGames = () => {
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +56,7 @@ const MyGames = () => {
     }, 1500);
   };
 
-  const handleGameSelect = async (selectedGames: BoardGame[]) => {
+  const handleGameSelect = async (selectedGames: GameData[]) => {
     if (!currentUser?.email) return;
 
     try {
@@ -89,6 +91,8 @@ const MyGames = () => {
       await deleteGame(currentUser.email, gameToDelete.id);
       await loadGames();
       setError(null);
+      setSuccessMessage(`${gameToDelete.title} has been removed from your collection`);
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       setError('Failed to delete game. Please try again.');
     } finally {
@@ -128,6 +132,7 @@ const MyGames = () => {
         </div>
 
         {error && <ErrorMessage message={error} />}
+        {successMessage && <SuccessMessage message={successMessage} />}
 
         <AddGameButton
           onCameraClick={() => setShowCamera(true)}

@@ -31,7 +31,6 @@ function CreateGameNightModal({ onClose, onSubmit, userGames }: CreateGameNightM
   const [description, setDescription] = useState('');
   const [maxPlayers, setMaxPlayers] = useState<number>();
   const [allowInvites, setAllowInvites] = useState(true);
-  const [defaultInvitePermission, setDefaultInvitePermission] = useState(false);
   const [invitees, setInvitees] = useState<Map<string, boolean>>(new Map());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +68,7 @@ function CreateGameNightModal({ onClose, onSubmit, userGames }: CreateGameNightM
         suggestedGames: [],
         inviteSettings: {
           allowInvites,
-          defaultInvitePermission
+          defaultInvitePermission: allowInvites // If invites are allowed, all attendees can invite
         },
         invitees: Array.from(invitees.entries()).map(([email, canInvite]) => ({
           email,
@@ -193,10 +192,10 @@ function CreateGameNightModal({ onClose, onSubmit, userGames }: CreateGameNightM
           <InviteUsersList
             selectedUsers={invitees}
             onUsersChange={setInvitees}
-            defaultInvitePermission={defaultInvitePermission}
+            defaultInvitePermission={allowInvites}
           />
 
-          <div className="space-y-3">
+          <div>
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -205,23 +204,9 @@ function CreateGameNightModal({ onClose, onSubmit, userGames }: CreateGameNightM
                 className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
               />
               <span className="text-sm font-medium text-gray-700">
-                Allow attendees to invite others
+                Allow attendees to invite others to this game night
               </span>
             </label>
-
-            {allowInvites && (
-              <label className="flex items-center gap-2 ml-6">
-                <input
-                  type="checkbox"
-                  checked={defaultInvitePermission}
-                  onChange={(e) => setDefaultInvitePermission(e.target.checked)}
-                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                />
-                <span className="text-sm text-gray-700">
-                  Let invited users invite others by default
-                </span>
-              </label>
-            )}
           </div>
 
           <div className="flex justify-end gap-3 pt-4">

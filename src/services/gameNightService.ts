@@ -232,10 +232,49 @@ export async function suggestGamesForGameNight(
   }
 
   const db = getDatabase();
+  
+  // Get game night details to check attendee count
+  const gameNight = await getGameNight(gameNightId);
+  if (!gameNight) {
+    throw new Error('Game night not found');
+  }
+
+  // Count confirmed attendees
+  const confirmedAttendeeCount = Object.values(gameNight.attendees)
+    .filter(attendee => attendee.status === 'going')
+    .length;
+
+  // Get all available games
+  const availableGames = await getAvailableGamesForGameNight(gameNightId);
+  
+  // Filter suggested games based on player count
+  const validGameIds = gameIds.filter(gameId => {
+    const game = availableGames.find(g => g.id === gameId);
+    if (!game) return false;
+    
+    // If player count info is missing, assume the game is valid
+    if (game.minPlayers === undefined || game.maxPlayers === undefined) {
+      return true;
+    }
+    
+    return (
+      game.minPlayers <= confirmedAttendeeCount &&
+      game.maxPlayers >= confirmedAttendeeCount
+    );
+  });
+
+  if (validGameIds.length === 0) {
+    throw new Error(`No suggested games support ${confirmedAttendeeCount} players. Please select games that support your group size.`);
+  }
+
+  if (validGameIds.length < gameIds.length) {
+    console.warn('Some suggested games were filtered out due to player count mismatch');
+  }
+
   const gameNightRef = ref(db, `gameNights/${gameNightId}/suggestedGames`);
 
   try {
-    await set(gameNightRef, gameIds);
+    await set(gameNightRef, validGameIds);
   } catch (error) {
     console.error('Failed to suggest games:', error);
     throw new Error('Failed to suggest games. Please try again.');

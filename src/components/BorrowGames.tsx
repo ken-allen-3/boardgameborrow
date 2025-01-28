@@ -25,6 +25,7 @@ interface Game {
   distance?: number;
   isFriend?: boolean;
   isDemo?: boolean;
+  description?: string;
 }
 
 interface BorrowGamesProps {

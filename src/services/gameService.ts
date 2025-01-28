@@ -76,7 +76,7 @@ export async function addGame(userEmail: string, game: GameData): Promise<void> 
     
     const newGame = {
       title: game.name,
-      image: game.image || '/board-game-placeholder.png',
+      image: (game as any).image_url || game.image || '/board-game-placeholder.png',
       status: 'available',
       ...(game.playerCount?.min !== undefined ? { minPlayers: game.playerCount.min } : {}),
       ...(game.playerCount?.max !== undefined ? { maxPlayers: game.playerCount.max } : {}),

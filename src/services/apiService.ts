@@ -1,7 +1,7 @@
 import axios, { AxiosResponse, AxiosError } from 'axios';
 import { createAppError } from '../utils/errorUtils';
 
-const FUNCTIONS_BASE_URL = 'https://us-central1-boardgameshare-001.cloudfunctions.net';
+const FUNCTIONS_BASE_URL = import.meta.env.VITE_FUNCTIONS_BASE_URL || 'https://us-central1-boardgameshare-001.cloudfunctions.net';
 
 // Cache configuration
 interface CacheEntry<T> {

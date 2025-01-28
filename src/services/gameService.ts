@@ -50,7 +50,8 @@ export async function loadUserGames(userEmail: string): Promise<Game[]> {
       maxPlayers: game.maxPlayers,
       minPlaytime: game.minPlaytime,
       maxPlaytime: game.maxPlaytime,
-      type: game.type
+      type: game.type,
+      description: game.description
     })).reverse() : [];
   } catch (err) {
     console.error('Error loading games:', err);

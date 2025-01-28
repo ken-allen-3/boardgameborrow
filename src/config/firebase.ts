@@ -15,6 +15,7 @@ import {
   FacebookAuthProvider 
 } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   // Your Firebase config object will be provided by the user
@@ -32,6 +33,7 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const database = getDatabase(app);
+export const storage = getStorage(app);
 
 // Initialize providers
 export const googleProvider = new GoogleAuthProvider();

@@ -13,6 +13,12 @@ interface GameListProps {
 const GameList: React.FC<GameListProps> = ({ games, onDeleteGame, onRateGame }) => {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
 
+  const handleGameSelect = (game: Game) => {
+    console.log('Selected game data:', game);
+    console.log('Game description:', game.description);
+    setSelectedGame(game);
+  };
+
   const handleDelete = (gameId: string) => {
     setSelectedGame(null); // Close fullscreen view
     onDeleteGame(gameId);
@@ -59,7 +65,7 @@ const GameList: React.FC<GameListProps> = ({ games, onDeleteGame, onRateGame }) 
           <div 
             key={game.id} 
             className="bg-white rounded-xl shadow-md overflow-hidden min-w-[300px] snap-center cursor-pointer"
-            onClick={() => setSelectedGame(game)}
+            onClick={() => handleGameSelect(game)}
           >
             <div className="relative w-full aspect-[4/3]">
               <img

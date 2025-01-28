@@ -16,6 +16,9 @@ const FullScreenGameCard: React.FC<FullScreenGameCardProps> = ({
   onDelete,
   onRate,
 }) => {
+  console.log('FullScreenGameCard received game:', game);
+  console.log('Game description in FullScreenGameCard:', game.description);
+
   const formatPlaytime = (min?: number, max?: number) => {
     if (!min && !max) return null;
     if (min === max) return `${min} min`;

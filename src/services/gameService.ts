@@ -38,21 +38,25 @@ export async function loadUserGames(userEmail: string): Promise<Game[]> {
     }
 
     const gamesData = snapshot.val();
+    console.log('Raw games data from Firebase:', gamesData);
 
-    return Array.isArray(gamesData) ? gamesData.map((game: any, index: number) => ({
-      id: index.toString(),
-      title: game.title || 'Untitled Game',
-      image: game.image || '/board-game-placeholder.png',
-      status: game.status || 'available',
-      borrower: game.borrower,
-      rating: game.rating || 0,
-      minPlayers: game.minPlayers,
-      maxPlayers: game.maxPlayers,
-      minPlaytime: game.minPlaytime,
-      maxPlaytime: game.maxPlaytime,
-      type: game.type,
-      description: game.description
-    })).reverse() : [];
+    return Array.isArray(gamesData) ? gamesData.map((game: any, index: number) => {
+      console.log(`Game ${index} description:`, game.description);
+      return {
+        id: index.toString(),
+        title: game.title || 'Untitled Game',
+        image: game.image || '/board-game-placeholder.png',
+        status: game.status || 'available',
+        borrower: game.borrower,
+        rating: game.rating || 0,
+        minPlayers: game.minPlayers,
+        maxPlayers: game.maxPlayers,
+        minPlaytime: game.minPlaytime,
+        maxPlaytime: game.maxPlaytime,
+        type: game.type,
+        description: game.description
+      };
+    }).reverse() : [];
   } catch (err) {
     console.error('Error loading games:', err);
     throw err;

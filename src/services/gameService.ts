@@ -51,7 +51,7 @@ export async function loadUserGames(userEmail: string): Promise<Game[]> {
       minPlaytime: game.minPlaytime,
       maxPlaytime: game.maxPlaytime,
       type: game.type
-    })) : [];
+    })).reverse() : [];
   } catch (err) {
     console.error('Error loading games:', err);
     throw err;
@@ -78,10 +78,10 @@ export async function addGame(userEmail: string, game: GameData): Promise<void> 
       title: game.name,
       image: game.image || 'https://images.unsplash.com/photo-1606503153255-59d5e417dbf0?auto=format&fit=crop&q=80&w=400',
       status: 'available',
-      minPlayers: game.playerCount?.min,
-      maxPlayers: game.playerCount?.max,
-      minPlaytime: game.playTime?.min,
-      maxPlaytime: game.playTime?.max,
+      minPlayers: game.playerCount ? game.playerCount.min : undefined,
+      maxPlayers: game.playerCount ? game.playerCount.max : undefined,
+      minPlaytime: game.playTime ? game.playTime.min : undefined,
+      maxPlaytime: game.playTime ? game.playTime.max : undefined,
       type: game.type || 'boardgame',
       description: game.description,
       ratings: {}

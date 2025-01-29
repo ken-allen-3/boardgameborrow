@@ -246,10 +246,12 @@ export async function getGameById(id: string): Promise<BoardGame> {
         name,
         year_published: yearPublished ? parseInt(yearPublished) : 0,
         min_players: minPlayers ? parseInt(minPlayers) : 1,
-        min_age: minAge ? parseInt(minAge) : 0,
         max_players: maxPlayers ? parseInt(maxPlayers) : 4,
         min_playtime: minPlaytime ? parseInt(minPlaytime) : 0,
         max_playtime: maxPlaytime ? parseInt(maxPlaytime) : 0,
+        age: {
+          min: minAge ? parseInt(minAge) : 0
+        },
         thumb_url: thumbnail,
         image_url: image,
         description,

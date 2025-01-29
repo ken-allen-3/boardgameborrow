@@ -6,8 +6,9 @@ import CameraCapture from '../components/CameraCapture';
 import LoadingScreen from '../components/LoadingScreen';
 import GameDetectionResults from '../components/GameDetectionResults';
 import GameSearchModal from '../components/GameSearchModal';
-import { GameData } from '../types/boardgame';
+import { GameData, BoardGame } from '../types/boardgame';
 import { Game, loadUserGames, addGame, deleteGame } from '../services/gameService';
+import { convertBoardGameToGameData } from '../utils/gameDataConverter';
 import GameList from '../components/GameList';
 import AddGameButton from '../components/AddGameButton';
 import ErrorMessage from '../components/ErrorMessage';
@@ -56,13 +57,14 @@ const MyGames = () => {
     }, 1500);
   };
 
-  const handleGameSelect = async (selectedGames: GameData[]) => {
+  const handleGameSelect = async (selectedGames: BoardGame[]) => {
     if (!currentUser?.email) return;
 
     try {
-      // Add games sequentially to maintain order and handle errors
+      // Convert BoardGame to GameData and add sequentially to maintain order
       for (const game of selectedGames) {
-        await addGame(currentUser.email, game);
+        const gameData = convertBoardGameToGameData(game);
+        await addGame(currentUser.email, gameData);
       }
       await loadGames();
       setCapturedPhoto(null);

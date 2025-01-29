@@ -48,6 +48,11 @@ const GameCard = ({ game, onSelect, requestStatus }: GameCardProps) => {
     return `${min}-${max} players`;
   };
 
+  const formatAge = (min?: number) => {
+    if (!min) return null;
+    return `${min}+ years`;
+  };
+
   const gameForFullScreen: ServiceGame = {
     ...game,
     status: 'available'
@@ -120,6 +125,12 @@ const GameCard = ({ game, onSelect, requestStatus }: GameCardProps) => {
               <div className="flex items-center gap-1 text-sm text-gray-600">
                 <Clock className="h-4 w-4" />
                 <span>{formatPlaytime(game.minPlaytime, game.maxPlaytime)}</span>
+              </div>
+            )}
+            {formatAge(game.minAge) && (
+              <div className="flex items-center gap-1 text-sm text-gray-600">
+                <Tag className="h-4 w-4" />
+                <span>{formatAge(game.minAge)}</span>
               </div>
             )}
             {game.category && (

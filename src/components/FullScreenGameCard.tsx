@@ -35,6 +35,11 @@ const FullScreenGameCard: React.FC<FullScreenGameCardProps> = ({
     return `${min}-${max} players`;
   };
 
+  const formatAge = (min?: number) => {
+    if (!min) return null;
+    return `${min}+ years`;
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fadeIn">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto animate-slideUp">
@@ -88,6 +93,13 @@ const FullScreenGameCard: React.FC<FullScreenGameCardProps> = ({
                   </div>
                 )}
                 
+                {formatAge(game.minAge) && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Tag className="h-5 w-5" />
+                    <span className="text-lg">{formatAge(game.minAge)}</span>
+                  </div>
+                )}
+
                 {game.type && (
                   <div className="flex items-center gap-2 text-gray-600">
                     <Tag className="h-5 w-5" />

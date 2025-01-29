@@ -42,7 +42,15 @@ export async function loadUserGames(userEmail: string): Promise<Game[]> {
     console.log('Raw games data from Firebase:', gamesData);
 
     return Array.isArray(gamesData) ? gamesData.map((game: any, index: number) => {
-      console.log(`Game ${index} description:`, game.description);
+      console.log('Processing game:', {
+        index,
+        title: game.title,
+        minPlayers: game.minPlayers,
+        maxPlayers: game.maxPlayers,
+        minPlaytime: game.minPlaytime,
+        maxPlaytime: game.maxPlaytime,
+        minAge: game.minAge
+      });
       return {
         id: index.toString(),
         title: game.title || 'Untitled Game',
@@ -50,11 +58,11 @@ export async function loadUserGames(userEmail: string): Promise<Game[]> {
         status: game.status || 'available',
         borrower: game.borrower,
         rating: game.rating || 0,
-        minPlayers: game.minPlayers,
-        maxPlayers: game.maxPlayers,
-        minPlaytime: game.minPlaytime,
-        maxPlaytime: game.maxPlaytime,
-        minAge: game.minAge,
+        minPlayers: game.minPlayers || null,
+        maxPlayers: game.maxPlayers || null,
+        minPlaytime: game.minPlaytime || null,
+        maxPlaytime: game.maxPlaytime || null,
+        minAge: game.minAge || null,
         type: game.type,
         description: game.description
       };
@@ -81,6 +89,8 @@ export async function addGame(userEmail: string, game: GameData): Promise<void> 
     const snapshot = await get(gamesRef);
     const currentGames = snapshot.exists() ? snapshot.val() : [];
     
+    console.log('Adding game with data:', game);
+
     const newGame = {
       title: game.name,
       image: (game as any).image_url || game.image || '/board-game-placeholder.png',
@@ -95,7 +105,9 @@ export async function addGame(userEmail: string, game: GameData): Promise<void> 
       ratings: {}
     };
 
+    console.log('Saving new game to Firebase:', newGame);
     await set(gamesRef, Array.isArray(currentGames) ? [...currentGames, newGame] : [newGame]);
+    console.log('Game saved successfully');
   } catch (err) {
     console.error('Error adding game:', err);
     throw err;

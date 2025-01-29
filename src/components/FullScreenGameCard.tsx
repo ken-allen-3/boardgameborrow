@@ -19,7 +19,7 @@ const FullScreenGameCard: React.FC<FullScreenGameCardProps> = ({
   console.log('FullScreenGameCard received game:', game);
   console.log('Game description in FullScreenGameCard:', game.description);
 
-  const formatPlaytime = (min?: number, max?: number) => {
+  const formatPlaytime = (min?: number | null, max?: number | null) => {
     if (!min && !max) return null;
     if (min === max) return `${min} min`;
     if (!max) return `${min}+ min`;
@@ -27,7 +27,7 @@ const FullScreenGameCard: React.FC<FullScreenGameCardProps> = ({
     return `${min}-${max} min`;
   };
 
-  const formatPlayers = (min?: number, max?: number) => {
+  const formatPlayers = (min?: number | null, max?: number | null) => {
     if (!min && !max) return null;
     if (min === max) return `${min} players`;
     if (!max) return `${min}+ players`;
@@ -35,7 +35,7 @@ const FullScreenGameCard: React.FC<FullScreenGameCardProps> = ({
     return `${min}-${max} players`;
   };
 
-  const formatAge = (min?: number) => {
+  const formatAge = (min?: number | null) => {
     if (!min) return null;
     return `${min}+ years`;
   };

@@ -241,6 +241,18 @@ export async function getGameById(id: string): Promise<BoardGame> {
       const rating = ratingNode?.getAttribute('value');
       const numericRating = rating ? parseFloat(rating) : 0;
 
+      console.log('BGG API response data:', {
+        id,
+        name,
+        yearPublished,
+        minPlayers,
+        maxPlayers,
+        minPlaytime,
+        maxPlaytime,
+        minAge,
+        description: description?.substring(0, 100) + '...' // Truncate for logging
+      });
+
       const game: BoardGame = {
         id,
         name,

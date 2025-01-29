@@ -34,7 +34,7 @@ const GameList: React.FC<GameListProps> = ({ games, onDeleteGame, onRateGame }) 
     );
   }
 
-  const formatPlaytime = (min?: number, max?: number) => {
+  const formatPlaytime = (min?: number | null, max?: number | null) => {
     if (!min && !max) return null;
     if (min === max) return `${min} min`;
     if (!max) return `${min}+ min`;
@@ -42,12 +42,17 @@ const GameList: React.FC<GameListProps> = ({ games, onDeleteGame, onRateGame }) 
     return `${min}-${max} min`;
   };
 
-  const formatPlayers = (min?: number, max?: number) => {
+  const formatPlayers = (min?: number | null, max?: number | null) => {
     if (!min && !max) return null;
     if (min === max) return `${min} players`;
     if (!max) return `${min}+ players`;
     if (!min) return `Up to ${max} players`;
     return `${min}-${max} players`;
+  };
+
+  const formatAge = (min?: number | null) => {
+    if (!min) return null;
+    return `${min}+ years`;
   };
 
   return (
@@ -109,6 +114,13 @@ const GameList: React.FC<GameListProps> = ({ games, onDeleteGame, onRateGame }) 
                   </div>
                 )}
                 
+                {formatAge(game.minAge) && (
+                  <div className="flex items-center gap-1 text-sm text-gray-600">
+                    <Tag className="h-4 w-4" />
+                    <span>{formatAge(game.minAge)}</span>
+                  </div>
+                )}
+
                 {game.type && (
                   <div className="flex items-center gap-1 text-sm text-gray-600">
                     <Tag className="h-4 w-4" />

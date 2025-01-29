@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { Calendar, X, Clock, MessageSquare } from 'lucide-react';
+import { X, Clock, MessageSquare } from 'lucide-react';
+import { addDays, format } from 'date-fns';
 import ErrorMessage from './ErrorMessage';
+import SuccessMessage from './SuccessMessage';
+import DatePicker from './DatePicker';
 
 interface BorrowRequestModalProps {
   game: {
@@ -22,11 +25,12 @@ interface BorrowRequestModalProps {
 }
 
 function BorrowRequestModal({ game, onClose, onSubmit }: BorrowRequestModalProps) {
-  const [startDate, setStartDate] = useState('');
+  const [startDate, setStartDate] = useState<Date | null>(null);
   const [duration, setDuration] = useState(7);
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,19 +45,17 @@ function BorrowRequestModal({ game, onClose, onSubmit }: BorrowRequestModalProps
     setError(null);
     
     try {
-      // Validate date is not in the past
-      const selectedDate = new Date(startDate);
-      if (selectedDate < new Date()) {
-        throw new Error('Start date cannot be in the past');
-      }
 
       await onSubmit({
         gameId: game.id,
-        startDate,
+        startDate: startDate.toISOString().split('T')[0],
         duration,
         message
       });
-      onClose();
+      setIsSuccess(true);
+      setTimeout(() => {
+        onClose();
+      }, 2000);
     } catch (error) {
       const errorMessage = error instanceof Error 
         ? error.message 
@@ -78,6 +80,7 @@ function BorrowRequestModal({ game, onClose, onSubmit }: BorrowRequestModalProps
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {error && <ErrorMessage message={error} />}
+          {isSuccess && <SuccessMessage message="Game borrow request sent successfully!" />}
           
           <div>
             <div className="font-medium mb-1">Game</div>
@@ -91,18 +94,16 @@ function BorrowRequestModal({ game, onClose, onSubmit }: BorrowRequestModalProps
             <label className="block font-medium mb-1">
               Start Date
             </label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <input
-                type="date"
-                aria-label="Start date"
-                min={today}
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                required
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
+            <DatePicker
+              selectedDate={startDate}
+              onChange={setStartDate}
+              minDate={new Date()}
+            />
+            {startDate && (
+              <div className="mt-2 text-sm text-gray-600">
+                Return by: {format(addDays(startDate, duration), 'EEEE, MMMM d, yyyy')}
+              </div>
+            )}
           </div>
 
           <div>

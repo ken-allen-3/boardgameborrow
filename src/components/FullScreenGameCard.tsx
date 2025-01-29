@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Users, Clock, Tag, Share2, Info, Star, ChevronDown, ChevronUp, Loader } from 'lucide-react';
+import { X, Users, Clock, Share2, Info, Star, ChevronDown, ChevronUp, Loader, Baby } from 'lucide-react';
 import StarRating from './StarRating';
 import { Game } from '../services/gameService';
 
@@ -20,15 +20,10 @@ const FullScreenGameCard: React.FC<FullScreenGameCardProps> = ({
 }) => {
   const [isImageLoading, setIsImageLoading] = useState(true);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
-  const [gameType, setGameType] = useState<string>('');
-  
   useEffect(() => {
     // Reset states when game changes
     setIsImageLoading(true);
     setIsDescriptionExpanded(false);
-    
-    // Format game type
-    setGameType(game.type ? game.type.replace('boardgame', '').trim() || 'Board Game' : 'Board Game');
   }, [game]);
 
   const shouldTruncateDescription = game.description && game.description.length > MAX_DESCRIPTION_LENGTH;
@@ -51,7 +46,7 @@ const FullScreenGameCard: React.FC<FullScreenGameCardProps> = ({
 
   const formatAge = (min?: number | null) => {
     if (!min) return null;
-    return `${min}+ years`;
+    return `Ages ${min}+`;
   };
 
   return (
@@ -148,17 +143,11 @@ const FullScreenGameCard: React.FC<FullScreenGameCardProps> = ({
                 
                 {formatAge(game.minAge) && (
                   <div className="flex items-center gap-2 text-gray-600">
-                    <Tag className="h-5 w-5" />
+                    <Baby className="h-5 w-5" />
                     <span className="text-lg">{formatAge(game.minAge)}</span>
                   </div>
                 )}
 
-                {game.type && (
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Tag className="h-5 w-5" />
-                    <span className="text-lg">{game.type.replace('boardgame', '').trim() || 'Board Game'}</span>
-                  </div>
-                )}
               </div>
 
               {onRate && (
@@ -177,13 +166,6 @@ const FullScreenGameCard: React.FC<FullScreenGameCardProps> = ({
             </div>
 
             <div>
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-3">Game Type</h3>
-                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                  {gameType}
-                </span>
-              </div>
-
               {game.description && (
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">

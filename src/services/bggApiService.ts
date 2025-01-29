@@ -164,7 +164,7 @@ export class BggApiService {
         min: parseInt(item.querySelector('minplaytime')?.getAttribute('value') || '0'),
         max: parseInt(item.querySelector('maxplaytime')?.getAttribute('value') || '0')
       },
-      description: item.querySelector('description')?.textContent || undefined
+      description: this.decodeHtmlEntities(item.querySelector('description')?.textContent || '') || undefined
     };
   }
 
@@ -185,6 +185,12 @@ export class BggApiService {
   private getCurrentMonth(): string {
     const date = new Date();
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  private decodeHtmlEntities(text: string): string {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
   }
 
   private isCacheValid(timestamp: number): boolean {

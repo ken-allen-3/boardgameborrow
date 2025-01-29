@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, Clock, Tag, ChevronDown, ChevronUp } from 'lucide-react';
+import { Users, Clock, ChevronDown, ChevronUp, Baby } from 'lucide-react';
 import { SampleContentTag } from './SampleContentTag';
 import { Game as ServiceGame } from '../services/gameService';
 import FullScreenGameCard from './FullScreenGameCard';
@@ -50,7 +50,7 @@ const GameCard = ({ game, onSelect, requestStatus }: GameCardProps) => {
 
   const formatAge = (min?: number) => {
     if (!min) return null;
-    return `${min}+ years`;
+    return `Ages ${min}+`;
   };
 
   const gameForFullScreen: ServiceGame = {
@@ -129,14 +129,8 @@ const GameCard = ({ game, onSelect, requestStatus }: GameCardProps) => {
             )}
             {formatAge(game.minAge) && (
               <div className="flex items-center gap-1 text-sm text-gray-600">
-                <Tag className="h-4 w-4" />
+                <Baby className="h-4 w-4" />
                 <span>{formatAge(game.minAge)}</span>
-              </div>
-            )}
-            {game.category && (
-              <div className="flex items-center gap-1 text-sm text-gray-600">
-                <Tag className="h-4 w-4" />
-                <span>{game.category}</span>
               </div>
             )}
           </div>

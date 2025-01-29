@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Trash2, ImageOff, Users, Clock, Tag } from 'lucide-react';
+import { Trash2, ImageOff, Users, Clock, Baby } from 'lucide-react';
 import { Game } from '../services/gameService';
 import StarRating from './StarRating';
 import FullScreenGameCard from './FullScreenGameCard';
@@ -60,7 +60,7 @@ const GameList: React.FC<GameListProps> = ({ games, onDeleteGame, onRateGame, mo
 
   const formatAge = (min?: number | null) => {
     if (!min) return null;
-    return `${min}+ years`;
+    return `Ages ${min}+`;
   };
 
   return (
@@ -125,15 +125,8 @@ const GameList: React.FC<GameListProps> = ({ games, onDeleteGame, onRateGame, mo
                 
                 {formatAge(game.minAge) && (
                   <div className="flex items-center gap-1 text-sm text-gray-600">
-                    <Tag className="h-4 w-4" />
+                    <Baby className="h-4 w-4" />
                     <span>{formatAge(game.minAge)}</span>
-                  </div>
-                )}
-
-                {game.type && (
-                  <div className="flex items-center gap-1 text-sm text-gray-600">
-                    <Tag className="h-4 w-4" />
-                    <span>{game.type.replace('boardgame', '').trim() || 'Board Game'}</span>
                   </div>
                 )}
               </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Trash2, ImageOff, Users, Clock, Tag } from 'lucide-react';
 import { Game } from '../services/gameService';
 import StarRating from './StarRating';
@@ -8,10 +8,18 @@ interface GameListProps {
   games: Game[];
   onDeleteGame: (gameId: string) => void;
   onRateGame?: (gameId: string, rating: number) => void;
+  mostRecentGameId?: string;
 }
 
-const GameList: React.FC<GameListProps> = ({ games, onDeleteGame, onRateGame }) => {
+const GameList: React.FC<GameListProps> = ({ games, onDeleteGame, onRateGame, mostRecentGameId }) => {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+  const recentGameRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (mostRecentGameId && recentGameRef.current) {
+      recentGameRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+    }
+  }, [mostRecentGameId]);
 
   const handleGameSelect = (game: Game) => {
     console.log('Selected game data:', game);
@@ -69,6 +77,7 @@ const GameList: React.FC<GameListProps> = ({ games, onDeleteGame, onRateGame }) 
         {games.map((game) => (
           <div 
             key={game.id} 
+            ref={game.id === mostRecentGameId ? recentGameRef : null}
             className="bg-white rounded-xl shadow-md overflow-hidden min-w-[300px] snap-center cursor-pointer"
             onClick={() => handleGameSelect(game)}
           >

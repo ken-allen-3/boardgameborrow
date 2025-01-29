@@ -19,6 +19,7 @@ const MyGames = () => {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [recentGameId, setRecentGameId] = useState<string | undefined>(undefined);
   
   const { currentUser } = useAuth();
 
@@ -61,12 +62,17 @@ const MyGames = () => {
     if (!currentUser?.email) return;
 
     try {
+      let lastAddedGameId: string | undefined = undefined;
       // Convert BoardGame to GameData and add sequentially to maintain order
       for (const game of selectedGames) {
         const gameData = convertBoardGameToGameData(game);
-        await addGame(currentUser.email, gameData);
+        const addedGame = await addGame(currentUser.email, gameData);
+        lastAddedGameId = addedGame.id;
       }
       await loadGames();
+      setRecentGameId(lastAddedGameId);
+      // Reset recentGameId after a delay to allow for future scrolling
+      setTimeout(() => setRecentGameId(undefined), 1000);
       setCapturedPhoto(null);
       setShowSearch(false);
       setError(null);
@@ -146,6 +152,7 @@ const MyGames = () => {
         games={games} 
         onDeleteGame={handleDeleteGame}
         onRateGame={handleRateGame}
+        mostRecentGameId={recentGameId}
       />
 
       {showCamera && (

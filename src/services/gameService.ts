@@ -73,7 +73,7 @@ export async function loadUserGames(userEmail: string): Promise<Game[]> {
   }
 }
 
-export async function addGame(userEmail: string, game: GameData): Promise<void> {
+export async function addGame(userEmail: string, game: GameData): Promise<{id: string}> {
   if (!userEmail) {
     throw new Error('User email is required');
   }
@@ -106,8 +106,10 @@ export async function addGame(userEmail: string, game: GameData): Promise<void> 
     };
 
     console.log('Saving new game to Firebase:', newGame);
-    await set(gamesRef, Array.isArray(currentGames) ? [...currentGames, newGame] : [newGame]);
+    const updatedGames = Array.isArray(currentGames) ? [...currentGames, newGame] : [newGame];
+    await set(gamesRef, updatedGames);
     console.log('Game saved successfully');
+    return { id: (updatedGames.length - 1).toString() };
   } catch (err) {
     console.error('Error adding game:', err);
     throw err;

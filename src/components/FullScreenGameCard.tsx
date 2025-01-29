@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, Users, Clock, Tag } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Users, Clock, Tag, Share2, Info, Star, ChevronDown, ChevronUp, Loader } from 'lucide-react';
 import StarRating from './StarRating';
 import { Game } from '../services/gameService';
 
@@ -10,14 +10,28 @@ interface FullScreenGameCardProps {
   onRate?: (gameId: string, rating: number) => void;
 }
 
+const MAX_DESCRIPTION_LENGTH = 300;
+
 const FullScreenGameCard: React.FC<FullScreenGameCardProps> = ({
   game,
   onClose,
   onDelete,
   onRate,
 }) => {
-  console.log('FullScreenGameCard received game:', game);
-  console.log('Game description in FullScreenGameCard:', game.description);
+  const [isImageLoading, setIsImageLoading] = useState(true);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [gameType, setGameType] = useState<string>('');
+  
+  useEffect(() => {
+    // Reset states when game changes
+    setIsImageLoading(true);
+    setIsDescriptionExpanded(false);
+    
+    // Format game type
+    setGameType(game.type ? game.type.replace('boardgame', '').trim() || 'Board Game' : 'Board Game');
+  }, [game]);
+
+  const shouldTruncateDescription = game.description && game.description.length > MAX_DESCRIPTION_LENGTH;
 
   const formatPlaytime = (min?: number | null, max?: number | null) => {
     if (!min && !max) return null;
@@ -41,44 +55,83 @@ const FullScreenGameCard: React.FC<FullScreenGameCardProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fadeIn">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-fadeIn">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto animate-slideUp">
-        <div className="relative">
+        <div className="relative bg-gradient-to-b from-black/40 to-transparent">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors z-10"
+            className="absolute top-4 right-4 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all hover:scale-105 z-10"
+            aria-label="Close dialog"
           >
             <X className="h-6 w-6" />
           </button>
           
-          <div className="aspect-video w-full">
+          <div className="aspect-video w-full relative">
+            {isImageLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                <Loader className="h-8 w-8 animate-spin text-blue-500" />
+              </div>
+            )}
             <img
               src={game.image}
               alt={game.title}
-              className="w-full h-full object-cover"
+              className={`w-full h-full object-cover transition-opacity duration-300 ${
+                isImageLoading ? 'opacity-0' : 'opacity-100'
+              }`}
+              onLoad={() => setIsImageLoading(false)}
               onError={(e) => {
+                setIsImageLoading(false);
                 e.currentTarget.src = '/board-game-placeholder.png';
               }}
             />
           </div>
         </div>
 
-        <div className="p-6">
-          <div className="flex justify-between items-start mb-4">
+        <div className="p-8">
+          <div className="flex justify-between items-start mb-6 gap-4">
             <h2 className="text-3xl font-bold text-gray-900">{game.title}</h2>
-            {onDelete && (
+            <div className="flex gap-3">
               <button
-                onClick={() => onDelete(game.id)}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                onClick={() => window.navigator.share?.({ 
+                  title: game.title,
+                  text: `Check out ${game.title} on BoardGameBorrow!`
+                })}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all hover:scale-105 flex items-center gap-2"
+                title="Share game"
               >
-                Remove Game
+                <Share2 className="h-5 w-5" />
+                Share
               </button>
-            )}
+              {onDelete && (
+                <button
+                  onClick={() => onDelete(game.id)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all hover:scale-105 flex items-center gap-2"
+                >
+                  Remove Game
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <div className="flex flex-col gap-4 mb-6">
+              {game.status && (
+                <div className="mb-6">
+                  <span className={`px-6 py-3 rounded-lg text-lg inline-flex items-center gap-2 ${
+                    game.status === 'available' 
+                      ? 'bg-green-100 text-green-800 border-2 border-green-200'
+                      : 'bg-yellow-100 text-yellow-800 border-2 border-yellow-200'
+                  }`}>
+                    <div className={`w-2 h-2 rounded-full ${
+                      game.status === 'available' ? 'bg-green-500' : 'bg-yellow-500'
+                    }`} />
+                    {game.status === 'available' ? 'Available' : `Borrowed by ${game.borrower}`}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-4 mb-6 bg-gray-50 p-6 rounded-xl shadow-sm">
+                <h3 className="font-semibold text-gray-900 mb-2">Quick Stats</h3>
                 {formatPlayers(game.minPlayers, game.maxPlayers) && (
                   <div className="flex items-center gap-2 text-gray-600">
                     <Users className="h-5 w-5" />
@@ -110,7 +163,10 @@ const FullScreenGameCard: React.FC<FullScreenGameCardProps> = ({
 
               {onRate && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold mb-2">Rate this game</h3>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <Star className="h-5 w-5 text-yellow-500" />
+                    Rate this game
+                  </h3>
                   <StarRating
                     rating={game.rating || 0}
                     onChange={(rating) => onRate(game.id, rating)}
@@ -118,25 +174,48 @@ const FullScreenGameCard: React.FC<FullScreenGameCardProps> = ({
                   />
                 </div>
               )}
-
-              {game.status && (
-                <div className="mb-6">
-                  <span className={`px-4 py-2 rounded-lg text-lg inline-block ${
-                    game.status === 'available' 
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {game.status === 'available' ? 'Available' : `Borrowed by ${game.borrower}`}
-                  </span>
-                </div>
-              )}
             </div>
 
             <div>
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Game Type</h3>
+                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                  {gameType}
+                </span>
+              </div>
+
               {game.description && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold mb-2">About this game</h3>
-                  <p className="text-gray-600 whitespace-pre-wrap">{game.description}</p>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <Info className="h-5 w-5 text-blue-500" />
+                    About this game
+                  </h3>
+                  <div className="relative">
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {shouldTruncateDescription && !isDescriptionExpanded
+                        ? `${game.description.slice(0, MAX_DESCRIPTION_LENGTH)}...`
+                        : game.description}
+                    </p>
+                    {shouldTruncateDescription && (
+                      <button
+                        onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                        className="mt-2 text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1"
+                        aria-label={isDescriptionExpanded ? "Show less" : "Read more"}
+                      >
+                        {isDescriptionExpanded ? (
+                          <>
+                            Show less
+                            <ChevronUp className="h-4 w-4" />
+                          </>
+                        ) : (
+                          <>
+                            Read more
+                            <ChevronDown className="h-4 w-4" />
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

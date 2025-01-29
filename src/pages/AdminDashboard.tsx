@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { getAllUsers, getAllGames, getActiveBorrows, getUpcomingGameNights } from '../services/adminService';
+import { getAllUsers, getAllGames, getActiveBorrows, getUpcomingGameNights, getCacheMetrics } from '../services/adminService';
 import { UserProfile } from '../types/user';
+import { CacheMetrics } from '../types/cache';
 import UserManagement from '../components/admin/UserManagement';
 import { seedDataService } from '../services/seedDataService';
 
@@ -9,6 +10,7 @@ interface DashboardMetrics {
   totalGames: number;
   activeBorrows: number;
   upcomingGameNights: number;
+  cacheMetrics: CacheMetrics;
   recentUsers: Array<{
     id: string;
     name: string;
@@ -23,6 +25,12 @@ const AdminDashboard: React.FC = () => {
     totalGames: 0,
     activeBorrows: 0,
     upcomingGameNights: 0,
+    cacheMetrics: {
+      totalCachedGames: 0,
+      cacheHitRate: 0,
+      memoryUsage: 0,
+      lastRefreshDate: ''
+    },
     recentUsers: []
   });
   const [loading, setLoading] = useState(true);
@@ -30,11 +38,12 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        const [users, games, borrows, gameNights] = await Promise.all([
+        const [users, games, borrows, gameNights, cacheMetrics] = await Promise.all([
           getAllUsers(),
           getAllGames(),
           getActiveBorrows(),
-          getUpcomingGameNights()
+          getUpcomingGameNights(),
+          getCacheMetrics()
         ]);
 
         const recentUsers = users
@@ -55,6 +64,7 @@ const AdminDashboard: React.FC = () => {
           totalGames: games.length,
           activeBorrows: borrows.length,
           upcomingGameNights: gameNights.length,
+          cacheMetrics,
           recentUsers
         });
       } catch (error) {
@@ -99,6 +109,32 @@ const AdminDashboard: React.FC = () => {
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-gray-500 text-sm font-medium">Upcoming Game Nights</h3>
           <p className="text-3xl font-bold">{metrics.upcomingGameNights}</p>
+        </div>
+      </div>
+
+      {/* Cache Overview Section */}
+      <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <h2 className="text-xl font-bold mb-4">Cache Overview</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div>
+            <h3 className="text-gray-500 text-sm font-medium">Cached Games</h3>
+            <p className="text-3xl font-bold">{metrics.cacheMetrics.totalCachedGames}</p>
+          </div>
+          
+          <div>
+            <h3 className="text-gray-500 text-sm font-medium">Cache Hit Rate</h3>
+            <p className="text-3xl font-bold">{metrics.cacheMetrics.cacheHitRate.toFixed(1)}%</p>
+          </div>
+          
+          <div>
+            <h3 className="text-gray-500 text-sm font-medium">Memory Usage</h3>
+            <p className="text-3xl font-bold">{metrics.cacheMetrics.memoryUsage} KB</p>
+          </div>
+          
+          <div>
+            <h3 className="text-gray-500 text-sm font-medium">Last Refresh</h3>
+            <p className="text-3xl font-bold">{metrics.cacheMetrics.lastRefreshDate}</p>
+          </div>
         </div>
       </div>
 

@@ -113,6 +113,30 @@
     - location data
     - preferred game types
 
+### Cache Management Improvements
+- Enhanced Cache Analytics
+  - [ ] Cache hit/miss ratio visualization
+  - [ ] Cache performance metrics dashboard
+  - [ ] Response time comparisons
+  
+- Cache Control Features  
+  - [ ] Manual cache refresh controls
+  - [ ] Category-specific cache clearing
+  - [ ] Game-specific cache refresh
+  - [ ] CSV fallback mode toggle
+
+- Cache Health Monitoring
+  - [ ] Staleness indicators
+  - [ ] API failure tracking
+  - [ ] Usage analytics
+  - [ ] Source distribution metrics
+
+- Cache Analytics Dashboard
+  - [ ] Detailed cache entry table
+  - [ ] Performance trending
+  - [ ] Resource usage monitoring
+  - [ ] Cache optimization suggestions
+
 ## Infrastructure Improvements
 
 ### Backend Infrastructure

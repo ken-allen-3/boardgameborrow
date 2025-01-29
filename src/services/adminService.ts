@@ -264,3 +264,5 @@ export async function getUpcomingGameNights(): Promise<any[]> {
     throw new Error('Failed to fetch game nights');
   }
 }
+
+export { getCacheMetrics } from './cacheMetricsService';

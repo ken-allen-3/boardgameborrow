@@ -4,6 +4,7 @@ import { UserProfile } from '../types/user';
 import { CacheMetrics } from '../types/cache';
 import UserManagement from '../components/admin/UserManagement';
 import { seedDataService } from '../services/seedDataService';
+import { initializeCache } from '../services/cacheInitService';
 
 interface DashboardMetrics {
   totalUsers: number;
@@ -114,7 +115,24 @@ const AdminDashboard: React.FC = () => {
 
       {/* Cache Overview Section */}
       <div className="bg-white rounded-lg shadow p-6 mb-8">
-        <h2 className="text-xl font-bold mb-4">Cache Overview</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Cache Overview</h2>
+          <button
+            onClick={async () => {
+              try {
+                await initializeCache();
+                // Refresh metrics after initialization
+                const newMetrics = await getCacheMetrics();
+                setMetrics(prev => ({ ...prev, cacheMetrics: newMetrics }));
+              } catch (error) {
+                console.error('Failed to initialize cache:', error);
+              }
+            }}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            Initialize Cache
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div>
             <h3 className="text-gray-500 text-sm font-medium">Cached Games</h3>

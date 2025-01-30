@@ -50,7 +50,28 @@ export const validateDatabaseAccess = async (email: string): Promise<boolean> =>
 };
 
 export const ensureDatabaseStructure = async (email: string): Promise<void> => {
-  // Implement your database structure initialization logic here
-  // This function can be expanded based on your needs
-  return Promise.resolve();
+  try {
+    // Initialize cache collections
+    const gameDetailsRef = collection(db, 'game-details');
+    const gameRankingsRef = collection(db, 'game-rankings');
+    
+    // Create a test document in each collection to ensure they exist
+    const testDoc = doc(gameDetailsRef, '_test');
+    const testRankingDoc = doc(gameRankingsRef, '_test');
+    
+    await setDoc(testDoc, {
+      _created: new Date().toISOString(),
+      _type: 'collection_init'
+    });
+    
+    await setDoc(testRankingDoc, {
+      _created: new Date().toISOString(),
+      _type: 'collection_init'
+    });
+
+    console.log('Cache collections initialized successfully');
+  } catch (error) {
+    console.error('Error initializing database structure:', error);
+    throw error;
+  }
 };

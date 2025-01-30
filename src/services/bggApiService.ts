@@ -175,11 +175,40 @@ export class BggApiService {
   }
 
   private async fetchRankingsFromBgg(category: string): Promise<GameData[]> {
-    // This is a placeholder - actual implementation would need to:
-    // 1. Query BGG's API for top games in category
-    // 2. Parse and transform the response
-    // 3. Handle rate limiting and errors
-    throw new Error('fetchRankingsFromBgg not implemented');
+    try {
+      // First get the top 100 games in the category
+      const response = await axios.get(
+        `https://boardgamegeek.com/xmlapi2/search?query=${category}&type=boardgame&exact=0`
+      );
+      
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(response.data, 'text/xml');
+      const items = xmlDoc.querySelectorAll('item');
+      
+      // Get details for each game
+      const gamePromises = Array.from(items)
+        .slice(0, 50) // Limit to top 50 to avoid rate limiting
+        .map(item => {
+          const id = item.getAttribute('id');
+          if (!id) return null;
+          return this.fetchGameDetails(id);
+        })
+        .filter((p): p is Promise<GameData> => p !== null);
+
+      const games = await Promise.all(gamePromises);
+      
+      // Sort by rank in the specific category
+      return games
+        .filter(game => game.rank[category as keyof typeof game.rank] !== null)
+        .sort((a, b) => {
+          const rankA = a.rank[category as keyof typeof a.rank] || Infinity;
+          const rankB = b.rank[category as keyof typeof b.rank] || Infinity;
+          return rankA - rankB;
+        });
+    } catch (error) {
+      console.error(`Failed to fetch rankings for ${category}:`, error);
+      throw error;
+    }
   }
 
   private getCurrentMonth(): string {

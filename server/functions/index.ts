@@ -115,6 +115,17 @@ export const getCacheMetrics = functions
     minInstances: 0
   })
   .https.onCall(async (data, context) => {
+    console.log('getCacheMetrics called with context:', {
+      auth: context.auth ? {
+        uid: context.auth.uid,
+        token: context.auth.token
+      } : null,
+      rawRequest: context.rawRequest ? {
+        headers: context.rawRequest.headers,
+        method: context.rawRequest.method
+      } : null
+    });
+
     // Verify authentication
     if (!context.auth) {
       throw new functions.https.HttpsError(
@@ -164,6 +175,17 @@ export const initializeCache = functions
     minInstances: 0
   })
   .https.onCall(async (data, context) => {
+    console.log('initializeCache called with context:', {
+      auth: context.auth ? {
+        uid: context.auth.uid,
+        token: context.auth.token
+      } : null,
+      rawRequest: context.rawRequest ? {
+        headers: context.rawRequest.headers,
+        method: context.rawRequest.method
+      } : null
+    });
+
     // Verify authentication
     if (!context.auth) {
       throw new functions.https.HttpsError(

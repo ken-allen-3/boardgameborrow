@@ -48,14 +48,18 @@ const initializeFunctions = async () => {
     const functions = getFunctions(app, 'us-central1');
     
     // Log functions configuration
+    const environment = import.meta.env.DEV ? 'development' : 'production';
+    const origin = environment === 'production' ? 'https://boardgameborrow.com' : 'http://localhost:5174';
+    
     console.log('Initializing Firebase Functions:', {
       projectId: app.options.projectId,
       region: 'us-central1',
-      environment: import.meta.env.DEV ? 'development' : 'production'
+      environment,
+      origin
     });
 
     // Connect to emulator in development
-    if (import.meta.env.DEV) {
+    if (environment === 'development') {
       console.log('Using Firebase Functions emulator');
       try {
         connectFunctionsEmulator(
@@ -85,7 +89,7 @@ const initializeFunctions = async () => {
   }
 };
 
-// Export functions with initialization status check
+// Initialize functions and export
 const functionsInstance = await initializeFunctions();
 export const functions = functionsInstance;
 export const getFirebaseStatus = () => ({

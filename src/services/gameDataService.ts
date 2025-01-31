@@ -23,6 +23,15 @@ export const gameDataService = {
       // Clear local cache
       localGameCache.clear();
       console.log('[gameDataService] Local cache cleared');
+      
+      // Use cloud function for cache initialization
+      const { initializeCache } = await import('./cacheMetricsService');
+      const result = await initializeCache();
+      if (!result.success) {
+        throw new Error(result.message);
+      }
+      
+      console.log('[gameDataService] Cache initialized via cloud function');
     } catch (error) {
       console.error('[gameDataService] Error initializing cache:', error);
       throw error;

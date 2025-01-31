@@ -117,36 +117,61 @@ const AdminDashboard: React.FC = () => {
       <div className="bg-white rounded-lg shadow p-6 mb-8">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Cache Overview</h2>
-          <button
-            onClick={async () => {
-              try {
-                setLoading(true);
-                console.log('Starting cache initialization...');
-                const result = await initializeCache();
-                
-                if (result.success) {
-                  console.log('Cache initialized, fetching new metrics...');
-                  const newMetrics = await getCacheMetrics();
-                  console.log('New metrics fetched:', newMetrics);
-                  setMetrics(prev => ({ ...prev, cacheMetrics: newMetrics }));
-                } else {
-                  console.error('Cache initialization returned failure:', result.message);
-                  // Show error to user
-                  alert(`Failed to initialize cache: ${result.message}`);
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={async () => {
+                try {
+                  setLoading(true);
+                  console.log('Starting cache initialization...');
+                  const result = await initializeCache();
+                  
+                  if (result.success) {
+                    console.log('Cache initialized, fetching new metrics...');
+                    const newMetrics = await getCacheMetrics();
+                    console.log('New metrics fetched:', newMetrics);
+                    setMetrics(prev => ({ ...prev, cacheMetrics: newMetrics }));
+                  } else {
+                    console.error('Cache initialization returned failure:', result.message);
+                    throw new Error(result.message);
+                  }
+                } catch (error) {
+                  console.error('Cache initialization error:', error);
+                  // Show error to user in a more user-friendly way
+                  const message = error instanceof Error ? error.message : 'Unknown error occurred';
+                  const errorDiv = document.createElement('div');
+                  errorDiv.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded';
+                  errorDiv.textContent = `Failed to initialize cache: ${message}`;
+                  
+                  const container = document.querySelector('.cache-error-container');
+                  if (container) {
+                    container.innerHTML = '';
+                    container.appendChild(errorDiv);
+                  }
+                } finally {
+                  setLoading(false);
                 }
-              } catch (error) {
-                console.error('Cache initialization error:', error);
-                // Show error to user
-                alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-              } finally {
-                setLoading(false);
-              }
-            }}
-            disabled={loading}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-          >
-            Initialize Cache
-          </button>
+              }}
+              disabled={loading}
+              className={`px-4 py-2 rounded font-medium ${
+                loading 
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-500 hover:bg-blue-600 text-white'
+              }`}
+            >
+              {loading ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Initializing...
+                </span>
+              ) : (
+                'Initialize Cache'
+              )}
+            </button>
+          </div>
+          <div className="cache-error-container mt-2"></div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div>

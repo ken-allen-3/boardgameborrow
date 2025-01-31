@@ -51,15 +51,31 @@ const logFunctionConfig = () => {
 export const getCacheMetrics = async (): Promise<CacheMetrics> => {
   try {
     logFunctionConfig();
-    const getMetrics = httpsCallable<void, CacheMetrics>(functions, 'getCacheMetrics');
+    const getMetrics = httpsCallable<object, CacheMetrics>(functions, 'getCacheMetrics');
     
     console.log('Making metrics call...');
-    const result = await getMetrics();
+    const result = await getMetrics({});
+    
+    if (!result.data) {
+      throw new Error('No data returned from metrics call');
+    }
     
     console.log('Metrics call successful:', result);
     return result.data;
   } catch (error) {
     logDetailedError(error, 'metrics');
+    
+    // Check for specific Firebase error types
+    if (error instanceof Error) {
+      const firebaseError = error as { code?: string };
+      if (firebaseError.code === 'functions/unauthenticated') {
+        throw new Error('Authentication required to fetch metrics');
+      }
+      if (firebaseError.code === 'functions/internal') {
+        throw new Error('Internal server error while fetching metrics');
+      }
+    }
+    
     return {
       totalCachedGames: 0,
       cacheHitRate: 0,
@@ -73,23 +89,38 @@ export const initializeCache = async (): Promise<{ success: boolean; message: st
   try {
     logFunctionConfig();
     console.log('Setting up cache initialization...');
-    const initialize = httpsCallable<void, { success: boolean; message: string }>(
+    const initialize = httpsCallable<object, { success: boolean; message: string }>(
       functions,
       'initializeCache',
       { timeout: 300000 } // 5 minutes timeout
     );
     
     console.log('Making initialization call...');
-    const result = await initialize();
+    const result = await initialize({});  // Pass empty object as required by httpsCallable
+    
+    if (!result.data) {
+      throw new Error('No response from initialization');
+    }
     
     console.log('Cache initialization successful:', result);
     return result.data;
   } catch (error) {
     logDetailedError(error, 'initialization');
+    
+    // Check for specific Firebase error types
     if (error instanceof Error) {
-      const code = 'code' in error ? (error as { code?: string }).code : 'UNKNOWN';
+      const firebaseError = error as { code?: string };
+      if (firebaseError.code === 'functions/unauthenticated') {
+        throw new Error('Authentication required to initialize cache');
+      }
+      if (firebaseError.code === 'functions/internal') {
+        throw new Error('Internal server error during initialization');
+      }
+      
+      const code = firebaseError.code || 'UNKNOWN';
       throw new Error(`Cache initialization failed: ${error.message} (Code: ${code})`);
     }
+    
     throw new Error('Cache initialization failed: Unknown error');
   }
 };

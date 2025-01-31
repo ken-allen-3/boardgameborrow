@@ -178,7 +178,7 @@ export const initializeCache = functions
         timestamp: new Date().toISOString()
       });
 
-      await initializeCacheData();
+      await initializeCacheData(context);
       
       console.log('Cache initialized successfully');
       return { success: true, message: 'Cache initialized successfully' };

@@ -38,9 +38,19 @@ const logDetailedError = (error: unknown, context: string) => {
   console.error(`Detailed ${context} error:`, errorDetails);
 };
 
+const logFunctionConfig = () => {
+  console.log('Firebase Functions Configuration:', {
+    region: functions.region,
+    customDomain: (functions as any).customDomain,
+    app: functions.app?.name,
+    projectId: functions.app?.options?.projectId,
+    emulator: process.env.FUNCTIONS_EMULATOR ? true : false
+  });
+};
+
 export const getCacheMetrics = async (): Promise<CacheMetrics> => {
   try {
-    console.log('Setting up metrics call with region:', functions.region);
+    logFunctionConfig();
     const getMetrics = httpsCallable<void, CacheMetrics>(functions, 'getCacheMetrics');
     
     console.log('Making metrics call...');
@@ -61,10 +71,12 @@ export const getCacheMetrics = async (): Promise<CacheMetrics> => {
 
 export const initializeCache = async (): Promise<{ success: boolean; message: string }> => {
   try {
-    console.log('Setting up cache initialization with region:', functions.region);
+    logFunctionConfig();
+    console.log('Setting up cache initialization...');
     const initialize = httpsCallable<void, { success: boolean; message: string }>(
       functions,
-      'initializeCache'
+      'initializeCache',
+      { timeout: 300000 } // 5 minutes timeout
     );
     
     console.log('Making initialization call...');

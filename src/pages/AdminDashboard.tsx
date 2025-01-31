@@ -121,20 +121,28 @@ const AdminDashboard: React.FC = () => {
             onClick={async () => {
               try {
                 setLoading(true);
+                console.log('Starting cache initialization...');
                 const result = await initializeCache();
+                
                 if (result.success) {
-                  // Refresh metrics after initialization
+                  console.log('Cache initialized, fetching new metrics...');
                   const newMetrics = await getCacheMetrics();
+                  console.log('New metrics fetched:', newMetrics);
                   setMetrics(prev => ({ ...prev, cacheMetrics: newMetrics }));
                 } else {
-                  console.error('Failed to initialize cache:', result.message);
+                  console.error('Cache initialization returned failure:', result.message);
+                  // Show error to user
+                  alert(`Failed to initialize cache: ${result.message}`);
                 }
               } catch (error) {
-                console.error('Failed to initialize cache:', error);
+                console.error('Cache initialization error:', error);
+                // Show error to user
+                alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
               } finally {
                 setLoading(false);
               }
             }}
+            disabled={loading}
             className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
           >
             Initialize Cache

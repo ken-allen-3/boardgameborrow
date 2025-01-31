@@ -114,10 +114,21 @@ export const getCacheMetrics = functions
     memory: "256MB" as const,
     minInstances: 0
   })
-  .https.onRequest(async (req, res) => {
-    if (handleCors(req, res)) return;
+  .https.onCall(async (data, context) => {
+    // Verify authentication
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        'unauthenticated',
+        'The function must be called while authenticated.'
+      );
+    }
 
     try {
+      console.log('Fetching cache metrics...', {
+        userId: context.auth.uid,
+        timestamp: new Date().toISOString()
+      });
+
       const gameDetailsRef = db.collection('game-details');
       const gameRankingsRef = db.collection('game-rankings');
 
@@ -133,10 +144,15 @@ export const getCacheMetrics = functions
         lastRefreshDate: await getLastRefreshDate()
       };
 
-      res.json(metrics);
+      console.log('Cache metrics fetched successfully:', metrics);
+      return metrics;
     } catch (error) {
       console.error('Error fetching cache metrics:', error);
-      res.status(500).json({ error: 'Failed to fetch cache metrics' });
+      throw new functions.https.HttpsError(
+        'internal',
+        'Failed to fetch cache metrics',
+        error
+      );
     }
   });
 
@@ -147,15 +163,32 @@ export const initializeCache = functions
     memory: "512MB" as const,
     minInstances: 0
   })
-  .https.onRequest(async (req, res) => {
-    if (handleCors(req, res)) return;
+  .https.onCall(async (data, context) => {
+    // Verify authentication
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        'unauthenticated',
+        'The function must be called while authenticated.'
+      );
+    }
 
     try {
+      console.log('Initializing cache...', {
+        userId: context.auth.uid,
+        timestamp: new Date().toISOString()
+      });
+
       await initializeCacheData();
-      res.json({ success: true, message: 'Cache initialized successfully' });
+      
+      console.log('Cache initialized successfully');
+      return { success: true, message: 'Cache initialized successfully' };
     } catch (error) {
       console.error('Error initializing cache:', error);
-      res.status(500).json({ success: false, message: 'Failed to initialize cache' });
+      throw new functions.https.HttpsError(
+        'internal',
+        'Failed to initialize cache',
+        error
+      );
     }
   });
 

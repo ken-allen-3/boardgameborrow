@@ -38,13 +38,36 @@ export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const database = getDatabase(app);
 export const storage = getStorage(app);
-export const functions = getFunctions(app, 'us-central1');
+// Initialize Firebase Functions with proper configuration
+const initializeFunctions = () => {
+  const functions = getFunctions(app, 'us-central1');
+  
+  // Log functions configuration
+  console.log('Initializing Firebase Functions:', {
+    projectId: app.options.projectId,
+    region: 'us-central1',
+    environment: import.meta.env.DEV ? 'development' : 'production'
+  });
 
-// Connect to emulator in development
-if (import.meta.env.DEV) {
-  console.log('Using Firebase Functions emulator');
-  connectFunctionsEmulator(functions, 'localhost', 5001);
-}
+  // Connect to emulator in development
+  if (import.meta.env.DEV) {
+    console.log('Using Firebase Functions emulator');
+    try {
+      connectFunctionsEmulator(
+        functions,
+        'localhost',
+        5001
+      );
+      console.log('Successfully connected to Functions emulator');
+    } catch (error) {
+      console.error('Failed to connect to Functions emulator:', error);
+    }
+  }
+
+  return functions;
+};
+
+export const functions = initializeFunctions();
 
 // Initialize providers
 export const googleProvider = new GoogleAuthProvider();

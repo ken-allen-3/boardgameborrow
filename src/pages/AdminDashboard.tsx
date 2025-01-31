@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getAllUsers, getAllGames, getActiveBorrows, getUpcomingGameNights } from '../services/adminService';
 import { getCacheMetrics, initializeCache } from '../services/cacheMetricsService';
+import { getFirebaseStatus } from '../config/firebase';
 import { UserProfile } from '../types/user';
 import { CacheMetrics } from '../types/cache';
 import UserManagement from '../components/admin/UserManagement';
@@ -35,10 +36,17 @@ const AdminDashboard: React.FC = () => {
     recentUsers: []
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
+        setError(null);
+        const { isInitialized, error: initError } = getFirebaseStatus();
+        if (!isInitialized) {
+          throw new Error(`Firebase not initialized: ${initError?.message || 'Unknown error'}`);
+        }
+
         const [users, games, borrows, gameNights, cacheMetrics] = await Promise.all([
           getAllUsers(),
           getAllGames(),
@@ -70,6 +78,7 @@ const AdminDashboard: React.FC = () => {
         });
       } catch (error) {
         console.error('Error fetching dashboard metrics:', error);
+        setError(error instanceof Error ? error.message : 'Failed to fetch dashboard metrics');
       } finally {
         setLoading(false);
       }
@@ -82,6 +91,23 @@ const AdminDashboard: React.FC = () => {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded max-w-lg">
+          <p className="font-bold">Error</p>
+          <p>{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-4 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -122,6 +148,13 @@ const AdminDashboard: React.FC = () => {
               onClick={async () => {
                 try {
                   setLoading(true);
+                  setError(null);
+
+                  const { isInitialized, error: initError } = getFirebaseStatus();
+                  if (!isInitialized) {
+                    throw new Error(`Firebase not initialized: ${initError?.message || 'Unknown error'}`);
+                  }
+
                   console.log('Starting cache initialization...');
                   const result = await initializeCache();
                   
@@ -131,22 +164,11 @@ const AdminDashboard: React.FC = () => {
                     console.log('New metrics fetched:', newMetrics);
                     setMetrics(prev => ({ ...prev, cacheMetrics: newMetrics }));
                   } else {
-                    console.error('Cache initialization returned failure:', result.message);
                     throw new Error(result.message);
                   }
                 } catch (error) {
                   console.error('Cache initialization error:', error);
-                  // Show error to user in a more user-friendly way
-                  const message = error instanceof Error ? error.message : 'Unknown error occurred';
-                  const errorDiv = document.createElement('div');
-                  errorDiv.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded';
-                  errorDiv.textContent = `Failed to initialize cache: ${message}`;
-                  
-                  const container = document.querySelector('.cache-error-container');
-                  if (container) {
-                    container.innerHTML = '';
-                    container.appendChild(errorDiv);
-                  }
+                  setError(error instanceof Error ? error.message : 'Failed to initialize cache');
                 } finally {
                   setLoading(false);
                 }

@@ -1,6 +1,27 @@
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '../config/firebase';
+import { functions, getFirebaseStatus } from '../config/firebase';
 import { CacheMetrics } from '../types/cache';
+
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const retryOperation = async <T>(
+  operation: () => Promise<T>,
+  retries = MAX_RETRIES,
+  delay = RETRY_DELAY
+): Promise<T> => {
+  try {
+    return await operation();
+  } catch (error) {
+    if (retries > 0) {
+      await wait(delay);
+      return retryOperation(operation, retries - 1, delay * 2);
+    }
+    throw error;
+  }
+};
 
 
 interface DetailedError {
@@ -50,11 +71,22 @@ const logFunctionConfig = () => {
 
 export const getCacheMetrics = async (): Promise<CacheMetrics> => {
   try {
+    const { isInitialized, error } = getFirebaseStatus();
+    if (!isInitialized) {
+      throw new Error(`Firebase not initialized: ${error?.message || 'Unknown error'}`);
+    }
+
     logFunctionConfig();
     const getMetrics = httpsCallable<object, CacheMetrics>(functions, 'getCacheMetrics');
     
     console.log('Making metrics call...');
-    const result = await getMetrics({});
+    const result = await retryOperation(async () => {
+      const response = await getMetrics({});
+      if (!response.data) {
+        throw new Error('No data returned from metrics call');
+      }
+      return response;
+    });
     
     if (!result.data) {
       throw new Error('No data returned from metrics call');
@@ -87,6 +119,11 @@ export const getCacheMetrics = async (): Promise<CacheMetrics> => {
 
 export const initializeCache = async (): Promise<{ success: boolean; message: string }> => {
   try {
+    const { isInitialized, error } = getFirebaseStatus();
+    if (!isInitialized) {
+      throw new Error(`Firebase not initialized: ${error?.message || 'Unknown error'}`);
+    }
+
     logFunctionConfig();
     console.log('Setting up cache initialization...');
     const initialize = httpsCallable<object, { success: boolean; message: string }>(
@@ -96,7 +133,13 @@ export const initializeCache = async (): Promise<{ success: boolean; message: st
     );
     
     console.log('Making initialization call...');
-    const result = await initialize({});  // Pass empty object as required by httpsCallable
+    const result = await retryOperation(async () => {
+      const response = await initialize({});
+      if (!response.data) {
+        throw new Error('No response from initialization');
+      }
+      return response;
+    });
     
     if (!result.data) {
       throw new Error('No response from initialization');

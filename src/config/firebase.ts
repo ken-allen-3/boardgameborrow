@@ -38,36 +38,60 @@ export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const database = getDatabase(app);
 export const storage = getStorage(app);
+// Track Firebase initialization state
+let isInitialized = false;
+let initializationError: Error | null = null;
+
 // Initialize Firebase Functions with proper configuration
-const initializeFunctions = () => {
-  const functions = getFunctions(app, 'us-central1');
-  
-  // Log functions configuration
-  console.log('Initializing Firebase Functions:', {
-    projectId: app.options.projectId,
-    region: 'us-central1',
-    environment: import.meta.env.DEV ? 'development' : 'production'
-  });
+const initializeFunctions = async () => {
+  try {
+    const functions = getFunctions(app, 'us-central1');
+    
+    // Log functions configuration
+    console.log('Initializing Firebase Functions:', {
+      projectId: app.options.projectId,
+      region: 'us-central1',
+      environment: import.meta.env.DEV ? 'development' : 'production'
+    });
 
-  // Connect to emulator in development
-  if (import.meta.env.DEV) {
-    console.log('Using Firebase Functions emulator');
-    try {
-      connectFunctionsEmulator(
-        functions,
-        'localhost',
-        5001
-      );
-      console.log('Successfully connected to Functions emulator');
-    } catch (error) {
-      console.error('Failed to connect to Functions emulator:', error);
+    // Connect to emulator in development
+    if (import.meta.env.DEV) {
+      console.log('Using Firebase Functions emulator');
+      try {
+        connectFunctionsEmulator(
+          functions,
+          'localhost',
+          5001
+        );
+        console.log('Successfully connected to Functions emulator');
+      } catch (error) {
+        console.error('Failed to connect to Functions emulator:', error);
+      }
     }
-  }
 
-  return functions;
+    // Wait for auth to be ready
+    await new Promise<void>((resolve) => {
+      const unsubscribe = auth.onAuthStateChanged(() => {
+        unsubscribe();
+        resolve();
+      });
+    });
+
+    isInitialized = true;
+    return functions;
+  } catch (error) {
+    initializationError = error instanceof Error ? error : new Error('Unknown initialization error');
+    throw initializationError;
+  }
 };
 
-export const functions = initializeFunctions();
+// Export functions with initialization status check
+const functionsInstance = await initializeFunctions();
+export const functions = functionsInstance;
+export const getFirebaseStatus = () => ({
+  isInitialized,
+  error: initializationError
+});
 
 // Initialize providers
 export const googleProvider = new GoogleAuthProvider();

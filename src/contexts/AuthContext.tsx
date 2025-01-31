@@ -14,7 +14,6 @@ import { ref, set, get, update } from 'firebase/database';
 import { 
   auth, 
   database, 
-  ensureDatabaseStructure, 
   validateDatabaseAccess,
   googleProvider,
   facebookProvider 
@@ -230,9 +229,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
-          await ensureDatabaseStructure(user.email);
           setIsAdmin(user.email === 'kenny@springwavestudios.com');
-
+          
+          // Get user data
           const userRef = ref(database, `users/${user.email.replace(/\./g, ',')}`);
           const snapshot = await get(userRef);
           const userData = snapshot.val();

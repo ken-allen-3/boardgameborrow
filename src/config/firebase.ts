@@ -16,6 +16,7 @@ import {
 } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
 import { getStorage } from 'firebase/storage';
+import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
@@ -37,6 +38,13 @@ export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const database = getDatabase(app);
 export const storage = getStorage(app);
+export const functions = getFunctions(app, 'us-central1');
+
+// Connect to emulator in development
+if (import.meta.env.DEV) {
+  console.log('Using Firebase Functions emulator');
+  connectFunctionsEmulator(functions, 'localhost', 5001);
+}
 
 // Initialize providers
 export const googleProvider = new GoogleAuthProvider();

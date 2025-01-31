@@ -1,34 +1,83 @@
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../config/firebase';
 import { CacheMetrics } from '../types/cache';
+
+
+interface DetailedError {
+  name?: string;
+  message?: string;
+  code?: string;
+  details?: unknown;
+  stack?: string;
+  timestamp: string;
+}
+
+const logDetailedError = (error: unknown, context: string) => {
+  const errorDetails: DetailedError = {
+    timestamp: new Date().toISOString(),
+    message: 'Unknown error'
+  };
+
+  if (error instanceof Error) {
+    errorDetails.name = error.name;
+    errorDetails.message = error.message;
+    errorDetails.stack = error.stack;
+    
+    // Check for Firebase Functions error properties
+    const functionError = error as { code?: string; details?: unknown };
+    if (functionError.code) {
+      errorDetails.code = functionError.code;
+    }
+    if (functionError.details) {
+      errorDetails.details = functionError.details;
+    }
+  } else {
+    errorDetails.message = String(error);
+  }
+  
+  console.error(`Detailed ${context} error:`, errorDetails);
+};
 
 export const getCacheMetrics = async (): Promise<CacheMetrics> => {
   try {
-    const functions = getFunctions();
+    console.log('Setting up metrics call with region:', functions.region);
     const getMetrics = httpsCallable<void, CacheMetrics>(functions, 'getCacheMetrics');
+    
+    console.log('Making metrics call...');
     const result = await getMetrics();
+    
+    console.log('Metrics call successful:', result);
     return result.data;
   } catch (error) {
-    console.error('Error fetching cache metrics:', error);
+    logDetailedError(error, 'metrics');
     return {
       totalCachedGames: 0,
       cacheHitRate: 0,
       memoryUsage: 0,
-      lastRefreshDate: 'Error'
+      lastRefreshDate: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
     };
   }
 };
 
 export const initializeCache = async (): Promise<{ success: boolean; message: string }> => {
   try {
-    const functions = getFunctions();
+    console.log('Setting up cache initialization with region:', functions.region);
     const initialize = httpsCallable<void, { success: boolean; message: string }>(
       functions,
       'initializeCache'
     );
+    
+    console.log('Making initialization call...');
     const result = await initialize();
+    
+    console.log('Cache initialization successful:', result);
     return result.data;
   } catch (error) {
-    console.error('Error initializing cache:', error);
-    throw error;
+    logDetailedError(error, 'initialization');
+    if (error instanceof Error) {
+      const code = 'code' in error ? (error as { code?: string }).code : 'UNKNOWN';
+      throw new Error(`Cache initialization failed: ${error.message} (Code: ${code})`);
+    }
+    throw new Error('Cache initialization failed: Unknown error');
   }
 };

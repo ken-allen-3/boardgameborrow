@@ -1,9 +1,53 @@
 {
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "game-details",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "metadata.lastAccessed", "order": "ASCENDING" },
+        { "fieldPath": "metadata.usageCount", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "game-rankings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "lastUpdated", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "cache-events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": [
     {
-      "collectionGroup": "api-cache",
-      "fieldPath": "timestamp",
+      "collectionGroup": "game-details",
+      "fieldPath": "metadata.lastAccessed",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "game-rankings",
+      "fieldPath": "lastUpdated",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "notifications",
+      "fieldPath": "createdAt",
       "indexes": [
         {
           "order": "ASCENDING",

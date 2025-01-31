@@ -1,11 +1,12 @@
 # Cache Monitoring Setup Guide
 
 ## Overview
-This document outlines the monitoring and alerting configuration for our two-tier caching system:
-1. Firebase-based server cache for game rankings and details
-2. Local memory cache for fast access during user sessions
+This document outlines the monitoring and alerting configuration for our caching system:
+1. Cloud Functions endpoints with CORS handling
+2. Firebase-based server cache for game rankings and details
+3. Local memory cache for fast access during user sessions
 
-The monitoring system tracks cache performance across both tiers, BGG API rate limits, and function execution times.
+The monitoring system tracks cache performance, CORS issues, API rate limits, and function execution times.
 
 ## Cache Architecture Overview
 Our caching system consists of two main components:
@@ -19,14 +20,15 @@ Our caching system consists of two main components:
    - Automatically cleared on session initialization
 
 ## Implemented Metrics
-The following metrics are automatically logged by the system:
+The following metrics are automatically logged to the cache-events collection:
 
 1. **Cache Performance**
-   - Server cache hit/miss ratios (logged every 100 requests)
+   - Server cache hit/miss ratios (logged per request)
    - Local cache hit/miss ratios
    - Cache operation durations
-   - Cache errors
+   - Cache errors and CORS issues
    - Game usage frequency metrics
+   - Memory usage tracking
 
 2. **API Performance**
    - Rate limit errors (429 responses)
@@ -53,12 +55,25 @@ The following operations are scheduled to maintain cache freshness:
 
 ## Firebase Monitoring Alert Setup
 
-### 1. Cache Hit/Miss Ratio Alert
+### 1. Cache Performance Alerts
 Configure in Firebase Console:
 - Navigate to: Functions > Monitoring > Create Alert
+- Set up the following alerts:
+
+#### Cache Hit/Miss Ratio
 - Metric: Custom Log Entry containing "metrics_summary"
 - Condition: When hitRatio < 50% over 1-hour window
 - Notification: Set up email/Slack notification
+
+#### CORS Errors
+- Metric: Custom Log Entry containing "cors_error"
+- Condition: Count > 10 per minute
+- Notification: High priority alert
+
+#### Memory Usage
+- Metric: Custom Log Entry containing "memory_usage"
+- Condition: When usage > 80% of limit
+- Notification: High priority alert
 
 ### 2. API Rate Limit Alert
 Configure in Firebase Console:
@@ -151,6 +166,21 @@ Configure in Firebase Console:
 
 ## Log Format Reference
 
+### Cache Events
+```json
+{
+  "type": "cache_event",
+  "timestamp": "2025-01-22T18:36:41.000Z",
+  "eventType": "hit" | "miss" | "error" | "cors_error",
+  "data": {
+    "operation": string,
+    "duration": number,
+    "memoryUsage": number,
+    "error"?: string
+  }
+}
+```
+
 ### Cache Hit/Miss Summary
 ```json
 {
@@ -192,6 +222,8 @@ Configure in Firebase Console:
    - Review alert thresholds monthly
    - Adjust based on usage patterns
    - Update notification settings as team changes
+   - Monitor CORS configuration and origins
+   - Review memory usage patterns
 
 2. **Troubleshooting**
    - Use logging timestamps to correlate events

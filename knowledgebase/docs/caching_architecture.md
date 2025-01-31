@@ -5,7 +5,23 @@ This document details the caching architecture implemented for board game data, 
 
 ## Architecture Components
 
-### 1. Firebase Cache Collections
+### 1. Cloud Functions Endpoints
+
+#### Cache Management Functions
+- `initializeCache`: Populates cache with initial game data
+- `getCacheMetrics`: Retrieves cache performance statistics
+- `cleanupExpiredCache`: Scheduled cleanup of stale cache entries
+
+#### API Functions with Cache Layer
+- `searchGames`: Game search with caching
+- `getGameDetails`: Game details with caching
+
+All endpoints implement CORS handling with:
+- Origin validation
+- Preflight request handling
+- Proper headers for cross-origin requests
+
+### 2. Firebase Cache Collections
 
 #### Game Rankings Cache
 ```
@@ -88,8 +104,27 @@ This document details the caching architecture implemented for board game data, 
 
 ### Automatic Invalidation
 - Monthly rankings refresh
-- 30-day TTL for game details
+- 24-hour TTL for infrequently accessed games
+- Preservation of high-usage games (10+ accesses)
 - Session-based local cache clear
+
+### Cache Events Collection
+```
+/cache-events/{eventId}
+├── type: 'cache_hit' | 'cache_miss' | 'cache_refresh' | 'cache_error'
+├── timestamp: number
+├── data: {
+│   ├── gameId?: string
+│   ├── query?: string
+│   ├── status?: string
+│   ├── error?: string
+│   └── duration?: number
+│ }
+└── metadata?: {
+    ├── source: string
+    └── details: any
+}
+```
 
 ### Manual Invalidation
 - Available through admin functions
@@ -103,14 +138,25 @@ This document details the caching architecture implemented for board game data, 
 ### Memory Usage
 - Local cache size limits
 - Selective caching based on usage patterns
-- Automatic cleanup of stale entries
+- Preservation of frequently accessed games (10+ uses)
+- Automatic cleanup of stale entries (24-hour TTL)
+- Memory usage tracking and monitoring
 
 ### Network Optimization
 - Batch updates where possible
 - Compression for large responses
 - Prioritized loading for visible content
+- CORS optimization for cross-origin requests
+- Rate limiting protection
 
 ## Implementation Details
+
+### Security Considerations
+- All write operations restricted to Cloud Functions
+- Read operations require authentication
+- CORS headers for secure cross-origin access
+- Rate limiting on API endpoints
+- Error logging and monitoring
 
 ### Key Classes and Services
 

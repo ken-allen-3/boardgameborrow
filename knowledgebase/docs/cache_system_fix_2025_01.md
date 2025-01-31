@@ -14,6 +14,8 @@ The admin dashboard was showing 0 cached games, indicating either:
    - Firebase Functions version conflicts
    - Incorrect permissions in Firestore rules
    - Direct client-side Firestore access for cache operations
+   - Missing CORS headers causing cross-origin request failures
+   - Inconsistent cache cleanup strategy
 
 ## Solution Implemented
 
@@ -21,7 +23,11 @@ The admin dashboard was showing 0 cached games, indicating either:
 Moved cache operations to Cloud Functions to ensure proper security and consistency:
 - `initializeCache`: Populates cache with game data from BGG API
 - `getCacheMetrics`: Retrieves cache statistics
-- Both functions require admin authentication
+- `cleanupExpiredCache`: Scheduled cleanup preserving high-usage games
+All functions include:
+- Proper CORS handling with preflight support
+- Admin authentication requirements
+- Error logging and monitoring
 
 ### 2. Firebase Configuration
 Updated Firestore rules to enforce proper access control:
@@ -51,16 +57,24 @@ Fixed version conflicts between Firebase packages:
 - Used --legacy-peer-deps to resolve dependency conflicts
 
 ### 4. Cache Implementation
-The cache system now operates in two tiers:
+The cache system now operates in three tiers:
 1. Game Details Cache (`game-details` collection):
    - Stores individual game information
    - Tracks usage metrics per game
    - Includes metadata like last access and update times
+   - Preserves frequently accessed games (10+ uses)
 
 2. Rankings Cache (`game-rankings` collection):
    - Organized by category and month
    - Stores top games for each category
    - Includes refresh metadata
+   - 24-hour TTL for infrequently accessed data
+
+3. Cache Events Collection (`cache-events` collection):
+   - Tracks all cache operations
+   - Monitors performance metrics
+   - Logs errors and CORS issues
+   - Helps optimize cache strategy
 
 ## Usage
 1. Access the admin dashboard
@@ -79,6 +93,19 @@ The cache system now operates in two tiers:
    - Verify Firestore collections exist
    - Check admin permissions
    - Review Cloud Function logs for initialization errors
+   - Verify CORS configuration
+
+2. **CORS Errors**
+   - Check Origin headers in requests
+   - Verify CORS middleware configuration
+   - Review preflight handling
+   - Check browser console for detailed errors
+
+3. **Cache Performance Issues**
+   - Monitor cache hit/miss ratios
+   - Review memory usage metrics
+   - Check preservation rules for high-usage games
+   - Verify cleanup job execution
 
 2. **Permission Errors**
    - Confirm Firestore rules are deployed
@@ -116,6 +143,10 @@ console.log('Is Admin:', userData.data()?.isAdmin);
 2. Add cache invalidation strategies
 3. Implement retry mechanisms for failed BGG API requests
 4. Add monitoring for cache performance metrics
+5. Implement regional caching for global scale
+6. Add predictive caching based on usage patterns
+7. Enhance CORS configuration for multiple environments
+8. Implement cache compression for large datasets
 
 ## Related Documentation
 - [Cache Monitoring Setup](./cache_monitoring_setup.md)

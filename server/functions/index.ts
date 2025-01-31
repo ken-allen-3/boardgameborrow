@@ -5,6 +5,32 @@ import { GameDetectionService } from '../services/gameDetection';
 import { logApiEvent, calculateCacheHitRate, calculateMemoryUsage, getLastRefreshDate, initializeCacheData } from './cacheService';
 import { searchGames, getGameDetails } from './boardgameApi';
 
+// Diagnostic helper functions
+const checkCollection = async (collectionName: string) => {
+  try {
+    const snapshot = await db.collection(collectionName).count().get();
+    return {
+      exists: true,
+      documentCount: snapshot.data().count,
+      lastAccessed: new Date().toISOString()
+    };
+  } catch (error) {
+    return {
+      exists: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+};
+
+const getEnvironmentInfo = () => ({
+  region: process.env.FUNCTION_REGION || 'unknown',
+  projectId: process.env.GCLOUD_PROJECT || 'unknown',
+  functionName: process.env.FUNCTION_NAME || 'unknown',
+  environment: process.env.FUNCTIONS_EMULATOR ? 'emulator' : 'production',
+  nodeVersion: process.version,
+  timestamp: new Date().toISOString()
+});
+
 // CORS middleware
 const setCorsHeaders = (res: functions.Response) => {
   res.set('Access-Control-Allow-Origin', '*');
@@ -23,8 +49,13 @@ const handleCors = (req: functions.Request, res: functions.Response) => {
   return false;
 };
 
-// Initialize Firebase Admin
-initializeApp();
+// Initialize Firebase Admin with diagnostic logging
+const app = initializeApp();
+console.log('Firebase Admin initialized with config:', {
+  projectId: app.options.projectId,
+  databaseURL: app.options.databaseURL,
+  storageBucket: app.options.storageBucket
+});
 
 // Initialize Firestore
 export const db = getFirestore();
@@ -32,8 +63,49 @@ export const db = getFirestore();
 // Initialize services
 const gameDetectionService = new GameDetectionService();
 
-// Log function initialization
-logApiEvent('function_init', { timestamp: Date.now() });
+// Log function initialization with environment info
+const envInfo = getEnvironmentInfo();
+logApiEvent('function_init', { timestamp: Date.now(), environment: envInfo });
+
+// Diagnostic endpoint
+export const diagnoseCacheSystem = functions
+  .runWith({
+    timeoutSeconds: 60,
+    memory: "256MB" as const,
+    minInstances: 0
+  })
+  .https.onRequest(async (req, res) => {
+    if (handleCors(req, res)) return;
+
+    try {
+      const diagnostics = {
+        environment: getEnvironmentInfo(),
+        collections: {
+          gameDetails: await checkCollection('game-details'),
+          gameRankings: await checkCollection('game-rankings'),
+          cacheEvents: await checkCollection('cache-events')
+        },
+        cacheMetrics: {
+          hitRate: await calculateCacheHitRate(),
+          lastRefresh: await getLastRefreshDate()
+        },
+        cors: {
+          origin: req.headers.origin || 'not provided',
+          method: req.method,
+          headers: req.headers
+        }
+      };
+
+      res.json(diagnostics);
+    } catch (error) {
+      console.error('Diagnostic error:', error);
+      res.status(500).json({
+        error: 'Diagnostic check failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
 
 // Cache metrics endpoint
 export const getCacheMetrics = functions

@@ -1,5 +1,14 @@
-import { db } from './index';
-import * as admin from 'firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
+import type { Firestore } from 'firebase-admin/firestore';
+
+let db: Firestore | null = null;
+
+const getDb = () => {
+  if (!db) {
+    db = getFirestore();
+  }
+  return db;
+};
 
 interface CacheEntry {
   data: string;  // XML response data
@@ -67,7 +76,7 @@ export const logApiEvent = (type: string, data: any) => {
 export async function getCacheEntry(cacheKey: string): Promise<CacheEntry | null> {
   const startTime = Date.now();
   try {
-    const doc = await db
+    const doc = await getDb()
       .collection(CACHE_COLLECTION)
       .doc(cacheKey)
       .get();
@@ -104,7 +113,7 @@ export async function setCacheEntry(
   const startTime = Date.now();
   let error: any = null;
   try {
-    await db
+    await getDb()
       .collection(CACHE_COLLECTION)
       .doc(cacheKey)
       .set(entry);

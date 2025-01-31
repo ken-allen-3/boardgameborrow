@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { getAllUsers, getAllGames, getActiveBorrows, getUpcomingGameNights, getCacheMetrics } from '../services/adminService';
+import { getAllUsers, getAllGames, getActiveBorrows, getUpcomingGameNights } from '../services/adminService';
+import { getCacheMetrics, initializeCache } from '../services/cacheMetricsService';
 import { UserProfile } from '../types/user';
 import { CacheMetrics } from '../types/cache';
 import UserManagement from '../components/admin/UserManagement';
 import { seedDataService } from '../services/seedDataService';
-import { initializeCache } from '../services/cacheInitService';
 
 interface DashboardMetrics {
   totalUsers: number;
@@ -120,12 +120,19 @@ const AdminDashboard: React.FC = () => {
           <button
             onClick={async () => {
               try {
-                await initializeCache();
-                // Refresh metrics after initialization
-                const newMetrics = await getCacheMetrics();
-                setMetrics(prev => ({ ...prev, cacheMetrics: newMetrics }));
+                setLoading(true);
+                const result = await initializeCache();
+                if (result.success) {
+                  // Refresh metrics after initialization
+                  const newMetrics = await getCacheMetrics();
+                  setMetrics(prev => ({ ...prev, cacheMetrics: newMetrics }));
+                } else {
+                  console.error('Failed to initialize cache:', result.message);
+                }
               } catch (error) {
                 console.error('Failed to initialize cache:', error);
+              } finally {
+                setLoading(false);
               }
             }}
             className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"

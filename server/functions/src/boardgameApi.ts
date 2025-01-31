@@ -1,22 +1,16 @@
-import { onRequest, HttpsOptions } from 'firebase-functions/v2/https';
+import * as functions from 'firebase-functions';
 import type { Request, Response } from 'express';
-import * as cors from 'cors';
+import cors = require('cors');
 import axios from 'axios';
 import { handleCachedApiRequest, logApiEvent } from './cacheService';
 
 const corsHandler = cors({ origin: true });
 const BGG_BASE_URL = 'https://boardgamegeek.com/xmlapi2';
 
-const functionConfig: HttpsOptions = {
-  timeoutSeconds: 60,
-  memory: '256MiB',
-  minInstances: 0
-};
-
 // Add timeout to BGG API requests
 const BGG_REQUEST_TIMEOUT = 10000; // 10 seconds
 
-export const searchGames = onRequest(functionConfig, async (request: Request, response: Response) => {
+export const searchGames = functions.https.onRequest(async (request: Request, response: Response) => {
   return corsHandler(request, response, async () => {
     const startTime = Date.now();
     try {
@@ -77,7 +71,7 @@ export const searchGames = onRequest(functionConfig, async (request: Request, re
   });
 });
 
-export const getGameDetails = onRequest(functionConfig, async (request: Request, response: Response) => {
+export const getGameDetails = functions.https.onRequest(async (request: Request, response: Response) => {
   return corsHandler(request, response, async () => {
     const startTime = Date.now();
     try {

@@ -38,18 +38,20 @@ function Navbar() {
   };
 
   const NavGroup = ({ children, title, className = "" }: NavGroupProps) => (
-    <div className={`flex flex-col ${className}`}>
+    <div className={`flex flex-col md:flex-row md:items-center md:space-x-2 ${className}`}>
       {title && (
         <div className="px-4 py-2 text-xs font-semibold text-brand-gray-500 bg-brand-gray-50 md:hidden">
           {title}
         </div>
       )}
-      {children}
+      <div className="flex flex-col md:flex-row md:items-center md:space-x-2">
+        {children}
+      </div>
     </div>
   );
 
   const NavLink = ({ to, icon: Icon, label, onClick, className = "", disabled = false, badge = null }: NavLinkProps) => {
-    const baseClass = "nav-link gap-3 p-4 flex items-center md:p-3 md:gap-2 relative transition-colors duration-150";
+    const baseClass = "nav-link gap-3 p-4 flex items-center md:px-2 md:py-2 md:gap-2 relative transition-colors duration-150 whitespace-nowrap";
     const activeClass = "bg-brand-blue-50 text-brand-blue-600 md:bg-transparent md:text-brand-blue-600";
     const defaultClass = disabled ? "opacity-60 cursor-not-allowed" : "hover:bg-brand-gray-50 md:hover:bg-transparent md:hover:text-brand-blue-600";
     
@@ -94,7 +96,7 @@ function Navbar() {
   const NavLinks = () => (
     <>
       {/* Core Features Group */}
-      <NavGroup title="Core Features" className="md:border-none">
+      <NavGroup title="Core Features" className="md:pr-6 md:border-r border-brand-gray-200">
         <NavLink
           to="/my-games"
           icon={Library}
@@ -114,7 +116,7 @@ function Navbar() {
       </NavGroup>
 
       {/* Social Features Group */}
-      <NavGroup title="Social" className="border-t md:border-none">
+      <NavGroup title="Social" className="border-t md:border-t-0 md:px-6 md:border-r border-brand-gray-200">
         <NavLink
           icon={Users}
           label="Groups"
@@ -137,7 +139,7 @@ function Navbar() {
       </NavGroup>
 
       {/* User Features Group */}
-      <NavGroup title="User" className="border-t md:border-none">
+      <NavGroup title="User" className="border-t md:border-t-0 md:px-6 md:border-r border-brand-gray-200">
         <NavLink
           to="/profile"
           icon={UserCircle}
@@ -150,7 +152,7 @@ function Navbar() {
       </NavGroup>
 
       {/* System Features Group */}
-      <NavGroup title="System" className="border-t md:border-none">
+      <NavGroup title="System" className="border-t md:border-t-0 md:pl-6">
         <NavLink
           to="/roadmap"
           icon={Trello}
@@ -211,7 +213,7 @@ function Navbar() {
           {currentUser && (
             <>
               {/* Desktop Navigation */}
-              <div className="hidden md:flex items-center space-x-4">
+              <div className="hidden md:flex md:flex-row items-center md:space-x-6">
                 <NavLinks />
               </div>
 

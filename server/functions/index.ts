@@ -1,6 +1,9 @@
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import * as functions from 'firebase-functions/v1';
+import { https, FunctionOptions } from 'firebase-functions/v2';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
+import { setGlobalOptions } from 'firebase-functions/v2';
+import * as cors from 'cors';
 import { GameDetectionService } from '../services/gameDetection';
 import { logApiEvent, calculateCacheHitRate, calculateMemoryUsage, getLastRefreshDate, initializeCacheData } from './cacheService';
 import { searchGames, getGameDetails } from './boardgameApi';
@@ -31,23 +34,20 @@ const getEnvironmentInfo = () => ({
   timestamp: new Date().toISOString()
 });
 
-// CORS middleware
-const setCorsHeaders = (res: functions.Response) => {
-  res.set('Access-Control-Allow-Origin', '*');
-  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.set('Access-Control-Allow-Headers', 'Content-Type, Accept');
-  res.set('Access-Control-Max-Age', '3600');
-};
+// Set global options for all functions
+setGlobalOptions({
+  maxInstances: 10,
+  timeoutSeconds: 60,
+  memory: "256MiB",
+  region: "us-central1"
+});
 
-// Handle CORS preflight requests
-const handleCors = (req: functions.Request, res: functions.Response) => {
-  setCorsHeaders(res);
-  if (req.method === 'OPTIONS') {
-    res.status(204).send('');
-    return true;
-  }
-  return false;
-};
+// Initialize CORS middleware with specific origin
+const corsHandler = cors({ 
+  origin: ['http://localhost:5174', 'https://boardgameborrow.com'],
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Accept', 'Authorization']
+});
 
 // Initialize Firebase Admin with diagnostic logging
 const app = initializeApp();
@@ -68,14 +68,15 @@ const envInfo = getEnvironmentInfo();
 logApiEvent('function_init', { timestamp: Date.now(), environment: envInfo });
 
 // Diagnostic endpoint
-export const diagnoseCacheSystem = functions
-  .runWith({
+export const diagnoseCacheSystem = https.onRequest(
+  { 
     timeoutSeconds: 60,
-    memory: "256MB" as const,
+    memory: "256MiB",
     minInstances: 0
-  })
-  .https.onRequest(async (req, res) => {
-    if (handleCors(req, res)) return;
+  },
+  async (req, res) => {
+    // Use the CORS middleware
+    await new Promise((resolve) => corsHandler(req, res, resolve));
 
     try {
       const diagnostics = {
@@ -108,13 +109,13 @@ export const diagnoseCacheSystem = functions
   });
 
 // Cache metrics endpoint
-export const getCacheMetrics = functions
-  .runWith({
+export const getCacheMetrics = https.onCall(
+  { 
     timeoutSeconds: 60,
-    memory: "256MB" as const,
+    memory: "256MiB",
     minInstances: 0
-  })
-  .https.onCall(async (data, context) => {
+  },
+  async (request: any, context: { auth?: { uid: string; token: any } }) => {
     console.log('getCacheMetrics called with context:', {
       auth: context.auth ? {
         uid: context.auth.uid,
@@ -128,7 +129,7 @@ export const getCacheMetrics = functions
 
     // Verify authentication
     if (!context.auth) {
-      throw new functions.https.HttpsError(
+      throw new https.HttpsError(
         'unauthenticated',
         'The function must be called while authenticated.'
       );
@@ -159,22 +160,22 @@ export const getCacheMetrics = functions
       return metrics;
     } catch (error) {
       console.error('Error fetching cache metrics:', error);
-      throw new functions.https.HttpsError(
+      throw new https.HttpsError(
         'internal',
         'Failed to fetch cache metrics',
-        error
+        error instanceof Error ? error.message : String(error)
       );
     }
   });
 
 // Initialize cache endpoint
-export const initializeCache = functions
-  .runWith({
+export const initializeCache = https.onCall(
+  { 
     timeoutSeconds: 300,
-    memory: "512MB" as const,
+    memory: "512MiB",
     minInstances: 0
-  })
-  .https.onCall(async (data, context) => {
+  },
+  async (request: any, context: { auth?: { uid: string; token: any } }) => {
     console.log('initializeCache called with context:', {
       auth: context.auth ? {
         uid: context.auth.uid,
@@ -188,9 +189,10 @@ export const initializeCache = functions
 
     // Verify authentication
     if (!context.auth) {
-      throw new functions.https.HttpsError(
+      throw new https.HttpsError(
         'unauthenticated',
-        'The function must be called while authenticated.'
+        'The function must be called while authenticated.',
+        { requiredAuth: true }
       );
     }
 
@@ -206,44 +208,48 @@ export const initializeCache = functions
       return { success: true, message: 'Cache initialized successfully' };
     } catch (error) {
       console.error('Error initializing cache:', error);
-      throw new functions.https.HttpsError(
+      throw new https.HttpsError(
         'internal',
         'Failed to initialize cache',
-        error
+        error instanceof Error ? error.message : String(error)
       );
     }
   });
 
 // BGG API endpoints
-export const bggSearch = functions
-  .runWith({
+export const bggSearch = https.onRequest(
+  { 
     timeoutSeconds: 60,
-    memory: "256MB" as const,
+    memory: "256MiB",
     minInstances: 0
-  })
-  .https.onRequest(searchGames);
+  },
+  async (req, res) => {
+    await new Promise((resolve) => corsHandler(req, res, resolve));
+    return searchGames(req, res);
+  }
+);
 
-export const bggGameDetails = functions
-  .runWith({
+export const bggGameDetails = https.onRequest(
+  { 
     timeoutSeconds: 60,
-    memory: "256MB" as const,
+    memory: "256MiB",
     minInstances: 0
-  })
-  .https.onRequest(getGameDetails);
+  },
+  async (req, res) => {
+    await new Promise((resolve) => corsHandler(req, res, resolve));
+    return getGameDetails(req, res);
+  }
+);
 
 // Vision API endpoint
-export const analyzeImage = functions.https.onRequest(async (req, res) => {
-  // Set CORS headers
-  res.set('Access-Control-Allow-Origin', '*');
-  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.set('Access-Control-Allow-Headers', 'Content-Type, Accept');
-  res.set('Access-Control-Max-Age', '3600');
-
-  // Handle preflight request
-  if (req.method === 'OPTIONS') {
-    res.status(204).send('');
-    return;
-  }
+export const analyzeImage = https.onRequest(
+  { 
+    timeoutSeconds: 60,
+    memory: "256MiB",
+    minInstances: 0
+  },
+  async (req, res) => {
+    await new Promise((resolve) => corsHandler(req, res, resolve));
 
   if (req.method !== 'POST') {
     res.status(405).send('Method Not Allowed');
@@ -275,9 +281,13 @@ export const analyzeImage = functions.https.onRequest(async (req, res) => {
 });
 
 // Scheduled cache cleanup
-export const cleanupExpiredCache = functions.pubsub
-  .schedule('every 24 hours')
-  .onRun(async () => {
+export const cleanupExpiredCache = onSchedule(
+  {
+    schedule: 'every 24 hours',
+    timeoutSeconds: 60,
+    memory: "256MiB"
+  },
+  async () => {
     const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
     const now = Date.now();
 

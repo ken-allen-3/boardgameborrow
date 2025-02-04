@@ -1,4 +1,4 @@
-import * as functions from 'firebase-functions';
+import { https } from 'firebase-functions/v2';
 import { getFirestore } from 'firebase-admin/firestore';
 import axios from 'axios';
 import { JSDOM } from 'jsdom';
@@ -39,23 +39,30 @@ interface GameData {
   description?: string;
 }
 
-// @ts-ignore
-export const initializeCache = functions.https.onCall(async (data, context) => {
+export const initializeCacheV2 = https.onCall({
+  cors: ['https://boardgameborrow.com', 'http://localhost:5174'],
+  timeoutSeconds: 300,
+  memory: "512MiB",
+  minInstances: 0,
+  region: 'us-central1'
+}, async (request, context) => {
   // Check if user is authenticated and admin
+  // @ts-ignore
   if (!context?.auth) {
-    throw new functions.https.HttpsError(
+    throw new https.HttpsError(
       'unauthenticated',
       'Must be authenticated to initialize cache'
     );
   }
 
   const db = getFirestore();
+  // @ts-ignore
   const userRef = db.collection('users').doc(context.auth.uid);
   const userDoc = await userRef.get();
   const userData = userDoc.data();
 
   if (!userData?.isAdmin) {
-    throw new functions.https.HttpsError(
+    throw new https.HttpsError(
       'permission-denied',
       'Must be an admin to initialize cache'
     );
@@ -158,17 +165,23 @@ export const initializeCache = functions.https.onCall(async (data, context) => {
     return { success: true, message: 'Cache initialized successfully' };
   } catch (error) {
     console.error('Failed to initialize cache:', error);
-    throw new functions.https.HttpsError(
+    throw new https.HttpsError(
       'internal',
       'Failed to initialize cache'
     );
   }
 });
 
-// @ts-ignore
-export const getCacheMetrics = functions.https.onCall(async (data, context) => {
+export const getCacheMetricsV2 = https.onCall({
+  cors: ['https://boardgameborrow.com', 'http://localhost:5174'],
+  timeoutSeconds: 60,
+  memory: "256MiB",
+  minInstances: 0,
+  region: 'us-central1'
+}, async (request, context) => {
+  // @ts-ignore
   if (!context?.auth) {
-    throw new functions.https.HttpsError(
+    throw new https.HttpsError(
       'unauthenticated',
       'Must be authenticated to get cache metrics'
     );
@@ -214,7 +227,7 @@ export const getCacheMetrics = functions.https.onCall(async (data, context) => {
     };
   } catch (error) {
     console.error('Error fetching cache metrics:', error);
-    throw new functions.https.HttpsError(
+    throw new https.HttpsError(
       'internal',
       'Failed to fetch cache metrics'
     );

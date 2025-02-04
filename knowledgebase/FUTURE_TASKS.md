@@ -2,6 +2,27 @@
 
 ## Feature Improvements
 
+### Feature Roadmap
+- Core Functionality
+  - [ ] Basic board layout with status columns
+  - [ ] Feature/bug card creation and management
+  - [ ] User voting system (up/down votes)
+  - [ ] Feature request submission form
+  - [ ] Admin management interface
+
+- VSCode/Cline Integration
+  - [ ] Command palette actions for card management
+  - [ ] Quick card creation from current file
+  - [ ] Status updates via VSCode/Cline
+  - [ ] Direct Firebase document manipulation
+
+- Enhanced Features
+  - [ ] Card filtering and sorting
+  - [ ] Tag-based organization
+  - [ ] Analytics dashboard
+  - [ ] Email notifications
+  - [ ] GitHub issues integration
+
 ### Game Nights Feature
 
 #### Beta Launch Requirements

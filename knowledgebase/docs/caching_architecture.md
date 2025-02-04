@@ -149,4 +149,5 @@ All endpoints implement:
 ## Related Documentation
 - [Cache Monitoring Setup](./cache_monitoring_setup.md)
 - [Cache System Fix - January 2025](./cache_system_fix_2025_01.md)
+- [CORS Investigation - February 2025](./cors_investigation_2025_02.md)
 - [API Integrations](./api_integrations.md)

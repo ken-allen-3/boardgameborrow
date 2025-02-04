@@ -28,8 +28,10 @@ dist-ssr
 .env.*
 
 # Google Cloud credentials
-vision-credentials.jsonserver/boardgameshare-001-37de06d81f76.json
+vision-credentials.json
 server/boardgameshare-001-37de06d81f76.json
 server/vision-credentials.json
-server/boardgameshare-001-37de06d81f76.json
-server/vision-credentials.json
+
+# Firebase credentials
+serviceAccountKey.json
+serviceAccountKey.json.json

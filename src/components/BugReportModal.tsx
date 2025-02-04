@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { sendBugReport } from '../services/email';
 import { compressImage } from '../utils/imageUtils';
 import { truncateErrorStack } from '../utils/errorUtils';
+import { roadmapService } from '../services/roadmapService';
 
 const MAX_FIELD_LENGTH = 1000;
 
@@ -59,6 +60,22 @@ function BugReportModal({ onClose, error }: BugReportModalProps) {
       });
       
       if (success) {
+        // Create roadmap card for the bug
+        await roadmapService.createCard({
+          title: steps.split('\n')[0] || 'Bug Report', // Use first step as title
+          description: `Steps to Reproduce:\n${steps}\n\nExpected Behavior:\n${expected}\n\nActual Behavior:\n${actual}`,
+          status: 'planned',
+          createdBy: currentUser?.uid || 'anonymous',
+          tags: ['bug'],
+          createdAt: new Date(),
+          votes: {
+            up: 0,
+            down: 0,
+            userVotes: {}
+          },
+          priority: 0
+        });
+
         setSuccessMessage('Bug report submitted successfully! Thank you for your feedback.');
         await new Promise(resolve => setTimeout(resolve, 1500)); // Show success message briefly
         onClose();
@@ -85,7 +102,7 @@ function BugReportModal({ onClose, error }: BugReportModalProps) {
       const video = document.createElement('video');
 
       const stream = await navigator.mediaDevices.getDisplayMedia({
-        preferCurrentTab: true
+        video: true
       });
 
       video.srcObject = stream;

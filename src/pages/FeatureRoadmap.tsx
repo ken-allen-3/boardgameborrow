@@ -11,6 +11,7 @@ export const FeatureRoadmap: React.FC = () => {
   const [cards, setCards] = useState<RoadmapCard[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'all' | 'features' | 'bugs'>('all');
 
   // Check if user is admin (you may want to adjust this based on your admin logic)
   const isAdmin = currentUser?.email === 'your-admin-email@example.com';
@@ -44,7 +45,12 @@ export const FeatureRoadmap: React.FC = () => {
   };
 
   const getCardsByStatus = (status: RoadmapCard['status']) => {
-    return cards.filter(card => card.status === status);
+    return cards.filter(card => {
+      const statusMatch = card.status === status;
+      if (filter === 'all') return statusMatch;
+      if (filter === 'bugs') return statusMatch && card.tags.includes('bug');
+      return statusMatch && !card.tags.includes('bug'); // features
+    });
   };
 
   if (isLoading) {
@@ -71,7 +77,18 @@ export const FeatureRoadmap: React.FC = () => {
     <div className="min-h-screen bg-gray-100 py-8 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">Feature Roadmap</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold">Feature Roadmap</h1>
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value as typeof filter)}
+              className="px-3 py-1.5 border rounded-lg bg-white text-sm"
+            >
+              <option value="all">All Items</option>
+              <option value="features">Features Only</option>
+              <option value="bugs">Bugs Only</option>
+            </select>
+          </div>
           <button
             onClick={() => setIsModalOpen(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"

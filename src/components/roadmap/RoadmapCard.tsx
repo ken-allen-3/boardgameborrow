@@ -43,7 +43,11 @@ export const RoadmapCard: React.FC<RoadmapCardProps> = ({
             {card.tags.map((tag) => (
               <span
                 key={tag}
-                className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
+                className={`px-2 py-1 text-xs rounded-full ${
+                  tag === 'bug'
+                    ? 'bg-red-100 text-red-700'
+                    : 'bg-gray-100 text-gray-600'
+                }`}
               >
                 {tag}
               </span>

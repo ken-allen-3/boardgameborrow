@@ -4,6 +4,7 @@ import { addDays, format } from 'date-fns';
 import ErrorMessage from './ErrorMessage';
 import SuccessMessage from './SuccessMessage';
 import DatePicker from './DatePicker';
+import { trackGameAction } from '../services/analyticsService';
 
 interface BorrowRequestModalProps {
   game: {
@@ -47,12 +48,22 @@ function BorrowRequestModal({ game, onClose, onSubmit }: BorrowRequestModalProps
     
     try {
 
-      await onSubmit({
+      const requestData = {
         gameId: game.id,
         startDate: startDate.toISOString().split('T')[0],
         duration,
         message
+      };
+      await onSubmit(requestData);
+      
+      // Track the borrow request
+      trackGameAction('Borrow Request', game.id, {
+        title: game.title,
+        owner: game.owner.email,
+        startDate: requestData.startDate,
+        duration: requestData.duration
       });
+      
       setIsSuccess(true);
       setTimeout(() => {
         onClose();

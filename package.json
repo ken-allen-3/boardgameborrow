@@ -15,23 +15,28 @@
     "@floating-ui/react": "^0.26.9",
     "@google-cloud/vision": "^4.3.2",
     "@headlessui/react": "^2.2.0",
+    "@hotjar/browser": "^1.0.9",
     "@types/axios": "^0.14.4",
+    "@types/mixpanel-browser": "^2.51.0",
     "axios": "^1.7.9",
+    "chart.js": "^4.4.7",
     "date-fns": "^4.1.0",
     "emailjs-com": "^3.2.0",
     "firebase": "^10.8.1",
     "lucide-react": "^0.344.0",
+    "mixpanel-browser": "^2.60.0",
     "react": "^18.3.1",
+    "react-chartjs-2": "^5.3.0",
     "react-confetti": "^6.2.2",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.22.3",
     "vue": "^3.5.13"
   },
   "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "^4.9.0",
-    "@rollup/rollup-win32-x64-msvc": "^4.9.0",
+    "@esbuild/linux-x64": "^0.19.0",
     "@rollup/rollup-darwin-x64": "^4.9.0",
-    "@esbuild/linux-x64": "^0.19.0"
+    "@rollup/rollup-linux-x64-gnu": "^4.9.0",
+    "@rollup/rollup-win32-x64-msvc": "^4.9.0"
   },
   "devDependencies": {
     "@babel/plugin-proposal-decorators": "^7.24.1",

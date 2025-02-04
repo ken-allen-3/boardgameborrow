@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Dice6 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { trackEvent, trackSocialInteraction } from '../services/analyticsService';
 import { Game, loadUserGames } from '../services/gameService';
 import { GameNight } from '../types/gameNight';
 import {
@@ -72,9 +73,24 @@ function GameNights() {
     try {
       const gameNightId = await createGameNight(currentUser.email, data);
       
+      // Track game night creation
+      trackEvent('Game Night Created', {
+        gameNightId,
+        title: data.title,
+        date: data.date,
+        location: data.location,
+        maxPlayers: data.maxPlayers,
+        suggestedGamesCount: data.suggestedGames.length,
+        inviteesCount: data.invitees.length
+      });
+      
       // Send invites
       if (data.invitees.length > 0) {
         await inviteUsers(gameNightId, data.invitees);
+        trackSocialInteraction('Game Night Invite', {
+          gameNightId,
+          inviteCount: data.invitees.length
+        });
       }
       
       await loadData();
@@ -90,6 +106,10 @@ function GameNights() {
 
     try {
       await updateAttendance(gameNightId, currentUser.email, status);
+      trackSocialInteraction('Game Night Response', {
+        gameNightId,
+        response: status
+      });
       await loadData();
       setSuccess('Response updated successfully!');
       setTimeout(() => setSuccess(null), 3000);
@@ -118,6 +138,9 @@ function GameNights() {
 
     try {
       await cancelGameNight(gameNightId, currentUser.email);
+      trackEvent('Game Night Cancelled', {
+        gameNightId
+      });
       await loadData();
       setSuccess('Game night cancelled successfully!');
       setTimeout(() => setSuccess(null), 3000);
@@ -152,6 +175,10 @@ function GameNights() {
   const handleSuggestGames = async (gameNightId: string, gameIds: string[]) => {
     try {
       await suggestGamesForGameNight(gameNightId, gameIds);
+      trackEvent('Games Suggested', {
+        gameNightId,
+        gamesCount: gameIds.length
+      });
       setSuccess('Games suggested successfully!');
       setTimeout(() => setSuccess(null), 3000);
       await loadData();

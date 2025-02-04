@@ -10,6 +10,7 @@ import {
   signInWithPopup,
   GoogleAuthProvider
 } from 'firebase/auth';
+import { identifyUser } from '../services/analyticsService';
 import { ref, set, get, update } from 'firebase/database';
 import { 
   auth, 
@@ -222,6 +223,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setCurrentUser(user);
       
       if (user?.email) {
+        // Identify user in analytics
+        identifyUser(user.uid, {
+          email: user.email,
+          name: user.displayName || '',
+          isAdmin: user.email === 'kenny@springwavestudios.com'
+        });
         try {
           const hasAccess = await validateDatabaseAccess(user.email);
           if (!hasAccess) {

@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { initializeAnalytics } from './services/analyticsService';
+import { useAnalytics } from './hooks/useAnalytics';
 import OnboardingFlow from './components/onboarding/OnboardingFlow';
 import { BugReportProvider } from './contexts/BugReportContext';
 import { NotificationProvider } from './contexts/NotificationContext';
@@ -29,6 +31,7 @@ import TermsAndConditions from './pages/TermsAndConditions';
 
 function AppRoutes() {
   const { currentUser, showWelcome, setShowWelcome, isAdmin } = useAuth();
+  useAnalytics();
 
   if (currentUser && showWelcome) {
     return <OnboardingFlow />;
@@ -72,6 +75,10 @@ function AppRoutes() {
 }
 
 function App() {
+  useEffect(() => {
+    initializeAnalytics();
+  }, []);
+
   return (
     <AuthProvider>
       <ErrorBoundary>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Users, MapPin, TrendingUp, Filter } from 'lucide-react';
+import RecommendedGames from '../components/RecommendedGames';
 import { getDatabase, ref, get } from 'firebase/database';
 import { useAuth } from '../contexts/AuthContext';
 import { createBorrowRequest, getUserBorrowRequests, BorrowRequest } from '../services/borrowRequestService';
@@ -285,6 +286,14 @@ function BorrowGamesPage() {
     <div>
       {error && <ErrorMessage message={error} />}
       {success && <SuccessMessage message={success} />}
+
+      {/* Recommended Games Section */}
+      {currentUser?.email && (
+        <RecommendedGames
+          userEmail={currentUser.email}
+          onSelectGame={setSelectedGame}
+        />
+      )}
 
       {/* Active Requests Section */}
       {borrowRequests.length > 0 && (

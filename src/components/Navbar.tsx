@@ -1,9 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { NotificationsDropdown } from './NotificationsDropdown';
-import { Dice6, Library, PlayCircle, Users, LogOut, Bug, Menu, X, UserCircle, Calendar, Settings, UserPlus, Trello } from 'lucide-react';
+import { Dice6, Library, PlayCircle, Users, LogOut, Bug, Menu, X, UserCircle, Calendar, Settings, UserPlus, Trello, LucideIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useBugReport } from '../contexts/BugReportContext';
+
+interface NavGroupProps {
+  children: ReactNode;
+  title?: string;
+  className?: string;
+}
+
+interface NavLinkProps {
+  to?: string;
+  icon: LucideIcon;
+  label: string;
+  onClick?: () => void;
+  className?: string;
+  disabled?: boolean;
+  badge?: ReactNode;
+}
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,109 +37,155 @@ function Navbar() {
     }
   };
 
+  const NavGroup = ({ children, title, className = "" }: NavGroupProps) => (
+    <div className={`flex flex-col ${className}`}>
+      {title && (
+        <div className="px-4 py-2 text-xs font-semibold text-brand-gray-500 bg-brand-gray-50 md:hidden">
+          {title}
+        </div>
+      )}
+      {children}
+    </div>
+  );
+
+  const NavLink = ({ to, icon: Icon, label, onClick, className = "", disabled = false, badge = null }: NavLinkProps) => {
+    const baseClass = "nav-link gap-3 p-4 flex items-center md:p-3 md:gap-2 relative transition-colors duration-150";
+    const activeClass = "bg-brand-blue-50 text-brand-blue-600 md:bg-transparent md:text-brand-blue-600";
+    const defaultClass = disabled ? "opacity-60 cursor-not-allowed" : "hover:bg-brand-gray-50 md:hover:bg-transparent md:hover:text-brand-blue-600";
+    
+    const content = (
+      <>
+        <Icon className={`${disabled ? 'h-5 w-5' : 'h-6 w-6 md:h-5 md:w-5'}`} />
+        <span>{label}</span>
+        {badge}
+      </>
+    );
+
+    if (disabled) {
+      return (
+        <div className={`${baseClass} ${defaultClass} ${className}`}>
+          {content}
+        </div>
+      );
+    }
+
+    return to ? (
+      <Link
+        to={to}
+        className={`${baseClass} ${defaultClass} ${className}`}
+        onClick={onClick}
+        role="menuitem"
+        aria-label={label}
+      >
+        {content}
+      </Link>
+    ) : (
+      <button
+        onClick={onClick}
+        className={`${baseClass} ${defaultClass} w-full text-left ${className}`}
+        role="menuitem"
+        aria-label={label}
+      >
+        {content}
+      </button>
+    );
+  };
+
   const NavLinks = () => (
     <>
-      <Link
-        to="/my-games"
-        className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2"
-        data-tutorial="my-games-link"
-        onClick={() => setIsOpen(false)}
-      >
-        <Library className="h-5 w-5" />
-        <span>My Games</span>
-      </Link>
-      
-      <Link
-        to="/borrow"
-        className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2"
-        data-tutorial="borrow-link"
-        onClick={() => setIsOpen(false)}
-      >
-        <PlayCircle className="h-5 w-5" />
-        <span>Borrow Games</span>
-      </Link>
-      
-      <div
-        className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2 cursor-not-allowed opacity-60"
-        data-tutorial="groups-link"
-      >
-        <Users className="h-5 w-5" />
-        <span>Groups</span>
-        <span className="text-xs bg-brand-blue-100 text-brand-blue-600 px-2 py-0.5 rounded-full">Coming Soon!</span>
-      </div>
-
-      <Link
-        to="/friends"
-        className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2"
-        onClick={() => setIsOpen(false)}
-      >
-        <UserPlus className="h-5 w-5" />
-        <span>Friends</span>
-      </Link>
-      
-      <Link
-        to="/game-nights"
-        className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2"
-        onClick={() => setIsOpen(false)}
-      >
-        <Calendar className="h-5 w-5" />
-        <span>Game Nights</span>
-      </Link>
-
-      <Link
-        to="/roadmap"
-        className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2"
-        onClick={() => setIsOpen(false)}
-      >
-        <Trello className="h-5 w-5" />
-        <span>Feature Roadmap</span>
-      </Link>
-
-      <Link
-        to="/profile"
-        className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2"
-        onClick={() => setIsOpen(false)}
-      >
-        <UserCircle className="h-5 w-5" />
-        <span>Profile</span>
-      </Link>
-
-      {isAdmin && (
-        <Link
-          to="/admin"
-          className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2"
+      {/* Core Features Group */}
+      <NavGroup title="Core Features" className="md:border-none">
+        <NavLink
+          to="/my-games"
+          icon={Library}
+          label="My Games"
           onClick={() => setIsOpen(false)}
-        >
-          <Settings className="h-5 w-5" />
-          <span>Admin Dashboard</span>
-        </Link>
-      )}
+          className="text-brand-blue-600"
+          data-tutorial="my-games-link"
+        />
+        <NavLink
+          to="/borrow"
+          icon={PlayCircle}
+          label="Borrow Games"
+          onClick={() => setIsOpen(false)}
+          className="text-brand-blue-600"
+          data-tutorial="borrow-link"
+        />
+      </NavGroup>
 
-      <div className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2">
-        <NotificationsDropdown />
-      </div>
+      {/* Social Features Group */}
+      <NavGroup title="Social" className="border-t md:border-none">
+        <NavLink
+          icon={Users}
+          label="Groups"
+          disabled={true}
+          badge={<span className="text-xs bg-brand-blue-100 text-brand-blue-600 px-2 py-0.5 rounded-full">Coming Soon!</span>}
+          data-tutorial="groups-link"
+        />
+        <NavLink
+          to="/friends"
+          icon={UserPlus}
+          label="Friends"
+          onClick={() => setIsOpen(false)}
+        />
+        <NavLink
+          to="/game-nights"
+          icon={Calendar}
+          label="Game Nights"
+          onClick={() => setIsOpen(false)}
+        />
+      </NavGroup>
 
-      <button
-        onClick={() => {
-          reportBug();
-          setIsOpen(false);
-        }}
-        className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2 text-brand-gray-500 hover:text-brand-gray-700"
-      >
-        <Bug className="h-5 w-5" />
-        <span>Report Bug</span>
-      </button>
+      {/* User Features Group */}
+      <NavGroup title="User" className="border-t md:border-none">
+        <NavLink
+          to="/profile"
+          icon={UserCircle}
+          label="Profile"
+          onClick={() => setIsOpen(false)}
+        />
+        <div className="nav-link gap-3 p-4 flex items-center md:p-3 md:gap-2">
+          <NotificationsDropdown />
+        </div>
+      </NavGroup>
 
-      <button
-        onClick={() => {
-          handleSignOut();
-          setIsOpen(false);
-        }}
-        className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2 text-brand-gray-500 hover:text-brand-gray-700"
-      >
-        <LogOut className="h-5 w-5" />
-        <span>Sign Out</span>
-      </button>
+      {/* System Features Group */}
+      <NavGroup title="System" className="border-t md:border-none">
+        <NavLink
+          to="/roadmap"
+          icon={Trello}
+          label="Feature Roadmap"
+          onClick={() => setIsOpen(false)}
+        />
+        {isAdmin && (
+          <NavLink
+            to="/admin"
+            icon={Settings}
+            label="Admin Dashboard"
+            onClick={() => setIsOpen(false)}
+          />
+        )}
+        <NavLink
+          icon={Bug}
+          label="Report Bug"
+          onClick={() => {
+            reportBug();
+            setIsOpen(false);
+          }}
+          className="text-brand-gray-500"
+          to="#"
+        />
+        <NavLink
+          icon={LogOut}
+          label="Sign Out"
+          onClick={() => {
+            handleSignOut();
+            setIsOpen(false);
+          }}
+          className="text-brand-gray-500"
+          to="#"
+        />
+      </NavGroup>
     </>
   );
 
@@ -172,11 +234,11 @@ function Navbar() {
 
         {/* Mobile Navigation */}
         {isOpen && currentUser && (
-          <div className="md:hidden border-t border-brand-gray-200 bg-white fixed left-0 right-0 top-16">
-            <div className="py-3 max-h-[calc(100vh-4rem)] overflow-y-auto">
-              <div className="flex flex-col divide-y divide-brand-gray-100">
+          <div className="md:hidden border-t border-brand-gray-200 bg-white fixed left-0 right-0 top-16 bottom-0">
+            <div className="h-full overflow-y-auto">
+              <nav className="flex flex-col" role="menu">
                 <NavLinks />
-              </div>
+              </nav>
             </div>
           </div>
         )}

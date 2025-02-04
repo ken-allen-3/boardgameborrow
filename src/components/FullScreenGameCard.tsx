@@ -152,15 +152,23 @@ const FullScreenGameCard: React.FC<FullScreenGameCardProps> = ({
 
               {onRate && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
                     <Star className="h-5 w-5 text-yellow-500" />
-                    Rate this game
+                    Rate to Get Similar Game Recommendations
                   </h3>
-                  <StarRating
-                    rating={game.rating || 0}
-                    onChange={(rating) => onRate(game.id, rating)}
-                    size="lg"
-                  />
+                  <p className="text-gray-600 text-sm mb-3">
+                    Rate your games to help us suggest other games you'll love
+                  </p>
+                  <div className="group relative">
+                    <StarRating
+                      rating={game.rating || 0}
+                      onChange={(rating) => onRate(game.id, rating)}
+                      size="lg"
+                    />
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute left-0 -bottom-8 bg-gray-800 text-white text-xs rounded px-2 py-1 w-64">
+                      Your ratings help us understand your taste in games to make personalized recommendations
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

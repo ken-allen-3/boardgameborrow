@@ -36,7 +36,7 @@
 
 - Game Integration
   - [x] Game suggestions system
-  - [ ] Player count validation against suggested games
+  - [ ] Player count validation against suggested games ([Implementation Plan](docs/player_count_validation_implementation.md))
   - [ ] Game availability confirmation
   - [ ] Game setup instructions/rules access
 

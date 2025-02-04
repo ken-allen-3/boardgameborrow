@@ -141,11 +141,6 @@ const MyGames = () => {
 
         {error && <ErrorMessage message={error} />}
         {successMessage && <SuccessMessage message={successMessage} />}
-
-        <AddGameButton
-          onCameraClick={() => setShowCamera(true)}
-          onSearchClick={() => setShowSearch(true)}
-        />
       </div>
 
       <GameList 
@@ -153,6 +148,11 @@ const MyGames = () => {
         onDeleteGame={handleDeleteGame}
         onRateGame={handleRateGame}
         mostRecentGameId={recentGameId}
+      />
+
+      <AddGameButton
+        onCameraClick={() => setShowCamera(true)}
+        onSearchClick={() => setShowSearch(true)}
       />
 
       {showCamera && (

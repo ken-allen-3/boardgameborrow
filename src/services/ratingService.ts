@@ -1,4 +1,5 @@
 import { getDatabase, ref, set, get } from 'firebase/database';
+import { storeRating as storeRatingForRecommendations } from './recommendationService';
 
 export interface GameRating {
   gameId: string;
@@ -42,8 +43,13 @@ export async function rateGame(
       rating: rating // Store rating directly on the game
     };
 
-    // Save back to database
-    await set(gamesRef, games);
+    // Save rating to both locations
+    await Promise.all([
+      // Save to game object for display
+      set(gamesRef, games),
+      // Save to ratings collection for recommendations
+      storeRatingForRecommendations(userEmail, gameId, rating)
+    ]);
   } catch (error) {
     console.error('Error rating game:', error);
     throw new Error('Failed to update game rating');

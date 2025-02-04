@@ -28,6 +28,7 @@ import PerformanceMonitor from './pages/PerformanceMonitor';
 import AdminDashboard from './pages/AdminDashboard';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
+import { FeatureRoadmap } from './pages/FeatureRoadmap';
 
 function AppRoutes() {
   const { currentUser, showWelcome, setShowWelcome, isAdmin } = useAuth();
@@ -50,6 +51,7 @@ function AppRoutes() {
           
           {/* Protected Routes */}
           <Route path="/my-games" element={currentUser ? <MyGames /> : <Navigate to="/login" />} />
+          <Route path="/roadmap" element={currentUser ? <FeatureRoadmap /> : <Navigate to="/login" />} />
           <Route path="/borrow" element={currentUser ? <BorrowGames /> : <Navigate to="/login" />} />
           <Route path="/groups" element={currentUser ? <ComingSoon /> : <Navigate to="/login" />} />
           <Route path="/game-nights" element={currentUser ? <GameNights /> : <Navigate to="/login" />} />

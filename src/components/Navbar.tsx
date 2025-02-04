@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { NotificationsDropdown } from './NotificationsDropdown';
-import { Dice6, Library, PlayCircle, Users, LogOut, Bug, Menu, X, UserCircle, Calendar, Settings, UserPlus } from 'lucide-react';
+import { Dice6, Library, PlayCircle, Users, LogOut, Bug, Menu, X, UserCircle, Calendar, Settings, UserPlus, Trello } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useBugReport } from '../contexts/BugReportContext';
 
@@ -68,6 +68,15 @@ function Navbar() {
       >
         <Calendar className="h-5 w-5" />
         <span>Game Nights</span>
+      </Link>
+
+      <Link
+        to="/roadmap"
+        className="nav-link gap-3 p-4 flex items-center md:p-0 md:gap-2"
+        onClick={() => setIsOpen(false)}
+      >
+        <Trello className="h-5 w-5" />
+        <span>Feature Roadmap</span>
       </Link>
 
       <Link

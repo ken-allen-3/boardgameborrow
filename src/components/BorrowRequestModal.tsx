@@ -14,6 +14,7 @@ interface BorrowRequestModalProps {
       firstName: string;
       lastName: string;
     };
+    isFriend: boolean;
   };
   onClose: () => void;
   onSubmit: (request: {
@@ -78,7 +79,24 @@ function BorrowRequestModal({ game, onClose, onSubmit }: BorrowRequestModalProps
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        {!game.isFriend ? (
+          <div className="p-6 space-y-4">
+            <div className="text-center">
+              <div className="text-lg font-medium mb-2">Friend Request Required</div>
+              <p className="text-gray-600 mb-4">
+                You need to be friends with {game.owner.firstName} to borrow their games. 
+                Send them a friend request to get started!
+              </p>
+              <a 
+                href={`/profile/${game.owner.email}`}
+                className="inline-block px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              >
+                View Profile & Send Friend Request
+              </a>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {error && <ErrorMessage message={error} />}
           {isSuccess && <SuccessMessage message="Game borrow request sent successfully!" />}
           
@@ -160,6 +178,7 @@ function BorrowRequestModal({ game, onClose, onSubmit }: BorrowRequestModalProps
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );

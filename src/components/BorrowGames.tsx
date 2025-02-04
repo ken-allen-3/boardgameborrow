@@ -2,31 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import GameCard from './GameCard';
 import { seedDataService } from '../services/seedDataService';
 
-interface Game {
-  id: string;
-  title: string;
-  image: string;
-  owner: {
-    email: string;
-    firstName: string;
-    lastName: string;
-    photoUrl?: string;
-    coordinates?: {
-      latitude: number;
-      longitude: number;
-    };
-  };
-  available: boolean;
-  minPlayers?: number;
-  maxPlayers?: number;
-  minPlaytime?: number;
-  maxPlaytime?: number;
-  category?: string;
-  distance?: number;
-  isFriend?: boolean;
-  isDemo?: boolean;
-  description?: string;
-}
+import { Game } from './GameCard';
 
 interface BorrowGamesProps {
   userGames: Game[];
@@ -70,7 +46,8 @@ const BorrowGames: React.FC<BorrowGamesProps> = ({ userGames, onSelectGame }) =>
       minPlaytime: game.min_playtime,
       maxPlaytime: game.max_playtime,
       category: game.categories[0],
-      isDemo: true
+      isDemo: true,
+      isFriend: false
     }));
     setSeededGames(transformedGames);
   }, []);

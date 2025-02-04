@@ -12,30 +12,7 @@ import ErrorMessage from '../components/ErrorMessage';
 import SuccessMessage from '../components/SuccessMessage';
 import BorrowGames from '../components/BorrowGames';
 import GameCard from '../components/GameCard';
-
-interface Game {
-  id: string;
-  title: string;
-  image: string;
-  owner: {
-    email: string;
-    firstName: string;
-    lastName: string;
-    photoUrl?: string;
-    coordinates?: {
-      latitude: number;
-      longitude: number;
-    };
-  };
-  available: boolean;
-  minPlayers?: number;
-  maxPlayers?: number;
-  minPlaytime?: number;
-  maxPlaytime?: number;
-  category?: string;
-  distance?: number;
-  isFriend?: boolean;
-}
+import { Game } from '../components/GameCard';
 
 interface Filters {
   playerCount?: number;
@@ -155,7 +132,7 @@ function BorrowGamesPage() {
                   maxPlaytime: game.maxPlaytime,
                   category: game.category,
                   distance,
-                  isFriend
+                  isFriend: isFriend || false
                 });
               }
             });
@@ -177,6 +154,11 @@ function BorrowGamesPage() {
     const game = games.find(g => g.id === request.gameId);
     if (!game || !currentUser?.email) {
       setError('Unable to process request. Please try again.');
+      return;
+    }
+
+    if (!game.isFriend) {
+      setError('You can only borrow games from friends. Send a friend request first!');
       return;
     }
     
@@ -219,6 +201,14 @@ function BorrowGamesPage() {
       console.error('Failed to send borrow request:', err);
       setError(err instanceof Error ? err.message : 'Failed to send borrow request. Please try again.');
     }
+  };
+
+  const handleGameSelect = (game: Game) => {
+    if (!game.isFriend) {
+      setError('You can only borrow games from friends. Send a friend request first!');
+      return;
+    }
+    setSelectedGame(game);
   };
 
   const applyFilters = (games: Game[]) => {
@@ -291,7 +281,7 @@ function BorrowGamesPage() {
       {currentUser?.email && (
         <RecommendedGames
           userEmail={currentUser.email}
-          onSelectGame={setSelectedGame}
+          onSelectGame={handleGameSelect}
         />
       )}
 
@@ -308,7 +298,7 @@ function BorrowGamesPage() {
                 <GameCard
                   key={request.id}
                   game={game}
-                  onSelect={setSelectedGame}
+                  onSelect={handleGameSelect}
                   requestStatus={request.status}
                 />
               );
@@ -319,7 +309,7 @@ function BorrowGamesPage() {
 
       <BorrowGames 
         userGames={filteredGames}
-        onSelectGame={setSelectedGame}
+        onSelectGame={handleGameSelect}
       />
 
       {selectedGame && (

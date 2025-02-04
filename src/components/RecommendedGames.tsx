@@ -1,28 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
-interface Game {
-  id: string;
-  title: string;
-  image: string;
-  owner: {
-    email: string;
-    firstName: string;
-    lastName: string;
-    photoUrl?: string;
-    coordinates?: {
-      latitude: number;
-      longitude: number;
-    };
-  };
-  available: boolean;
-  minPlayers?: number;
-  maxPlayers?: number;
-  minPlaytime?: number;
-  maxPlaytime?: number;
-  category?: string;
-  distance?: number;
-  isFriend?: boolean;
-}
+import { Game } from './GameCard';
 import { getRecommendedGames } from '../services/recommendationService';
 import GameCard from './GameCard';
 
@@ -60,7 +38,8 @@ const RecommendedGames: React.FC<RecommendedGamesProps> = ({
         maxPlayers: game.maxPlayers,
         minPlaytime: game.minPlaytime,
         maxPlaytime: game.maxPlaytime,
-        type: game.type
+        type: game.type,
+        isFriend: false // Recommended games are not necessarily from friends
       }));
       setRecommendations(games);
     } catch (error) {

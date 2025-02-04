@@ -4,7 +4,7 @@ import { SampleContentTag } from './SampleContentTag';
 import { Game as ServiceGame } from '../services/gameService';
 import FullScreenGameCard from './FullScreenGameCard';
 
-interface Game extends Omit<ServiceGame, 'status'> {
+export interface Game extends Omit<ServiceGame, 'status'> {
   owner: {
     email: string;
     firstName: string;
@@ -18,7 +18,7 @@ interface Game extends Omit<ServiceGame, 'status'> {
   available: boolean;
   category?: string;
   distance?: number;
-  isFriend?: boolean;
+  isFriend: boolean;
   isDemo?: boolean;
 }
 
@@ -175,12 +175,24 @@ const GameCard = ({ game, onSelect, requestStatus }: GameCardProps) => {
               className={`w-full px-4 py-2 rounded-lg transition ${
                 game.isDemo 
                   ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                  : !game.isFriend
+                  ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   : 'bg-indigo-600 text-white hover:bg-indigo-700'
               }`}
               disabled={game.isDemo}
-              title={game.isDemo ? "Sample games cannot be borrowed" : undefined}
+              title={
+                game.isDemo 
+                  ? "Sample games cannot be borrowed" 
+                  : !game.isFriend
+                  ? "You need to be friends with the owner to borrow this game"
+                  : undefined
+              }
             >
-              {game.isDemo ? "Sample Game" : "Request to Borrow"}
+              {game.isDemo 
+                ? "Sample Game" 
+                : !game.isFriend
+                ? "Add Friend to Borrow"
+                : "Request to Borrow"}
             </button>
           )}
         </div>

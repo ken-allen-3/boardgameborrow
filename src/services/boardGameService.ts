@@ -212,16 +212,34 @@ export async function getGameById(id: string): Promise<BoardGame> {
         throw createAppError('Game not found', 'NOT_FOUND_ERROR', { id });
       }
 
-      const name = item.querySelector('name[type="primary"]')?.getAttribute('value') || '';
-      const yearPublished = item.querySelector('yearpublished')?.getAttribute('value');
-      const image = item.querySelector('image')?.textContent || '/board-game-placeholder.png';
-      const thumbnail = item.querySelector('thumbnail')?.textContent || '/board-game-placeholder.png';
-      const description = item.querySelector('description')?.textContent || '';
-      const minPlayers = item.querySelector('minplayers')?.getAttribute('value');
-      const maxPlayers = item.querySelector('maxplayers')?.getAttribute('value');
-      const minPlaytime = item.querySelector('minplaytime')?.getAttribute('value');
-      const maxPlaytime = item.querySelector('maxplaytime')?.getAttribute('value');
-      const minAge = item.querySelector('minage')?.getAttribute('value');
+      // Extract and log raw XML values
+      const extractValue = (selector: string, attr: string = 'value') => {
+        const element = item.querySelector(selector);
+        const value = element?.getAttribute(attr) || element?.textContent || '';
+        console.log(`[BGG XML] ${selector}:`, { value, element: element?.outerHTML });
+        return value;
+      };
+
+      const name = extractValue('name[type="primary"]', 'value');
+      const yearPublished = extractValue('yearpublished');
+      const image = extractValue('image') || '/board-game-placeholder.png';
+      const thumbnail = extractValue('thumbnail') || '/board-game-placeholder.png';
+      const description = extractValue('description');
+      const minPlayers = extractValue('minplayers');
+      const maxPlayers = extractValue('maxplayers');
+      const minPlaytime = extractValue('minplaytime');
+      const maxPlaytime = extractValue('maxplaytime');
+      const minAge = extractValue('minage');
+
+      // Log parsed numeric values
+      console.log('[BGG Parse] Numeric values:', {
+        yearPublished: yearPublished ? parseInt(yearPublished) : 0,
+        minPlayers: minPlayers ? parseInt(minPlayers) : 1,
+        maxPlayers: maxPlayers ? parseInt(maxPlayers) : 4,
+        minPlaytime: minPlaytime ? parseInt(minPlaytime) : 0,
+        maxPlaytime: maxPlaytime ? parseInt(maxPlaytime) : 0,
+        minAge: minAge ? parseInt(minAge) : 0
+      });
       
       // Get categories
       const categoryNodes = Array.from(item.querySelectorAll('link[type="boardgamecategory"]'));

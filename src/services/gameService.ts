@@ -82,6 +82,12 @@ export async function addGame(userEmail: string, game: GameData): Promise<{id: s
     throw new Error('Cannot add sample content to your collection');
   }
 
+  // Validate game data
+  if (!game.name) {
+    console.error('Invalid game data: Missing name', game);
+    throw new Error('Game name is required');
+  }
+
   try {
     const db = getDatabase();
     const gamesRef = ref(db, `games/${userEmail.replace(/\./g, ',')}`);
@@ -89,24 +95,57 @@ export async function addGame(userEmail: string, game: GameData): Promise<{id: s
     const snapshot = await get(gamesRef);
     const currentGames = snapshot.exists() ? snapshot.val() : [];
     
-    console.log('Adding game with data:', game);
+    console.log('Adding game with data:', {
+      id: game.id,
+      name: game.name,
+      playerCount: game.playerCount,
+      playTime: game.playTime,
+      age: game.age
+    });
+
+    // Validate numeric fields before creating newGame object
+    const validateNumber = (value: any): number | undefined => {
+      const num = Number(value);
+      return !isNaN(num) ? num : undefined;
+    };
+
+    const minPlayers = validateNumber(game.playerCount?.min);
+    const maxPlayers = validateNumber(game.playerCount?.max);
+    const minPlaytime = validateNumber(game.playTime?.min);
+    const maxPlaytime = validateNumber(game.playTime?.max);
+    const minAge = validateNumber(game.age?.min);
+
+    console.log('Validated numeric values:', {
+      minPlayers,
+      maxPlayers,
+      minPlaytime,
+      maxPlaytime,
+      minAge
+    });
 
     const newGame = {
       title: game.name,
-      image: (game as any).image_url || game.image || '/board-game-placeholder.png',
+      image: game.image || '/board-game-placeholder.png',
       status: 'available',
-      ...(game.playerCount?.min !== undefined ? { minPlayers: game.playerCount.min } : {}),
-      ...(game.playerCount?.max !== undefined ? { maxPlayers: game.playerCount.max } : {}),
-      ...(game.playTime?.min !== undefined ? { minPlaytime: game.playTime.min } : {}),
-      ...(game.playTime?.max !== undefined ? { maxPlaytime: game.playTime.max } : {}),
-      ...(game.age?.min !== undefined ? { minAge: game.age.min } : {}),
+      minPlayers: minPlayers ?? null,
+      maxPlayers: maxPlayers ?? null,
+      minPlaytime: minPlaytime ?? null,
+      maxPlaytime: maxPlaytime ?? null,
+      minAge: minAge ?? null,
       type: game.type || 'boardgame',
-      description: game.description,
+      description: game.description || '',
       ratings: {}
     };
 
     console.log('Saving new game to Firebase:', newGame);
-    const updatedGames = Array.isArray(currentGames) ? [...currentGames, newGame] : [newGame];
+    
+    // Validate currentGames is an array
+    if (!Array.isArray(currentGames)) {
+      console.error('Current games is not an array:', currentGames);
+      throw new Error('Invalid games data structure');
+    }
+
+    const updatedGames = [...currentGames, newGame];
     await set(gamesRef, updatedGames);
     console.log('Game saved successfully');
     return { id: (updatedGames.length - 1).toString() };

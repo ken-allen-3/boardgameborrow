@@ -74,18 +74,42 @@ export async function loadUserGames(userEmail: string): Promise<Game[]> {
 }
 
 export async function addGame(userEmail: string, game: GameData): Promise<{id: string}> {
+  // Log incoming data
+  console.log('addGame called with data:', {
+    userEmail: userEmail ? 'provided' : 'missing',
+    gameId: game?.id,
+    gameName: game?.name,
+    playerCount: game?.playerCount,
+    playTime: game?.playTime,
+    age: game?.age
+  });
+
+  // Validate user email
   if (!userEmail) {
+    console.error('addGame validation failed: Missing user email');
     throw new Error('User email is required');
   }
 
+  // Validate game object
+  if (!game) {
+    console.error('addGame validation failed: Game object is null or undefined');
+    throw new Error('Game data is required');
+  }
+
   if (seedDataService.isSeededContent(game.id)) {
+    console.error('addGame validation failed: Attempted to add seeded content', { gameId: game.id });
     throw new Error('Cannot add sample content to your collection');
   }
 
-  // Validate game data
+  // Validate required game data
   if (!game.name) {
-    console.error('Invalid game data: Missing name', game);
+    console.error('addGame validation failed: Missing game name', game);
     throw new Error('Game name is required');
+  }
+
+  if (!game.id) {
+    console.error('addGame validation failed: Missing game ID', game);
+    throw new Error('Game ID is required');
   }
 
   try {
@@ -123,21 +147,32 @@ export async function addGame(userEmail: string, game: GameData): Promise<{id: s
       minAge
     });
 
+    // Create the game object with strict type checking
     const newGame = {
       title: game.name,
       image: game.image || '/board-game-placeholder.png',
       status: 'available',
-      minPlayers: minPlayers ?? null,
-      maxPlayers: maxPlayers ?? null,
-      minPlaytime: minPlaytime ?? null,
-      maxPlaytime: maxPlaytime ?? null,
-      minAge: minAge ?? null,
+      minPlayers: typeof minPlayers === 'number' ? minPlayers : null,
+      maxPlayers: typeof maxPlayers === 'number' ? maxPlayers : null,
+      minPlaytime: typeof minPlaytime === 'number' ? minPlaytime : null,
+      maxPlaytime: typeof maxPlaytime === 'number' ? maxPlaytime : null,
+      minAge: typeof minAge === 'number' ? minAge : null,
       type: game.type || 'boardgame',
       description: game.description || '',
-      ratings: {}
+      ratings: {},
+      gameId: game.id // Store the original game ID for reference
     };
 
-    console.log('Saving new game to Firebase:', newGame);
+    console.log('Prepared game data for Firebase:', {
+      title: newGame.title,
+      minPlayers: newGame.minPlayers,
+      maxPlayers: newGame.maxPlayers,
+      minPlaytime: newGame.minPlaytime,
+      maxPlaytime: newGame.maxPlaytime,
+      minAge: newGame.minAge,
+      type: newGame.type,
+      gameId: newGame.gameId
+    });
     
     // Validate currentGames is an array
     if (!Array.isArray(currentGames)) {
@@ -146,11 +181,30 @@ export async function addGame(userEmail: string, game: GameData): Promise<{id: s
     }
 
     const updatedGames = [...currentGames, newGame];
-    await set(gamesRef, updatedGames);
-    console.log('Game saved successfully');
-    return { id: (updatedGames.length - 1).toString() };
-  } catch (err) {
-    console.error('Error adding game:', err);
+    
+    try {
+      await set(gamesRef, updatedGames);
+      console.log('Game saved successfully to Firebase', {
+        gameId: game.id,
+        arrayIndex: updatedGames.length - 1
+      });
+      return { id: (updatedGames.length - 1).toString() };
+    } catch (err: any) {
+      console.error('Firebase set operation failed:', {
+        error: err.message,
+        code: err.code,
+        stack: err.stack,
+        gameId: game.id
+      });
+      throw new Error(`Failed to save game to Firebase: ${err.message}`);
+    }
+  } catch (err: any) {
+    console.error('Error in addGame:', {
+      error: err.message,
+      code: err.code,
+      stack: err.stack,
+      gameId: game?.id
+    });
     throw err;
   }
 }

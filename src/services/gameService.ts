@@ -96,11 +96,6 @@ export async function addGame(userEmail: string, game: GameData): Promise<{id: s
     throw new Error('Game data is required');
   }
 
-  if (seedDataService.isSeededContent(game.id)) {
-    console.error('addGame validation failed: Attempted to add seeded content', { gameId: game.id });
-    throw new Error('Cannot add sample content to your collection');
-  }
-
   // Validate required game data
   if (!game.name) {
     console.error('addGame validation failed: Missing game name', game);

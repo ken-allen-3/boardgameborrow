@@ -357,40 +357,155 @@ export async function getGameById(id: string): Promise<BoardGame> {
 
 export async function getPopularGames(): Promise<BoardGame[]> {
   return measurePerformance('get-popular-games', async () => {
-    const cached = popularGamesCache.get('popular', 'popular-games');
-    if (cached) {
-      return cached;
-    }
-
     try {
+      // Always fetch fresh data from BGG API
       const games = await processBatch(
         POPULAR_GAMES_IDS,
-        id => getGameById(id)
+        async (id) => {
+          try {
+            // Skip cache and fetch directly from API
+            const xmlText = await makeApiRequest('game-details', {
+              id,
+              stats: '1',
+              versions: '0'
+            });
+            
+            const doc = await parseXML(xmlText);
+            const item = doc.querySelector('item');
+
+            if (!item) {
+              console.error('Game not found:', id);
+              return null;
+            }
+
+            // Extract game data (reuse existing extraction logic)
+            const game = await processGameData(item, id);
+            return game;
+          } catch (error) {
+            console.error(`Failed to fetch game ${id}:`, error);
+            return null;
+          }
+        }
       );
       
-      // Sort by rank
-      const sortedGames = games.sort((a, b) => (a.rank || 999999) - (b.rank || 999999));
+      // Filter out null results and sort by rank
+      const validGames = games.filter((game): game is BoardGame => game !== null);
+      const sortedGames = validGames.sort((a, b) => (a.rank || 999999) - (b.rank || 999999));
+      
+      // Update cache after fetching
       popularGamesCache.set('popular', sortedGames, 'popular-games');
       
       return sortedGames;
     } catch (error) {
       console.error('Failed to fetch popular games:', error);
-      return [];
+      // Try to return cached data as fallback
+      const cached = popularGamesCache.get('popular', 'popular-games');
+      return cached || [];
     }
   });
 }
 
+// Helper function to process game data from XML
+async function processGameData(item: Element, id: string): Promise<BoardGame> {
+  const extractValue = (selector: string, attr: string = 'value') => {
+    const element = item.querySelector(selector);
+    const value = element?.getAttribute(attr) || element?.textContent || '';
+    console.log(`[BGG XML] ${selector}:`, { value, element: element?.outerHTML });
+    return value;
+  };
+
+  const name = extractValue('name[type="primary"]', 'value');
+  const yearPublished = extractValue('yearpublished');
+  const image = extractValue('image') || '/board-game-placeholder.png';
+  const thumbnail = extractValue('thumbnail') || '/board-game-placeholder.png';
+  const description = extractValue('description');
+  const minPlayers = extractValue('minplayers');
+  const maxPlayers = extractValue('maxplayers');
+  const minPlaytime = extractValue('minplaytime');
+  const maxPlaytime = extractValue('maxplaytime');
+  const minAge = extractValue('minage');
+
+  // Get categories
+  const categoryNodes = Array.from(item.querySelectorAll('link[type="boardgamecategory"]'));
+  const categories = categoryNodes.map(node => ({
+    id: node.getAttribute('id') || '',
+    value: node.getAttribute('value') || '',
+    url: `https://boardgamegeek.com/boardgamecategory/${node.getAttribute('id')}`
+  }));
+  
+  // Get ranking information
+  const rankNode = item.querySelector('rank[type="subtype"][name="boardgame"]');
+  const rank = rankNode?.getAttribute('value');
+  const numericRank = rank && rank !== 'Not Ranked' ? parseInt(rank) : 0;
+
+  // Get rating information
+  const ratingNode = item.querySelector('ratings average');
+  const rating = ratingNode?.getAttribute('value');
+  const numericRating = rating ? parseFloat(rating) : 0;
+
+  return {
+    id,
+    name,
+    year_published: yearPublished ? parseInt(yearPublished) : 0,
+    min_players: minPlayers ? parseInt(minPlayers) : 1,
+    max_players: maxPlayers ? parseInt(maxPlayers) : 4,
+    min_playtime: minPlaytime ? parseInt(minPlaytime) : 0,
+    max_playtime: maxPlaytime ? parseInt(maxPlaytime) : 0,
+    age: {
+      min: minAge ? parseInt(minAge) : 0
+    },
+    thumb_url: thumbnail,
+    image_url: image,
+    description,
+    rank: numericRank,
+    average_user_rating: numericRating,
+    mechanics: [],
+    categories,
+    publishers: [],
+    designers: [],
+    developers: [],
+    artists: [],
+    names: [],
+    num_user_ratings: 0,
+    historical_low_prices: [],
+    primary_publisher: { id: "", score: 0, url: "" },
+    primary_designer: { id: "", score: 0, url: "" },
+    related_to: [],
+    related_as: [],
+    weight_amount: 0,
+    weight_units: "",
+    size_height: 0,
+    size_depth: 0,
+    size_units: "",
+    active: true,
+    num_user_complexity_votes: 0,
+    average_learning_complexity: 0,
+    average_strategy_complexity: 0,
+    visits: 0,
+    lists: 0,
+    mentions: 0,
+    links: 0,
+    plays: 0,
+    type: "boardgame",
+    sku: "",
+    upc: "",
+    price: "",
+    price_ca: "",
+    price_uk: "",
+    price_au: "",
+    msrp: 0,
+    discount: "",
+    handle: "",
+    url: `https://boardgamegeek.com/boardgame/${id}`,
+    rules_url: "",
+    official_url: "",
+    commentary: "",
+    faq: ""
+  };
+}
+
 export async function searchGames(query: string, page: number = 1): Promise<SearchResults> {
   return measurePerformance('search-games', async () => {
-    // Check cache first
-    const cacheKey = `${query.toLowerCase()}-${page}`;
-    const cachedSearch = searchCache.get(cacheKey, 'search-results');
-    if (cachedSearch) {
-      return {
-        items: cachedSearch,
-        hasMore: page < 3 // Limit to 3 pages total
-      };
-    }
 
     try {
       console.log('[BGG Search] Starting search for:', query);
@@ -495,7 +610,24 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
         limitedGameIds,
         async (id) => {
           try {
-            return await getGameById(id);
+            // Skip cache and fetch directly from API
+            const xmlText = await makeApiRequest('game-details', {
+              id,
+              stats: '1',
+              versions: '0'
+            });
+            
+            const doc = await parseXML(xmlText);
+            const item = doc.querySelector('item');
+
+            if (!item) {
+              console.error('Game not found:', id);
+              return null;
+            }
+
+            // Extract game data using the helper function
+            const game = await processGameData(item, id);
+            return game;
           } catch (error: any) {
             console.error('[BGG Search] Failed to fetch game details:', {
               gameId: id,
@@ -541,14 +673,10 @@ export async function searchGames(query: string, page: number = 1): Promise<Sear
       const endIdx = startIdx + 10;
       const pageResults = sortedGames.slice(startIdx, endIdx);
       
-      // Cache the page results
+      // Update cache after fetching
       if (pageResults.length > 0) {
+        const cacheKey = `${query.toLowerCase()}-${page}`;
         searchCache.set(cacheKey, pageResults, 'search-results');
-        
-        // Cache individual games for faster retrieval
-        pageResults.forEach(game => {
-          gameCache.set(game.id, game, 'game-details');
-        });
       }
       
       return {

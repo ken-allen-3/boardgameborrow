@@ -210,8 +210,7 @@ export const initializeCache = https.onRequest(
 
       await initializeCacheData({ 
         auth: { 
-          uid: decodedToken.uid,
-          token: decodedToken
+          uid: decodedToken.uid
         }
       });
       

@@ -1,5 +1,5 @@
 import { getFirestore, DocumentSnapshot } from 'firebase-admin/firestore';
-import * as functions from 'firebase-functions/v1';
+import { https } from 'firebase-functions/v2';
 import axios from 'axios';
 
 const db = getFirestore();
@@ -126,18 +126,18 @@ const fetchCategoryRankings = async (category: string): Promise<GameData[]> => {
     return games;
   } catch (error) {
     console.error(`Failed to fetch rankings for ${category}:`, error);
-    throw new functions.https.HttpsError(
+    throw new https.HttpsError(
       'internal',
       `Failed to fetch rankings for ${category}`,
-      error
+      error instanceof Error ? error.message : String(error)
     );
   }
 };
 
-export const initializeCacheData = async (context: functions.https.CallableContext): Promise<void> => {
+export const initializeCacheData = async (context: { auth?: { uid: string } }): Promise<void> => {
   // Verify authentication
   if (!context.auth) {
-    throw new functions.https.HttpsError(
+    throw new https.HttpsError(
       'unauthenticated',
       'Must be authenticated to initialize cache'
     );
@@ -227,7 +227,7 @@ export const initializeCacheData = async (context: functions.https.CallableConte
       userId: context.auth?.uid
     });
     
-    throw new functions.https.HttpsError(
+    throw new https.HttpsError(
       'internal',
       'Failed to initialize cache',
       error

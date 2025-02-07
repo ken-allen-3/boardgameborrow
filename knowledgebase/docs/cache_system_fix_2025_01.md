@@ -16,6 +16,8 @@ The admin dashboard was showing 0 cached games, indicating either:
    - Direct client-side Firestore access for cache operations
    - Missing CORS headers causing cross-origin request failures
    - Inconsistent cache cleanup strategy
+   - Node.js-specific code in browser environment
+   - Incorrect database rules deployment structure
 
 ## Solution Implemented
 
@@ -94,12 +96,29 @@ The cache system now operates in three tiers:
    - Check admin permissions
    - Review Cloud Function logs for initialization errors
    - Verify CORS configuration
+   - Ensure proper Firebase initialization before making calls
+   - Check region configuration matches between client and server
 
 2. **CORS Errors**
    - Check Origin headers in requests
    - Verify CORS middleware configuration
    - Review preflight handling
    - Check browser console for detailed errors
+   - Ensure httpsCallable is used for Firebase Functions instead of direct HTTP
+   - Verify authentication state before making calls
+   - Add proper timeout configurations for function calls
+
+3. **Environment-Specific Issues**
+   - Use import.meta.env.DEV instead of process.env in browser code
+   - Ensure environment detection is consistent across services
+   - Keep development and production configurations separate
+   - Use proper environment variables for different deployments
+
+4. **Database Rules Deployment**
+   - Keep database.rules.json within the Firebase project directory
+   - Update firebase.json to reference the correct rules path
+   - Ensure rules files are properly synchronized across environments
+   - Include proper indexing for all queried fields
 
 3. **Cache Performance Issues**
    - Monitor cache hit/miss ratios
@@ -147,6 +166,10 @@ console.log('Is Admin:', userData.data()?.isAdmin);
 6. Add predictive caching based on usage patterns
 7. Enhance CORS configuration for multiple environments
 8. Implement cache compression for large datasets
+9. Implement proper development/production environment detection
+10. Add comprehensive error logging and monitoring
+11. Implement automated database rules deployment
+12. Add validation for Firebase initialization states
 
 ## Related Documentation
 - [Cache Monitoring Setup](./cache_monitoring_setup.md)

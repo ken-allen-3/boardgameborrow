@@ -85,9 +85,14 @@ const initializeFunctions = async () => {
   }
 };
 
-// Initialize functions and export
-const functionsInstance = await initializeFunctions();
-export const functions = functionsInstance;
+// Initialize functions synchronously
+export const functions = getFunctions(app, 'us-central1');
+
+// Initialize functions asynchronously in the background
+initializeFunctions().catch(error => {
+  console.error('Failed to initialize Firebase Functions:', error);
+  initializationError = error instanceof Error ? error : new Error('Unknown initialization error');
+});
 export const getFirebaseStatus = () => ({
   isInitialized,
   error: initializationError

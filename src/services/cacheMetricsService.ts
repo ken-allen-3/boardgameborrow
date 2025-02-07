@@ -59,16 +59,6 @@ const logDetailedError = (error: unknown, context: string) => {
   console.error(`Detailed ${context} error:`, errorDetails);
 };
 
-const logFunctionConfig = () => {
-  console.log('Firebase Functions Configuration:', {
-    region: functions.region,
-    customDomain: (functions as any).customDomain,
-    app: functions.app?.name,
-    projectId: functions.app?.options?.projectId,
-    emulator: process.env.FUNCTIONS_EMULATOR ? true : false
-  });
-};
-
 export const getCacheMetrics = async (): Promise<CacheMetrics> => {
   try {
     const { isInitialized, error } = getFirebaseStatus();
@@ -76,7 +66,6 @@ export const getCacheMetrics = async (): Promise<CacheMetrics> => {
       throw new Error(`Firebase not initialized: ${error?.message || 'Unknown error'}`);
     }
 
-    logFunctionConfig();
     const getMetrics = httpsCallable<object, CacheMetrics>(functions, 'getCacheMetrics');
     
     console.log('Making metrics call...');
@@ -124,7 +113,6 @@ export const initializeCache = async (): Promise<{ success: boolean; message: st
       throw new Error(`Firebase not initialized: ${error?.message || 'Unknown error'}`);
     }
 
-    logFunctionConfig();
     console.log('Setting up cache initialization...');
     const initialize = httpsCallable<object, { success: boolean; message: string }>(
       functions,

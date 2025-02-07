@@ -1,6 +1,8 @@
-import { httpsCallable } from 'firebase/functions';
-import { functions, getFirebaseStatus, initializeFunctions } from '../config/firebase';
+import { auth } from '../config/firebase';
+import axios from 'axios';
 import { CacheMetrics } from '../types/cache';
+
+const FUNCTIONS_BASE_URL = import.meta.env.VITE_FUNCTIONS_BASE_URL || 'https://us-central1-boardgameshare-001.cloudfunctions.net';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
@@ -22,7 +24,6 @@ const retryOperation = async <T>(
     throw error;
   }
 };
-
 
 interface DetailedError {
   name?: string;
@@ -61,49 +62,41 @@ const logDetailedError = (error: unknown, context: string) => {
 
 export const getCacheMetrics = async (): Promise<CacheMetrics> => {
   try {
-    // Ensure functions are properly initialized
-    const functionsInstance = await initializeFunctions();
-    if (!functionsInstance) {
-      throw new Error('Failed to initialize Firebase Functions');
+    const idToken = await auth.currentUser?.getIdToken();
+    if (!idToken) {
+      throw new Error('Not authenticated');
     }
 
-    // Initialize the callable with explicit region
-    const getMetrics = httpsCallable<object, CacheMetrics>(
-      functionsInstance,
-      'getCacheMetrics',
-      { timeout: 60000 } // 60 second timeout
-    );
-
-    console.log('Making metrics call with config:', {
-      region: functionsInstance.region || 'us-central1',
-      functionName: 'getCacheMetrics',
-      timestamp: new Date().toISOString()
-    });
+    console.log('Making metrics call...');
     const result = await retryOperation(async () => {
-      const response = await getMetrics({});
+      const response = await axios.get(
+        `${FUNCTIONS_BASE_URL}/getCacheMetrics`,
+        {
+          headers: {
+            Authorization: `Bearer ${idToken}`
+          }
+        }
+      );
+      
       if (!response.data) {
         throw new Error('No data returned from metrics call');
       }
       return response;
     });
     
-    if (!result.data) {
-      throw new Error('No data returned from metrics call');
-    }
-    
     console.log('Metrics call successful:', result);
     return result.data;
   } catch (error) {
     logDetailedError(error, 'metrics');
     
-    // Check for specific Firebase error types
     if (error instanceof Error) {
-      const firebaseError = error as { code?: string };
-      if (firebaseError.code === 'functions/unauthenticated') {
-        throw new Error('Authentication required to fetch metrics');
-      }
-      if (firebaseError.code === 'functions/internal') {
-        throw new Error('Internal server error while fetching metrics');
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          throw new Error('Authentication required to fetch metrics');
+        }
+        if (error.response?.status === 500) {
+          throw new Error('Internal server error while fetching metrics');
+        }
       }
     }
     
@@ -118,49 +111,43 @@ export const getCacheMetrics = async (): Promise<CacheMetrics> => {
 
 export const initializeCache = async (): Promise<{ success: boolean; message: string }> => {
   try {
-    // Ensure functions are properly initialized
-    const functionsInstance = await initializeFunctions();
-    if (!functionsInstance) {
-      throw new Error('Failed to initialize Firebase Functions');
+    const idToken = await auth.currentUser?.getIdToken();
+    if (!idToken) {
+      throw new Error('Not authenticated');
     }
 
-    console.log('Setting up cache initialization...');
-    const initialize = httpsCallable<object, { success: boolean; message: string }>(
-      functionsInstance,
-      'initializeCache',
-      { timeout: 300000 } // 5 minutes timeout
-    );
-    
     console.log('Making initialization call...');
     const result = await retryOperation(async () => {
-      const response = await initialize({});
+      const response = await axios.get(
+        `${FUNCTIONS_BASE_URL}/initializeCache`,
+        {
+          headers: {
+            Authorization: `Bearer ${idToken}`
+          }
+        }
+      );
+      
       if (!response.data) {
         throw new Error('No response from initialization');
       }
       return response;
     });
     
-    if (!result.data) {
-      throw new Error('No response from initialization');
-    }
-    
     console.log('Cache initialization successful:', result);
     return result.data;
   } catch (error) {
     logDetailedError(error, 'initialization');
     
-    // Check for specific Firebase error types
     if (error instanceof Error) {
-      const firebaseError = error as { code?: string };
-      if (firebaseError.code === 'functions/unauthenticated') {
-        throw new Error('Authentication required to initialize cache');
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          throw new Error('Authentication required to initialize cache');
+        }
+        if (error.response?.status === 500) {
+          throw new Error('Internal server error during initialization');
+        }
       }
-      if (firebaseError.code === 'functions/internal') {
-        throw new Error('Internal server error during initialization');
-      }
-      
-      const code = firebaseError.code || 'UNKNOWN';
-      throw new Error(`Cache initialization failed: ${error.message} (Code: ${code})`);
+      throw new Error(`Cache initialization failed: ${error.message}`);
     }
     
     throw new Error('Cache initialization failed: Unknown error');

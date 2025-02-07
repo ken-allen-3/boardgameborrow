@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { https, FunctionOptions } from 'firebase-functions/v2';
+import { getAuth } from 'firebase-admin/auth';
+import { https } from 'firebase-functions/v2';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { setGlobalOptions } from 'firebase-functions/v2';
 import * as cors from 'cors';
@@ -57,8 +58,17 @@ console.log('Firebase Admin initialized with config:', {
   storageBucket: app.options.storageBucket
 });
 
-// Initialize Firestore
+// Initialize Firebase Admin services
 export const db = getFirestore();
+export const auth = getAuth();
+
+// CORS headers helper
+const setCorsHeaders = (res: any) => {
+  res.set('Access-Control-Allow-Origin', ['http://localhost:5174', 'https://boardgameborrow.com']);
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+  res.set('Access-Control-Max-Age', '3600');
+};
 
 // Initialize services
 const gameDetectionService = new GameDetectionService();
@@ -109,36 +119,34 @@ export const diagnoseCacheSystem = https.onRequest(
   });
 
 // Cache metrics endpoint
-export const getCacheMetrics = https.onCall(
+export const getCacheMetrics = https.onRequest(
   { 
-    cors: true,
     timeoutSeconds: 60,
     memory: "256MiB",
     minInstances: 0
   },
-  async (request: any, context: { auth?: { uid: string; token: any } }) => {
-    console.log('getCacheMetrics called with context:', {
-      auth: context.auth ? {
-        uid: context.auth.uid,
-        token: context.auth.token
-      } : null,
-      rawRequest: context.rawRequest ? {
-        headers: context.rawRequest.headers,
-        method: context.rawRequest.method
-      } : null
-    });
+  async (req, res) => {
+    setCorsHeaders(res);
+    
+    if (req.method === 'OPTIONS') {
+      res.status(204).send('');
+      return;
+    }
 
-    // Verify authentication
-    if (!context.auth) {
-      throw new https.HttpsError(
-        'unauthenticated',
-        'The function must be called while authenticated.'
-      );
+    // Verify auth token from header
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
     }
 
     try {
+      // Verify the token
+      const token = authHeader.split('Bearer ')[1];
+      const decodedToken = await auth.verifyIdToken(token);
+      
       console.log('Fetching cache metrics...', {
-        userId: context.auth.uid,
+        userId: decodedToken.uid,
         timestamp: new Date().toISOString()
       });
 
@@ -158,63 +166,63 @@ export const getCacheMetrics = https.onCall(
       };
 
       console.log('Cache metrics fetched successfully:', metrics);
-      return metrics;
+      res.json(metrics);
     } catch (error) {
       console.error('Error fetching cache metrics:', error);
-      throw new https.HttpsError(
-        'internal',
-        'Failed to fetch cache metrics',
-        error instanceof Error ? error.message : String(error)
-      );
+      res.status(500).json({ 
+        error: 'Failed to fetch metrics',
+        details: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
 // Initialize cache endpoint
-export const initializeCache = https.onCall(
+export const initializeCache = https.onRequest(
   { 
-    cors: true,
     timeoutSeconds: 300,
     memory: "512MiB",
     minInstances: 0
   },
-  async (request: any, context: { auth?: { uid: string; token: any } }) => {
-    console.log('initializeCache called with context:', {
-      auth: context.auth ? {
-        uid: context.auth.uid,
-        token: context.auth.token
-      } : null,
-      rawRequest: context.rawRequest ? {
-        headers: context.rawRequest.headers,
-        method: context.rawRequest.method
-      } : null
-    });
+  async (req, res) => {
+    setCorsHeaders(res);
+    
+    if (req.method === 'OPTIONS') {
+      res.status(204).send('');
+      return;
+    }
 
-    // Verify authentication
-    if (!context.auth) {
-      throw new https.HttpsError(
-        'unauthenticated',
-        'The function must be called while authenticated.',
-        { requiredAuth: true }
-      );
+    // Verify auth token from header
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
     }
 
     try {
+      // Verify the token
+      const token = authHeader.split('Bearer ')[1];
+      const decodedToken = await auth.verifyIdToken(token);
+      
       console.log('Initializing cache...', {
-        userId: context.auth.uid,
+        userId: decodedToken.uid,
         timestamp: new Date().toISOString()
       });
 
-      await initializeCacheData(context);
+      await initializeCacheData({ 
+        auth: { 
+          uid: decodedToken.uid,
+          token: decodedToken
+        }
+      });
       
       console.log('Cache initialized successfully');
-      return { success: true, message: 'Cache initialized successfully' };
+      res.json({ success: true, message: 'Cache initialized successfully' });
     } catch (error) {
       console.error('Error initializing cache:', error);
-      throw new https.HttpsError(
-        'internal',
-        'Failed to initialize cache',
-        error instanceof Error ? error.message : String(error)
-      );
+      res.status(500).json({ 
+        error: 'Failed to initialize cache',
+        details: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 

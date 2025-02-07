@@ -42,10 +42,14 @@ export const storage = getStorage(app);
 let isInitialized = false;
 let initializationError: Error | null = null;
 
-// Initialize Firebase Functions with proper configuration
-const initializeFunctions = async () => {
+// Initialize functions with a single source of truth
+export let functions: ReturnType<typeof getFunctions>;
+
+export const initializeFunctions = async () => {
+  if (functions) return functions;
+
   try {
-    const functions = getFunctions(app, 'us-central1');
+    functions = getFunctions(app, 'us-central1');
     
     // Log functions configuration
     console.log('Initializing Firebase Functions:', {
@@ -84,9 +88,6 @@ const initializeFunctions = async () => {
     throw initializationError;
   }
 };
-
-// Initialize functions synchronously
-export const functions = getFunctions(app, 'us-central1');
 
 // Initialize functions asynchronously in the background
 initializeFunctions().catch(error => {

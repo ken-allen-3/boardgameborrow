@@ -111,6 +111,7 @@ export const diagnoseCacheSystem = https.onRequest(
 // Cache metrics endpoint
 export const getCacheMetrics = https.onCall(
   { 
+    cors: true,
     timeoutSeconds: 60,
     memory: "256MiB",
     minInstances: 0
@@ -171,6 +172,7 @@ export const getCacheMetrics = https.onCall(
 // Initialize cache endpoint
 export const initializeCache = https.onCall(
   { 
+    cors: true,
     timeoutSeconds: 300,
     memory: "512MiB",
     minInstances: 0

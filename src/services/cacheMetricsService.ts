@@ -1,5 +1,5 @@
 import { httpsCallable } from 'firebase/functions';
-import { functions, getFirebaseStatus } from '../config/firebase';
+import { functions, getFirebaseStatus, initializeFunctions } from '../config/firebase';
 import { CacheMetrics } from '../types/cache';
 
 const MAX_RETRIES = 3;
@@ -61,25 +61,21 @@ const logDetailedError = (error: unknown, context: string) => {
 
 export const getCacheMetrics = async (): Promise<CacheMetrics> => {
   try {
-    // Wait for Firebase initialization
-    const { isInitialized, error } = getFirebaseStatus();
-    if (!isInitialized) {
-      throw new Error(`Firebase not initialized: ${error?.message || 'Unknown error'}`);
+    // Ensure functions are properly initialized
+    const functionsInstance = await initializeFunctions();
+    if (!functionsInstance) {
+      throw new Error('Failed to initialize Firebase Functions');
     }
-
-    // Verify region matches server configuration
-    const region = functions.region || 'us-central1';
-    console.log('Initializing metrics call with region:', region);
 
     // Initialize the callable with explicit region
     const getMetrics = httpsCallable<object, CacheMetrics>(
-      functions, 
+      functionsInstance,
       'getCacheMetrics',
       { timeout: 60000 } // 60 second timeout
     );
-    
+
     console.log('Making metrics call with config:', {
-      region,
+      region: functionsInstance.region || 'us-central1',
       functionName: 'getCacheMetrics',
       timestamp: new Date().toISOString()
     });
@@ -122,14 +118,15 @@ export const getCacheMetrics = async (): Promise<CacheMetrics> => {
 
 export const initializeCache = async (): Promise<{ success: boolean; message: string }> => {
   try {
-    const { isInitialized, error } = getFirebaseStatus();
-    if (!isInitialized) {
-      throw new Error(`Firebase not initialized: ${error?.message || 'Unknown error'}`);
+    // Ensure functions are properly initialized
+    const functionsInstance = await initializeFunctions();
+    if (!functionsInstance) {
+      throw new Error('Failed to initialize Firebase Functions');
     }
 
     console.log('Setting up cache initialization...');
     const initialize = httpsCallable<object, { success: boolean; message: string }>(
-      functions,
+      functionsInstance,
       'initializeCache',
       { timeout: 300000 } // 5 minutes timeout
     );

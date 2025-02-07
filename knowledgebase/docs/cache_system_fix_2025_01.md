@@ -18,6 +18,18 @@ The admin dashboard was showing 0 cached games, indicating either:
    - Inconsistent cache cleanup strategy
    - Node.js-specific code in browser environment
    - Incorrect database rules deployment structure
+   - Mismatched user identification in database rules
+
+3. Attempted Solutions:
+   - Removed process.env usage in browser code
+   - Fixed database rules deployment structure
+   - Updated Firebase Functions initialization
+   However, these changes didn't fully resolve the issues due to a deeper architectural problem:
+   - Database rules were using auth.uid for admin checks
+   - But user data was being stored with email-based keys
+   - This mismatch caused all admin operations to fail
+   - Failed admin auth caused Firebase SDK to fall back to direct HTTP requests
+   - Leading to CORS errors as a secondary symptom
 
 ## Solution Implemented
 
@@ -100,25 +112,25 @@ The cache system now operates in three tiers:
    - Check region configuration matches between client and server
 
 2. **CORS Errors**
-   - Check Origin headers in requests
-   - Verify CORS middleware configuration
-   - Review preflight handling
-   - Check browser console for detailed errors
-   - Ensure httpsCallable is used for Firebase Functions instead of direct HTTP
-   - Verify authentication state before making calls
-   - Add proper timeout configurations for function calls
+   - Often a symptom of authentication failures
+   - When admin access fails, Firebase SDK falls back to HTTP requests
+   - This fallback triggers CORS preflight requests
+   - Which fail because the function expects a Firebase callable
+   - Fix the underlying auth/permission issue first
 
-3. **Environment-Specific Issues**
-   - Use import.meta.env.DEV instead of process.env in browser code
-   - Ensure environment detection is consistent across services
-   - Keep development and production configurations separate
-   - Use proper environment variables for different deployments
+3. **Authentication Issues**
+   - Verify database rules match storage pattern
+   - Check if using uid vs email for user identification
+   - Ensure admin checks use correct path to user data
+   - Test admin privileges in Firebase Console
+   - Monitor auth state changes in browser console
 
-4. **Database Rules Deployment**
-   - Keep database.rules.json within the Firebase project directory
-   - Update firebase.json to reference the correct rules path
-   - Ensure rules files are properly synchronized across environments
-   - Include proper indexing for all queried fields
+4. **Database Rules**
+   - Rules must match how data is actually stored
+   - Use auth.token.email for email-based paths
+   - Add top-level admin access for collections
+   - Test rules in Firebase Console
+   - Deploy rules from correct directory
 
 3. **Cache Performance Issues**
    - Monitor cache hit/miss ratios

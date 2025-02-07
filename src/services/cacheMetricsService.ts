@@ -61,14 +61,28 @@ const logDetailedError = (error: unknown, context: string) => {
 
 export const getCacheMetrics = async (): Promise<CacheMetrics> => {
   try {
+    // Wait for Firebase initialization
     const { isInitialized, error } = getFirebaseStatus();
     if (!isInitialized) {
       throw new Error(`Firebase not initialized: ${error?.message || 'Unknown error'}`);
     }
 
-    const getMetrics = httpsCallable<object, CacheMetrics>(functions, 'getCacheMetrics');
+    // Verify region matches server configuration
+    const region = functions.region || 'us-central1';
+    console.log('Initializing metrics call with region:', region);
+
+    // Initialize the callable with explicit region
+    const getMetrics = httpsCallable<object, CacheMetrics>(
+      functions, 
+      'getCacheMetrics',
+      { timeout: 60000 } // 60 second timeout
+    );
     
-    console.log('Making metrics call...');
+    console.log('Making metrics call with config:', {
+      region,
+      functionName: 'getCacheMetrics',
+      timestamp: new Date().toISOString()
+    });
     const result = await retryOperation(async () => {
       const response = await getMetrics({});
       if (!response.data) {

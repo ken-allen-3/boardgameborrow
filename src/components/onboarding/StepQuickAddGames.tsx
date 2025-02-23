@@ -4,7 +4,7 @@ import { addGame } from '../../services/gameService';
 import { useAuth } from '../../contexts/AuthContext';
 import onboardingGames from '../../config/onboardingGames.json';
 
-interface GameData {
+interface OnboardingGame {
   id: string;
   name: string;
   image: string;
@@ -20,7 +20,7 @@ interface GameData {
 
 interface StepQuickAddGamesProps {
   selectedCategories: string[];
-  onComplete: (selectedGames: GameData[]) => void;
+  onComplete: (selectedGames: OnboardingGame[]) => void;
   currentStep: number;
   totalSteps: number;
 }
@@ -51,16 +51,16 @@ function StepQuickAddGames({ selectedCategories, onComplete, currentStep, totalS
     });
   };
 
-  const getTopGames = (category: string): GameData[] => {
+  const getTopGames = (category: string): OnboardingGame[] => {
     return onboardingGames[category as keyof typeof onboardingGames] || [];
   };
 
-  const formatPlayTime = (game: GameData): string => {
+  const formatPlayTime = (game: OnboardingGame): string => {
     const { min, max } = game.playTime;
     return min === max ? `${min} min` : `${min}-${max} min`;
   };
 
-  const formatPlayerCount = (game: GameData): string => {
+  const formatPlayerCount = (game: OnboardingGame): string => {
     const { min, max } = game.playerCount;
     return min === max ? `${min} players` : `${min}-${max} players`;
   };
@@ -80,7 +80,7 @@ function StepQuickAddGames({ selectedCategories, onComplete, currentStep, totalS
         if (game) return game;
       }
       return null;
-    }).filter((game): game is GameData => game !== null);
+    }).filter((game): game is OnboardingGame => game !== null);
     
     try {
       // Add games one at a time

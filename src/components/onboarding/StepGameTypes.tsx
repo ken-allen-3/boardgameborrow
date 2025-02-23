@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import type { GameData } from '../../services/gameDataService';
 
 interface StepGameTypesProps {
   onNext: (categories: string[]) => void;
@@ -7,7 +6,7 @@ interface StepGameTypesProps {
   totalSteps: number;
 }
 
-type CategoryKey = keyof GameData['rank'];
+type CategoryKey = 'strategy' | 'family' | 'party' | 'thematic' | 'abstracts' | 'wargames';
 
 const categories = [
   { 

@@ -62,14 +62,6 @@ console.log('Firebase Admin initialized with config:', {
 export const db = getFirestore();
 export const auth = getAuth();
 
-// CORS headers helper
-const setCorsHeaders = (res: any) => {
-  res.set('Access-Control-Allow-Origin', ['http://localhost:5174', 'https://boardgameborrow.com']);
-  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.set('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
-  res.set('Access-Control-Max-Age', '3600');
-};
-
 // Initialize services
 const gameDetectionService = new GameDetectionService();
 
@@ -126,12 +118,7 @@ export const getCacheMetrics = https.onRequest(
     minInstances: 0
   },
   async (req, res) => {
-    setCorsHeaders(res);
-    
-    if (req.method === 'OPTIONS') {
-      res.status(204).send('');
-      return;
-    }
+    await new Promise((resolve) => corsHandler(req, res, resolve));
 
     // Verify auth token from header
     const authHeader = req.headers.authorization;
@@ -184,12 +171,7 @@ export const initializeCache = https.onRequest(
     minInstances: 0
   },
   async (req, res) => {
-    setCorsHeaders(res);
-    
-    if (req.method === 'OPTIONS') {
-      res.status(204).send('');
-      return;
-    }
+    await new Promise((resolve) => corsHandler(req, res, resolve));
 
     // Verify auth token from header
     const authHeader = req.headers.authorization;

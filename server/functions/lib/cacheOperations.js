@@ -1,27 +1,4 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -36,7 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getCacheMetrics = exports.initializeCache = void 0;
-const functions = __importStar(require("firebase-functions"));
+const v2_1 = require("firebase-functions/v2");
 const firestore_1 = require("firebase-admin/firestore");
 const axios_1 = __importDefault(require("axios"));
 const jsdom_1 = require("jsdom");
@@ -50,20 +27,19 @@ const CATEGORIES = [
     'thematic',
     'wargames'
 ];
-// @ts-ignore
-exports.initializeCache = functions.https.onCall((data, context) => __awaiter(void 0, void 0, void 0, function* () {
+exports.initializeCache = v2_1.https.onRequest({
+    timeoutSeconds: 300,
+    memory: "512MiB",
+    minInstances: 0
+}, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c, _d, _e, _f, _g;
     // Check if user is authenticated and admin
-    if (!(context === null || context === void 0 ? void 0 : context.auth)) {
-        throw new functions.https.HttpsError('unauthenticated', 'Must be authenticated to initialize cache');
+    const authHeader = req.headers.authorization;
+    if (!(authHeader === null || authHeader === void 0 ? void 0 : authHeader.startsWith('Bearer '))) {
+        res.status(401).json({ error: 'Must be authenticated to initialize cache' });
+        return;
     }
     const db = (0, firestore_1.getFirestore)();
-    const userRef = db.collection('users').doc(context.auth.uid);
-    const userDoc = yield userRef.get();
-    const userData = userDoc.data();
-    if (!(userData === null || userData === void 0 ? void 0 : userData.isAdmin)) {
-        throw new functions.https.HttpsError('permission-denied', 'Must be an admin to initialize cache');
-    }
     try {
         // Process each category
         for (const category of CATEGORIES) {
@@ -145,17 +121,25 @@ exports.initializeCache = functions.https.onCall((data, context) => __awaiter(vo
                 }
             });
         }
-        return { success: true, message: 'Cache initialized successfully' };
+        res.json({ success: true, message: 'Cache initialized successfully' });
     }
     catch (error) {
         console.error('Failed to initialize cache:', error);
-        throw new functions.https.HttpsError('internal', 'Failed to initialize cache');
+        res.status(500).json({
+            error: 'Failed to initialize cache',
+            details: error instanceof Error ? error.message : String(error)
+        });
     }
 }));
-// @ts-ignore
-exports.getCacheMetrics = functions.https.onCall((data, context) => __awaiter(void 0, void 0, void 0, function* () {
-    if (!(context === null || context === void 0 ? void 0 : context.auth)) {
-        throw new functions.https.HttpsError('unauthenticated', 'Must be authenticated to get cache metrics');
+exports.getCacheMetrics = v2_1.https.onRequest({
+    timeoutSeconds: 60,
+    memory: "256MiB",
+    minInstances: 0
+}, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const authHeader = req.headers.authorization;
+    if (!(authHeader === null || authHeader === void 0 ? void 0 : authHeader.startsWith('Bearer '))) {
+        res.status(401).json({ error: 'Must be authenticated to get cache metrics' });
+        return;
     }
     try {
         const db = (0, firestore_1.getFirestore)();
@@ -183,16 +167,19 @@ exports.getCacheMetrics = functions.https.onCall((data, context) => __awaiter(vo
         const lastRefreshDate = rankingsSnap.empty
             ? 'Never'
             : new Date(rankingsSnap.docs[0].data().lastUpdated).toLocaleDateString();
-        return {
+        res.json({
             totalCachedGames: gameDetailsSnap.size,
             cacheHitRate: totalAccesses > 0 ? (totalHits / totalAccesses) * 100 : 0,
             memoryUsage: Math.round(totalSize / 1024),
             lastRefreshDate
-        };
+        });
     }
     catch (error) {
         console.error('Error fetching cache metrics:', error);
-        throw new functions.https.HttpsError('internal', 'Failed to fetch cache metrics');
+        res.status(500).json({
+            error: 'Failed to fetch cache metrics',
+            details: error instanceof Error ? error.message : String(error)
+        });
     }
 }));
 function parseRanking(xmlDoc, category) {

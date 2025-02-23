@@ -1,8 +1,7 @@
 import { auth } from '../config/firebase';
-import axios from 'axios';
 import { CacheMetrics } from '../types/cache';
-
-const FUNCTIONS_BASE_URL = import.meta.env.VITE_FUNCTIONS_BASE_URL || 'https://us-central1-boardgameshare-001.cloudfunctions.net';
+import { makeCacheRequest } from './apiService';
+import axios, { AxiosError } from 'axios';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
@@ -69,14 +68,7 @@ export const getCacheMetrics = async (): Promise<CacheMetrics> => {
 
     console.log('Making metrics call...');
     const result = await retryOperation(async () => {
-      const response = await axios.get(
-        `${FUNCTIONS_BASE_URL}/getCacheMetrics`,
-        {
-          headers: {
-            Authorization: `Bearer ${idToken}`
-          }
-        }
-      );
+      const response = await makeCacheRequest('getCacheMetrics', idToken);
       
       if (!response.data) {
         throw new Error('No data returned from metrics call');
@@ -90,7 +82,7 @@ export const getCacheMetrics = async (): Promise<CacheMetrics> => {
     logDetailedError(error, 'metrics');
     
     if (error instanceof Error) {
-      if (axios.isAxiosError(error)) {
+      if (error instanceof AxiosError) {
         if (error.response?.status === 401) {
           throw new Error('Authentication required to fetch metrics');
         }
@@ -118,14 +110,7 @@ export const initializeCache = async (): Promise<{ success: boolean; message: st
 
     console.log('Making initialization call...');
     const result = await retryOperation(async () => {
-      const response = await axios.get(
-        `${FUNCTIONS_BASE_URL}/initializeCache`,
-        {
-          headers: {
-            Authorization: `Bearer ${idToken}`
-          }
-        }
-      );
+      const response = await makeCacheRequest('initializeCache', idToken);
       
       if (!response.data) {
         throw new Error('No response from initialization');
@@ -139,7 +124,7 @@ export const initializeCache = async (): Promise<{ success: boolean; message: st
     logDetailedError(error, 'initialization');
     
     if (error instanceof Error) {
-      if (axios.isAxiosError(error)) {
+      if (error instanceof AxiosError) {
         if (error.response?.status === 401) {
           throw new Error('Authentication required to initialize cache');
         }

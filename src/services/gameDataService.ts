@@ -1,5 +1,5 @@
 import { db } from '../config/firebase';
-import { collection, doc, getDoc, getDocs, query, where, setDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, setDoc } from 'firebase/firestore';
 import { GameData } from '../types/boardgame';
 import axios from 'axios';
 
@@ -18,20 +18,23 @@ let localGameCache: Map<string, GameData[]> = new Map();
 
 export const gameDataService = {
   async initializeCache() {
-    console.log('[gameDataService] Initializing cache');
+    console.log('[gameDataService] Initializing cache from CSV');
     try {
       // Clear local cache
       localGameCache.clear();
       console.log('[gameDataService] Local cache cleared');
       
-      // Use cloud function for cache initialization
-      const { initializeCache } = await import('./cacheMetricsService');
-      const result = await initializeCache();
-      if (!result.success) {
-        throw new Error(result.message);
+      // Initialize directly from CSV for each category
+      const categories = ['strategy', 'family', 'party', 'thematic', 'abstracts', 'wargames'];
+      for (const category of categories) {
+        console.log(`[gameDataService] Loading ${category} games from CSV`);
+        const games = await this.fetchFromCSV(category);
+        localGameCache.set(category, games);
+        console.log(`[gameDataService] Loaded ${games.length} ${category} games`);
       }
       
-      console.log('[gameDataService] Cache initialized via cloud function');
+      console.log('[gameDataService] Cache initialized from CSV');
+      return { success: true, message: 'Cache initialized from CSV' };
     } catch (error) {
       console.error('[gameDataService] Error initializing cache:', error);
       throw error;

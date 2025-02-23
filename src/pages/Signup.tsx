@@ -7,7 +7,8 @@ import ErrorMessage from '../components/ErrorMessage';
 function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -44,9 +45,6 @@ function Signup() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     
-    const [firstName, ...lastNameParts] = name.trim().split(' ');
-    const lastName = lastNameParts.join(' ') || firstName;
-    
     try {
       setError('');
       setLoading(true);
@@ -68,8 +66,8 @@ function Signup() {
 
   const handleAutoFill = async () => {
     const randomId = Math.random().toString(36).substring(2, 8);
-    const firstName = `Test`;
-    const lastName = `User ${randomId}`;
+    const testFirstName = `Test`;
+    const testLastName = `User ${randomId}`;
     const randomEmail = `test.user.${randomId}@example.com`;
     const defaultPassword = 'password123';
     const defaultPhoto = 'https://images.unsplash.com/photo-1566004100631-35d015d6a491?auto=format&fit=crop&q=80&w=200&h=200';
@@ -81,8 +79,8 @@ function Signup() {
       await signUp({
         email: randomEmail,
         password: defaultPassword,
-        firstName,
-        lastName,
+        firstName: testFirstName,
+        lastName: testLastName,
         photoUrl: defaultPhoto,
         location: defaultLocation
       });
@@ -123,20 +121,38 @@ function Signup() {
         {error && <ErrorMessage message={error} />}
         
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Name
-            </label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Enter your name"
-                required
-              />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                First Name
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Enter first name"
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Last Name
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Enter last name"
+                  required
+                />
+              </div>
             </div>
           </div>
 

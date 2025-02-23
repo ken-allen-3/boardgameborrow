@@ -33,14 +33,15 @@ exports.initializeCacheV2 = v2_1.https.onCall({
     memory: "512MiB",
     minInstances: 0,
     region: 'us-central1'
-    // @ts-expect-error - Type mismatch will be fixed in future SDK update
 }, (request, context) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c, _d, _e, _f, _g;
     // Check if user is authenticated and admin
+    // @ts-ignore
     if (!(context === null || context === void 0 ? void 0 : context.auth)) {
         throw new v2_1.https.HttpsError('unauthenticated', 'Must be authenticated to initialize cache');
     }
     const db = (0, firestore_1.getFirestore)();
+    // @ts-ignore
     const userRef = db.collection('users').doc(context.auth.uid);
     const userDoc = yield userRef.get();
     const userData = userDoc.data();
@@ -141,8 +142,8 @@ exports.getCacheMetricsV2 = v2_1.https.onCall({
     memory: "256MiB",
     minInstances: 0,
     region: 'us-central1'
-    // @ts-expect-error - Type mismatch will be fixed in future SDK update
 }, (request, context) => __awaiter(void 0, void 0, void 0, function* () {
+    // @ts-ignore
     if (!(context === null || context === void 0 ? void 0 : context.auth)) {
         throw new v2_1.https.HttpsError('unauthenticated', 'Must be authenticated to get cache metrics');
     }

@@ -169,6 +169,78 @@ const userData = await userRef.get();
 console.log('Is Admin:', userData.data()?.isAdmin);
 ```
 
+## Update Log
+
+### February 7, 2025 - CORS Fix Attempt #2
+After observing that the previous fix didn't resolve all issues, a new approach was implemented based on analyzing the working endpoints (searchGames and getGameDetails).
+
+#### Changes Made
+1. Cloud Functions Architecture:
+   - Converted getCacheMetrics and initializeCache from onCall to onRequest functions
+   - Added explicit CORS headers handling using setCorsHeaders helper
+   - Implemented token-based authentication with Bearer scheme
+   - Updated error handling to use v2 HttpsError
+
+2. Client-Side Implementation:
+   - Switched from Firebase callable functions to direct axios HTTP requests
+   - Added auth token in Authorization header
+   - Improved error handling with specific HTTP status codes
+   - Maintained existing retry logic for reliability
+
+3. Authentication Flow:
+   - Simplified auth context to only pass required uid
+   - Removed dependency on Firebase callable context
+   - Added proper token verification on server side
+
+4. Code Organization:
+   - Updated all Firebase Functions imports to use v2
+   - Removed legacy v1 functions references
+   - Aligned error handling patterns across all endpoints
+
+#### Technical Details
+```typescript
+// Server-side CORS headers
+const setCorsHeaders = (res: any) => {
+  res.set('Access-Control-Allow-Origin', ['http://localhost:5174', 'https://boardgameborrow.com']);
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+  res.set('Access-Control-Max-Age', '3600');
+};
+
+// Client-side request
+const getCacheMetrics = async (): Promise<CacheMetrics> => {
+  const idToken = await auth.currentUser?.getIdToken();
+  const response = await axios.get(
+    `${FUNCTIONS_BASE_URL}/getCacheMetrics`,
+    {
+      headers: {
+        Authorization: `Bearer ${idToken}`
+      }
+    }
+  );
+  return response.data;
+};
+```
+
+#### Rationale
+- Previous approach using onCall functions was causing SDK to fall back to HTTP
+- Working endpoints were already using onRequest with explicit CORS
+- Direct HTTP requests provide better control over headers and error handling
+- Token-based auth maintains security while being more explicit
+
+#### Testing Steps
+1. Log in as admin user
+2. Visit admin dashboard
+3. Verify cache metrics load without CORS errors
+4. Test cache initialization
+5. Monitor network tab for proper headers
+
+#### Known Limitations
+- Requires valid auth token for all requests
+- No WebSocket support (unlike Firebase callable)
+- Manual CORS handling required
+- Must maintain consistent auth header format
+
 ## Future Improvements
 1. Implement cache warming for popular categories
 2. Add cache invalidation strategies

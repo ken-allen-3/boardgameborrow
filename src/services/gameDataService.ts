@@ -68,8 +68,14 @@ export const gameDataService = {
     return Object.values(games)
       .filter(game => game.rank[category as keyof GameData['rank']] !== null)
       .sort((a, b) => {
-        const rankA = a.rank[category as keyof GameData['rank']] || Infinity;
-        const rankB = b.rank[category as keyof GameData['rank']] || Infinity;
+        const rankA = a.rank[category as keyof GameData['rank']];
+        const rankB = b.rank[category as keyof GameData['rank']];
+        // If both are null, consider them equal
+        if (rankA === null && rankB === null) return 0;
+        // If only one is null, put it at the end
+        if (rankA === null) return 1;
+        if (rankB === null) return -1;
+        // Otherwise compare the actual ranks
         return rankA - rankB;
       });
   },

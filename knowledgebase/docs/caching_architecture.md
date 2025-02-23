@@ -1,49 +1,29 @@
 # Game Data Caching Architecture
 
 ## Overview
-This document details the caching architecture implemented for board game data, designed to optimize performance and reduce API calls while ensuring data freshness.
+This document details the caching architecture implemented for board game data, designed to optimize performance while maintaining simplicity and reliability. The system uses a hybrid approach, combining local CSV data for fast initialization with optional Firebase caching for extended functionality.
 
 ## Architecture Components
 
-### 1. Cloud Functions Endpoints
+### 1. Local Cache System
 
-#### Cache Management Functions
-- `initializeCache`: Populates cache with initial game data
-  - Requires authentication
-  - Handles CORS automatically via httpsCallable
-  - Returns success/failure status with detailed messages
+#### CSV-Based Initialization
+- Primary data source: `boardgameranks6.csv`
+- Contains pre-populated game rankings by category
+- No authentication required
+- Zero network latency
+- Instant availability during onboarding
 
-- `getCacheMetrics`: Retrieves cache performance statistics
-  - Requires authentication
-  - Returns detailed metrics about cache usage
-  - Includes hit rates, memory usage, and refresh dates
+#### Memory Cache
+- `localGameCache`: Map<string, GameData[]>
+- Stores parsed CSV data by category
+- Provides immediate access to game data
+- Cleared on page refresh
+- No persistence requirements
 
-- `cleanupExpiredCache`: Scheduled cleanup of stale cache entries
-  - Runs every 24 hours
-  - Preserves frequently accessed games (10+ uses)
-  - Logs cleanup statistics
+### 2. Firebase Integration (Optional)
 
-All endpoints implement:
-- Authentication checks
-- Error handling with detailed logging
-- Performance monitoring
-- Event tracking
-
-### 2. Firebase Cache Collections
-
-#### Game Rankings Cache
-```
-/game-rankings/{category}/{month}
-├── games: GameData[]
-├── lastUpdated: timestamp
-├── source: 'bgg-api' | 'csv'
-└── metadata
-    ├── totalGames: number
-    ├── preservedGames: number
-    └── refreshDate: string
-```
-
-#### Game Details Cache
+#### Game Details Collection
 ```
 /game-details/{gameId}
 ├── gameData: GameData
@@ -51,100 +31,77 @@ All endpoints implement:
     ├── lastUpdated: timestamp
     ├── lastAccessed: timestamp
     ├── usageCount: number
-    ├── source: 'bgg-api' | 'csv' | 'ai-vision'
-    └── detectionConfidence?: number
+    └── source: 'bgg-api'
 ```
 
-#### Cache Events Collection
-```
-/cache-events/{eventId}
-├── type: 'hit' | 'miss' | 'error' | 'refresh'
-├── timestamp: number
-├── data: {
-│   ├── operation: string
-│   ├── duration: number
-│   ├── memoryUsage: number
-│   └── error?: string
-│ }
-└── metadata?: any
-```
+- Used for additional game details not in CSV
+- Accessed only when needed
+- Write operations through Cloud Functions only
+- Read operations require authentication
 
 ### 3. Client-Side Implementation
 
-#### Cache Service
-- Uses Firebase Functions SDK for all operations
-- Implements proper error handling
-- Provides detailed logging for debugging
-- Handles authentication automatically
+#### Game Data Service
+- Manages CSV data parsing and caching
+- Implements category-based filtering
+- Provides game ranking functionality
+- Handles fallback to Firebase when needed
 
-#### Admin Dashboard
-- Displays real-time cache metrics
-- Provides cache initialization controls
-- Shows detailed error messages
-- Includes loading states for operations
+#### Performance Features
+- Efficient CSV parsing
+- In-memory caching for fast access
+- Minimal network requests
+- No authentication delays
 
 ## Cache Operations
 
 ### Initialization Process
-1. Client calls `initializeCache` Cloud Function
-2. Function verifies authentication
-3. Checks if cache already exists
-4. For each game category:
-   - Fetches data from BGG API
-   - Stores in appropriate collections
-   - Updates metadata
-5. Logs operation results
+1. Clear local cache
+2. For each game category:
+   - Load category data from CSV
+   - Parse and filter games
+   - Store in localGameCache
+3. Return success status
 
-### Metrics Collection
-1. Client requests metrics via `getCacheMetrics`
-2. Function aggregates data from:
-   - Game details collection
-   - Game rankings collection
-   - Cache events collection
-3. Calculates:
-   - Total cached games
-   - Cache hit rate
-   - Memory usage
-   - Last refresh date
+### Data Access Flow
+1. Check localGameCache first
+2. If not found, try Firebase cache
+3. If still not found, fetch from CSV
+4. Update localGameCache with results
 
-### Cache Cleanup
-1. Scheduled function runs daily
-2. Identifies:
-   - Stale game details (not accessed in 24 hours)
-   - Infrequently used games (<10 accesses)
-   - Old rankings data
-3. Preserves:
-   - Frequently accessed games (10+ uses)
-   - Recently accessed games
-4. Logs cleanup statistics
+### Game Details Retrieval
+1. Check Firebase game-details collection
+2. If not found, fetch from BGG API
+3. Store results in Firebase
+4. Return game details to client
 
 ## Error Handling
 
-### Client-Side
-- Detailed error logging
-- User-friendly error messages
-- Automatic retry for transient errors
-- Loading state management
+### CSV Operations
+- Validate CSV format
+- Handle missing data gracefully
+- Provide fallback values
+- Log parsing errors
 
-### Server-Side
-- Authentication verification
-- Operation logging
-- Error event tracking
-- Performance monitoring
+### Firebase Operations
+- Handle authentication errors
+- Manage network failures
+- Implement retry logic
+- Track error patterns
 
-## Monitoring and Optimization
+## Performance Considerations
 
-### Performance Metrics
-- Cache hit/miss ratios
-- Operation durations
-- Memory usage
-- API rate limits
+### CSV Optimization
+- Efficient parsing algorithms
+- Minimal memory footprint
+- Quick category filtering
+- Fast sorting operations
 
-### Optimization Strategies
-- Preserve frequently used data
-- Clean up stale entries
-- Track usage patterns
-- Monitor memory usage
+### Memory Management
+- Clear cache when appropriate
+- Limit cached data size
+- Remove unused categories
+- Optimize data structures
 
 ## Related Documentation
 - [Cache Monitoring Setup](./cache_monitoring_setup.md)

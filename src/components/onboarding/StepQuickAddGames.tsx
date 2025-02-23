@@ -1,8 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Users, Clock } from 'lucide-react';
-import { gameDataService, type GameData } from '../../services/gameDataService';
 import { addGame } from '../../services/gameService';
 import { useAuth } from '../../contexts/AuthContext';
+import onboardingGames from '../../config/onboardingGames.json';
+
+interface GameData {
+  id: string;
+  name: string;
+  image: string;
+  playerCount: {
+    min: number;
+    max: number;
+  };
+  playTime: {
+    min: number;
+    max: number;
+  };
+}
+
 interface StepQuickAddGamesProps {
   selectedCategories: string[];
   onComplete: (selectedGames: GameData[]) => void;
@@ -10,41 +25,20 @@ interface StepQuickAddGamesProps {
   totalSteps: number;
 }
 
-type CategoryKey = keyof GameData['rank'];
-
-const categories: Array<{ key: CategoryKey; label: string }> = [
+const categories = [
   { key: 'strategy', label: 'Strategy Games' },
   { key: 'family', label: 'Family Games' },
   { key: 'party', label: 'Party Games' },
   { key: 'thematic', label: 'Thematic Games' },
   { key: 'abstracts', label: 'Abstract Games' },
-  { key: 'wargames', label: 'War Games' },
-  { key: 'childrens', label: "Children's Games" }
+  { key: 'wargames', label: 'War Games' }
 ];
 
 function StepQuickAddGames({ selectedCategories, onComplete, currentStep, totalSteps }: StepQuickAddGamesProps) {
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedGames, setSelectedGames] = useState<string[]>([]);
 
   // Filter categories to only show selected ones from previous step
   const filteredCategories = categories.filter(cat => selectedCategories.includes(cat.key));
-
-  useEffect(() => {
-    const loadGames = async () => {
-      await gameDataService.initializeCache();
-      
-      // Pre-fetch details for all games in selected categories
-      for (const category of filteredCategories) {
-        const games = gameDataService.getTopGamesForCategory(category.key, 20);
-        for (const game of games) {
-          await gameDataService.fetchGameDetails(game.id);
-        }
-      }
-
-      setIsLoading(false);
-    };
-    loadGames();
-  }, []);
 
   const toggleGameSelection = (gameId: string) => {
     setSelectedGames(prev => {
@@ -57,18 +51,16 @@ function StepQuickAddGames({ selectedCategories, onComplete, currentStep, totalS
     });
   };
 
-  const getTopGames = (category: CategoryKey) => {
-    return gameDataService.getTopGamesForCategory(category, 20);
+  const getTopGames = (category: string): GameData[] => {
+    return onboardingGames[category as keyof typeof onboardingGames] || [];
   };
 
-  const formatPlayTime = (game: ReturnType<typeof gameDataService.getGameById>) => {
-    if (!game?.playTime) return 'N/A';
+  const formatPlayTime = (game: GameData): string => {
     const { min, max } = game.playTime;
     return min === max ? `${min} min` : `${min}-${max} min`;
   };
 
-  const formatPlayerCount = (game: ReturnType<typeof gameDataService.getGameById>) => {
-    if (!game?.playerCount) return 'N/A';
+  const formatPlayerCount = (game: GameData): string => {
     const { min, max } = game.playerCount;
     return min === max ? `${min} players` : `${min}-${max} players`;
   };
@@ -82,7 +74,13 @@ function StepQuickAddGames({ selectedCategories, onComplete, currentStep, totalS
     }
 
     // Get full game data for selected games
-    const selectedGameData = selectedGames.map(id => gameDataService.getGameById(id)).filter(Boolean) as GameData[];
+    const selectedGameData = selectedGames.map(id => {
+      for (const category of Object.values(onboardingGames)) {
+        const game = category.find(g => g.id === id);
+        if (game) return game;
+      }
+      return null;
+    }).filter((game): game is GameData => game !== null);
     
     try {
       // Add games one at a time
@@ -112,11 +110,6 @@ function StepQuickAddGames({ selectedCategories, onComplete, currentStep, totalS
           <p className="text-gray-500 text-sm mb-6">No pressure to add everything now—you can update your library anytime!</p>
         </div>
         
-        {isLoading ? (
-          <div className="flex justify-center items-center min-h-[200px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-brand-blue-600 border-t-transparent"></div>
-          </div>
-        ) : (
           <div className="space-y-12">
             {filteredCategories.map(category => (
               <div key={category.key} className="category-section">
@@ -171,7 +164,6 @@ function StepQuickAddGames({ selectedCategories, onComplete, currentStep, totalS
               </div>
             ))}
           </div>
-        )}
       </div>
 
       {/* Fixed bottom bar - outside of loading condition */}

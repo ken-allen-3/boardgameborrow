@@ -1,0 +1,259 @@
+{
+  "strategy": [
+    {
+      "id": "224517",
+      "name": "Brass: Birmingham",
+      "image": "https://cf.geekdo-images.com/x3zxjr-Vw5iU4yDPg70Jgw__original/img/FpyxH41Y6_ROoePAilPNEhXnzO8=/0x0/filters:format(jpeg)/pic3490053.jpg",
+      "playerCount": { "min": 2, "max": 4 },
+      "playTime": { "min": 60, "max": 120 }
+    },
+    {
+      "id": "161936",
+      "name": "Pandemic Legacy: Season 1",
+      "image": "https://cf.geekdo-images.com/hxeYxBkgd1nwKkE_B-VZgg__original/img/HuBHXEGR1-RnHY7tQhj3RMYFZ1U=/0x0/filters:format(jpeg)/pic2452831.jpg",
+      "playerCount": { "min": 2, "max": 4 },
+      "playTime": { "min": 60, "max": 60 }
+    },
+    {
+      "id": "342942",
+      "name": "Ark Nova",
+      "image": "https://cf.geekdo-images.com/SoU8p28Sk1s8MSvoM4N8pQ__original/img/g4S8t1e3YQXIHcfGQ8Jd8Nv7Ugo=/0x0/filters:format(jpeg)/pic6293412.jpg",
+      "playerCount": { "min": 1, "max": 4 },
+      "playTime": { "min": 90, "max": 150 }
+    },
+    {
+      "id": "174430",
+      "name": "Gloomhaven",
+      "image": "https://cf.geekdo-images.com/sZYp_3BTDGjh2unaZfZmuA__original/img/7EXd6KLnNPFhVkY8-T5QyQI8EYk=/0x0/filters:format(jpeg)/pic2437871.jpg",
+      "playerCount": { "min": 1, "max": 4 },
+      "playTime": { "min": 60, "max": 120 }
+    },
+    {
+      "id": "233078",
+      "name": "Twilight Imperium: Fourth Edition",
+      "image": "https://cf.geekdo-images.com/CzwSm8i7tkLz6cBnrILZBg__original/img/bA8irydTCNlE38uFVGTt9fHEU1k=/0x0/filters:format(jpeg)/pic3727516.jpg",
+      "playerCount": { "min": 3, "max": 6 },
+      "playTime": { "min": 240, "max": 480 }
+    },
+    {
+      "id": "316554",
+      "name": "Dune: Imperium",
+      "image": "https://cf.geekdo-images.com/PhjygpWSo-0labGrPBMyyg__original/img/mZzaBAEEJpMlHWJwKO0hkSgCgzg=/0x0/filters:format(jpeg)/pic5666597.jpg",
+      "playerCount": { "min": 1, "max": 4 },
+      "playTime": { "min": 60, "max": 120 }
+    },
+    {
+      "id": "167791",
+      "name": "Terraforming Mars",
+      "image": "https://cf.geekdo-images.com/wg9oOLcsKvDesSUdZQ4rxw__original/img/thIqWDnH9utKuoKVEUqveDixprI=/0x0/filters:format(jpeg)/pic3536616.jpg",
+      "playerCount": { "min": 1, "max": 5 },
+      "playTime": { "min": 120, "max": 120 }
+    },
+    {
+      "id": "162886",
+      "name": "Spirit Island",
+      "image": "https://cf.geekdo-images.com/a13ieMPP2s0KEaKNYmtH5w__original/img/wRv3ZAiWEA4VYu0hJd3wXMRGXxE=/0x0/filters:format(jpeg)/pic3615739.png",
+      "playerCount": { "min": 1, "max": 4 },
+      "playTime": { "min": 90, "max": 120 }
+    },
+    {
+      "id": "220308",
+      "name": "Gaia Project",
+      "image": "https://cf.geekdo-images.com/hGWFm3hbMlCDsfCsauOQ4g__original/img/NyqXmHh_p5wVkxjGnYxKKmIUkqY=/0x0/filters:format(jpeg)/pic5375625.png",
+      "playerCount": { "min": 1, "max": 4 },
+      "playTime": { "min": 60, "max": 150 }
+    },
+    {
+      "id": "12333",
+      "name": "Twilight Struggle",
+      "image": "https://cf.geekdo-images.com/pNCiUUphnoeWOYfsWq0kng__original/img/Pn-0qu-F_24b-PI1KCuOBmDPwkY=/0x0/filters:format(jpeg)/pic361592.jpg",
+      "playerCount": { "min": 2, "max": 2 },
+      "playTime": { "min": 180, "max": 180 }
+    }
+  ],
+  "family": [
+    {
+      "id": "266192",
+      "name": "Wingspan",
+      "image": "https://cf.geekdo-images.com/yLZJCVLlIx4c7eJEWUNJ7w__original/img/cI782Zis9cT66j2MjSHKJHhlaYA=/0x0/filters:format(jpeg)/pic4458123.jpg",
+      "playerCount": { "min": 1, "max": 5 },
+      "playTime": { "min": 40, "max": 70 }
+    },
+    {
+      "id": "324856",
+      "name": "The Crew: Mission Deep Sea",
+      "image": "https://cf.geekdo-images.com/VuBqZ1sMaDBMI8GE5v0yRQ__original/img/HlgR6_KD5BiRFHZhE2hA6FhHHLs=/0x0/filters:format(jpeg)/pic5988903.jpg",
+      "playerCount": { "min": 2, "max": 5 },
+      "playTime": { "min": 20, "max": 20 }
+    },
+    {
+      "id": "199792",
+      "name": "Everdell",
+      "image": "https://cf.geekdo-images.com/fjE7V5LNq31yVEW_yuqI-Q__original/img/Cf_mYxR_GgRVryCzuAWh58nbgO0=/0x0/filters:format(jpeg)/pic3918905.png",
+      "playerCount": { "min": 1, "max": 4 },
+      "playTime": { "min": 40, "max": 80 }
+    },
+    {
+      "id": "373106",
+      "name": "Sky Team",
+      "image": "https://cf.geekdo-images.com/85UiLaP3FqhyXo8QOQEjHQ__original/img/Hs8YH_KKEHvGXNqHVqELGQYPvZE=/0x0/filters:format(jpeg)/pic7104873.jpg",
+      "playerCount": { "min": 2, "max": 2 },
+      "playTime": { "min": 20, "max": 20 }
+    },
+    {
+      "id": "366013",
+      "name": "Heat: Pedal to the Metal",
+      "image": "https://cf.geekdo-images.com/85UiLaP3FqhyXo8QOQEjHQ__original/img/Hs8YH_KKEHvGXNqHVqELGQYPvZE=/0x0/filters:format(jpeg)/pic7104873.jpg",
+      "playerCount": { "min": 1, "max": 6 },
+      "playTime": { "min": 30, "max": 60 }
+    }
+  ],
+  "party": [
+    {
+      "id": "240980",
+      "name": "Blood on the Clocktower",
+      "image": "https://cf.geekdo-images.com/PzVFp0Bvz9KCMkiY34H6UQ__original/img/5Qc7uFyqXXFxDQrHH8GxPH_kZKc=/0x0/filters:format(jpeg)/pic6782614.jpg",
+      "playerCount": { "min": 5, "max": 20 },
+      "playTime": { "min": 120, "max": 120 }
+    },
+    {
+      "id": "225694",
+      "name": "Decrypto",
+      "image": "https://cf.geekdo-images.com/hHZWXnUTMYDd_KTAM6Jwxg__original/img/0iJKxC_dqS_vk-yXGhKoxtQY5Yk=/0x0/filters:format(jpeg)/pic3759421.jpg",
+      "playerCount": { "min": 3, "max": 8 },
+      "playTime": { "min": 30, "max": 45 }
+    },
+    {
+      "id": "254640",
+      "name": "Just One",
+      "image": "https://cf.geekdo-images.com/ocAuKT9hp_DJHQz9KiKBkw__original/img/YQhV3bl3GVXq_PYEsT_7Qe8EcwY=/0x0/filters:format(jpeg)/pic4268499.jpg",
+      "playerCount": { "min": 3, "max": 7 },
+      "playTime": { "min": 20, "max": 20 }
+    },
+    {
+      "id": "178900",
+      "name": "Codenames",
+      "image": "https://cf.geekdo-images.com/F_KDEu0GjdClml8N7c8Imw__original/img/RC3LrEXDXTt_oWJGKWqEKQX8yKQ=/0x0/filters:format(jpeg)/pic2582929.jpg",
+      "playerCount": { "min": 2, "max": 8 },
+      "playTime": { "min": 15, "max": 15 }
+    },
+    {
+      "id": "165722",
+      "name": "KLASK",
+      "image": "https://cf.geekdo-images.com/DUwUkbDHIOGSquxbvKaJHQ__original/img/Xt7mVtPuTBNOHDVGBNAVZGJBPnE=/0x0/filters:format(jpeg)/pic2627442.jpg",
+      "playerCount": { "min": 2, "max": 2 },
+      "playTime": { "min": 10, "max": 10 }
+    }
+  ],
+  "thematic": [
+    {
+      "id": "161936",
+      "name": "Pandemic Legacy: Season 1",
+      "image": "https://cf.geekdo-images.com/hxeYxBkgd1nwKkE_B-VZgg__original/img/HuBHXEGR1-RnHY7tQhj3RMYFZ1U=/0x0/filters:format(jpeg)/pic2452831.jpg",
+      "playerCount": { "min": 2, "max": 4 },
+      "playTime": { "min": 60, "max": 60 }
+    },
+    {
+      "id": "174430",
+      "name": "Gloomhaven",
+      "image": "https://cf.geekdo-images.com/sZYp_3BTDGjh2unaZfZmuA__original/img/7EXd6KLnNPFhVkY8-T5QyQI8EYk=/0x0/filters:format(jpeg)/pic2437871.jpg",
+      "playerCount": { "min": 1, "max": 4 },
+      "playTime": { "min": 60, "max": 120 }
+    },
+    {
+      "id": "233078",
+      "name": "Twilight Imperium: Fourth Edition",
+      "image": "https://cf.geekdo-images.com/CzwSm8i7tkLz6cBnrILZBg__original/img/bA8irydTCNlE38uFVGTt9fHEU1k=/0x0/filters:format(jpeg)/pic3727516.jpg",
+      "playerCount": { "min": 3, "max": 6 },
+      "playTime": { "min": 240, "max": 480 }
+    },
+    {
+      "id": "167355",
+      "name": "Nemesis",
+      "image": "https://cf.geekdo-images.com/tAqLpWxQ0Oo3GaPP3MER1g__original/img/CCJN_82K5MKPkQjIJGYxz-0fuSI=/0x0/filters:format(jpeg)/pic5073276.jpg",
+      "playerCount": { "min": 1, "max": 5 },
+      "playTime": { "min": 90, "max": 180 }
+    },
+    {
+      "id": "266507",
+      "name": "Clank! Legacy: Acquisitions Incorporated",
+      "image": "https://cf.geekdo-images.com/hN1K2gdORAqGLInNVEzi0Q__original/img/6WoFXZo6_Ue5nDz9Q_pOxKEyLN0=/0x0/filters:format(jpeg)/pic4885780.jpg",
+      "playerCount": { "min": 2, "max": 4 },
+      "playTime": { "min": 60, "max": 120 }
+    }
+  ],
+  "abstracts": [
+    {
+      "id": "295947",
+      "name": "Cascadia",
+      "image": "https://cf.geekdo-images.com/MjeJZfulbsM1DSV3DrGJYA__original/img/B374C04Eip7fmQBHjG2mLFb5e8E=/0x0/filters:format(jpeg)/pic5100691.jpg",
+      "playerCount": { "min": 1, "max": 4 },
+      "playTime": { "min": 30, "max": 45 }
+    },
+    {
+      "id": "230802",
+      "name": "Azul",
+      "image": "https://cf.geekdo-images.com/tz19PfklMdAdjxV9WArraA__original/img/AGAFmkXvVxCQ9oHNN5UZwZsE1Dk=/0x0/filters:format(jpeg)/pic3718275.jpg",
+      "playerCount": { "min": 2, "max": 4 },
+      "playTime": { "min": 30, "max": 45 }
+    },
+    {
+      "id": "249259",
+      "name": "War Chest",
+      "image": "https://cf.geekdo-images.com/Vh6VhXs4_8EwgV9UMXnr8g__original/img/Hy6-6RIrHPEyb87lqMoWX-_TZbc=/0x0/filters:format(jpeg)/pic4045498.jpg",
+      "playerCount": { "min": 2, "max": 4 },
+      "playTime": { "min": 30, "max": 60 }
+    },
+    {
+      "id": "163413",
+      "name": "Patchwork",
+      "image": "https://cf.geekdo-images.com/wLW7pFn0--20lEizEz5p3A__original/img/qMGOmG4G-2KVUGwVu1VQqD_3o38=/0x0/filters:format(jpeg)/pic2270442.jpg",
+      "playerCount": { "min": 2, "max": 2 },
+      "playTime": { "min": 15, "max": 30 }
+    },
+    {
+      "id": "7805",
+      "name": "YINSH",
+      "image": "https://cf.geekdo-images.com/dUh-sb2V8CyDjBDvwzf-qg__original/img/Yv5kV6ZPQHgZE_il8GmvE2F_qxk=/0x0/filters:format(jpeg)/pic154525.jpg",
+      "playerCount": { "min": 2, "max": 2 },
+      "playTime": { "min": 30, "max": 60 }
+    }
+  ],
+  "wargames": [
+    {
+      "id": "115746",
+      "name": "War of the Ring: Second Edition",
+      "image": "https://cf.geekdo-images.com/ImPgGag98W6gpV1KV812aA__original/img/UiRaNkHHoIJqKSbqjDPjVQCDx1I=/0x0/filters:format(jpeg)/pic1215633.jpg",
+      "playerCount": { "min": 2, "max": 4 },
+      "playTime": { "min": 150, "max": 180 }
+    },
+    {
+      "id": "187645",
+      "name": "Star Wars: Rebellion",
+      "image": "https://cf.geekdo-images.com/7FxeJKoYETxoqZSpbo7mdQ__original/img/HlDb9F4bqhTZ0FSwSVyYlHH2xXc=/0x0/filters:format(jpeg)/pic2737530.png",
+      "playerCount": { "min": 2, "max": 4 },
+      "playTime": { "min": 180, "max": 240 }
+    },
+    {
+      "id": "12333",
+      "name": "Twilight Struggle",
+      "image": "https://cf.geekdo-images.com/pNCiUUphnoeWOYfsWq0kng__original/img/Pn-0qu-F_24b-PI1KCuOBmDPwkY=/0x0/filters:format(jpeg)/pic361592.jpg",
+      "playerCount": { "min": 2, "max": 2 },
+      "playTime": { "min": 180, "max": 180 }
+    },
+    {
+      "id": "237182",
+      "name": "Root",
+      "image": "https://cf.geekdo-images.com/JUAUWaVUzeBgzirhZNmHHw__original/img/ZF-dta5ffawuKAkAt2HB_i5tr4A=/0x0/filters:format(jpeg)/pic4254509.jpg",
+      "playerCount": { "min": 2, "max": 4 },
+      "playTime": { "min": 60, "max": 90 }
+    },
+    {
+      "id": "192135",
+      "name": "Too Many Bones",
+      "image": "https://cf.geekdo-images.com/PhjygpWSo-0labGrPBMyyg__original/img/mZzaBAEEJpMlHWJwKO0hkSgCgzg=/0x0/filters:format(jpeg)/pic5666597.jpg",
+      "playerCount": { "min": 1, "max": 4 },
+      "playTime": { "min": 60, "max": 120 }
+    }
+  ]
+}

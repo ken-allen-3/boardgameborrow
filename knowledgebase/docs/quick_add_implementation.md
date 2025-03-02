@@ -92,6 +92,81 @@ useEffect(() => {
 - Ensure snap scrolling has fallbacks for older browsers
 - Test horizontal scrolling on both desktop and mobile devices
 
+## CSV Data Integration
+
+### Background
+- The application now uses CSV data for game information instead of direct API calls
+- This change improves performance and reduces API dependencies
+- See [Cache System Fix - January 2025](./cache_system_fix_2025_01.md) for details on this architectural change
+
+### Implementation Details
+- The StepQuickAddGames component continues to use onboardingGames.json for UI display
+- When adding games to a user's collection, the data format must match the GameData interface
+- The handleComplete function transforms the selected game data to include the rank field required by the GameData interface
+
+### Code Example
+```typescript
+// Example of properly formatted game data for addGame after CSV switch
+const gameData = {
+  id: game.id,
+  name: game.name,
+  image: game.image || '',
+  playerCount: {
+    min: game.playerCount?.min || 1,
+    max: game.playerCount?.max || 1
+  },
+  playTime: {
+    min: game.playTime?.min || 0,
+    max: game.playTime?.max || 0
+  },
+  // Required after CSV switch
+  rank: {
+    abstracts: null,
+    cgs: null,
+    childrens: null,
+    family: null,
+    party: null,
+    strategy: null,
+    thematic: null,
+    wargames: null
+  },
+  type: 'boardgame'
+};
+```
+
+### Common Issues
+- Missing rank field in GameData objects
+- Incorrect data structure when passing to addGame
+- Mismatch between onboardingGames.json structure and GameData interface
+
+### Race Condition Fix
+When adding multiple games to a user's collection, a race condition can occur with concurrent Firebase writes. This happens because each call to `addGame()`:
+1. Reads the current games array
+2. Adds a new game to it
+3. Writes the entire array back
+
+When multiple calls happen concurrently through Promise.all(), only the last write "wins".
+
+**Solution**: Process games sequentially instead of concurrently:
+
+```typescript
+// INCORRECT: Using Promise.all() creates race conditions
+await Promise.all(selectedGameData.map(game => 
+  addGame(currentUser.email!, {
+    // game data...
+  })
+));
+
+// CORRECT: Process sequentially to avoid race conditions
+for (const game of selectedGameData) {
+  await addGame(currentUser.email!, {
+    // game data...
+  });
+}
+```
+
+This ensures each game is added one after another, with each operation seeing the updated state from the previous operation.
+
 ## Future Improvements
 - Consider implementing virtual scrolling for large game lists
 - Add loading states for individual game cards

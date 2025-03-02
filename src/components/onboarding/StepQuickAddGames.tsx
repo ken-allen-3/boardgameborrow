@@ -83,18 +83,39 @@ function StepQuickAddGames({ selectedCategories, onComplete, currentStep, totalS
     }).filter((game): game is OnboardingGame => game !== null);
     
     try {
-      // Add games one at a time
-      await Promise.all(selectedGameData.map(game => 
-        addGame(currentUser.email!, {
+      // Process games sequentially to avoid race conditions
+      console.log(`Adding ${selectedGameData.length} games sequentially`);
+      
+      for (const game of selectedGameData) {
+        console.log(`Adding game: ${game.name} (${game.id})`);
+        await addGame(currentUser.email!, {
+          id: game.id,
           name: game.name,
-          image_url: game.image || '',
-          min_players: game.playerCount?.min || 1,
-          max_players: game.playerCount?.max || 1,
-          min_playtime: game.playTime?.min || 0,
-          max_playtime: game.playTime?.max || 0,
+          image: game.image || '',
+          playerCount: {
+            min: game.playerCount?.min || 1,
+            max: game.playerCount?.max || 1
+          },
+          playTime: {
+            min: game.playTime?.min || 0,
+            max: game.playTime?.max || 0
+          },
+          // Add empty rank field to match GameData interface
+          rank: {
+            abstracts: null,
+            cgs: null,
+            childrens: null,
+            family: null,
+            party: null,
+            strategy: null,
+            thematic: null,
+            wargames: null
+          },
           type: 'boardgame'
-        } as any)
-      ));
+        });
+      }
+      
+      console.log(`Successfully added ${selectedGameData.length} games`);
       onComplete(selectedGameData);
     } catch (error) {
       console.error('Failed to save games:', error);

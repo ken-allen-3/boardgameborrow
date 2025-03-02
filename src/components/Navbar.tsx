@@ -38,13 +38,13 @@ function Navbar() {
   };
 
   const NavGroup = ({ children, title, className = "" }: NavGroupProps) => (
-    <div className={`flex flex-col md:flex-row md:items-center md:space-x-2 ${className}`}>
+    <div className={`flex flex-col md:flex-row md:items-center md:space-x-4 ${className}`}>
       {title && (
         <div className="px-4 py-2 text-xs font-semibold text-brand-gray-500 bg-brand-gray-50 md:hidden">
           {title}
         </div>
       )}
-      <div className="flex flex-col md:flex-row md:items-center md:space-x-2">
+      <div className="flex flex-col md:flex-row md:items-center md:space-x-4">
         {children}
       </div>
     </div>
@@ -57,7 +57,7 @@ function Navbar() {
     
     const content = (
       <>
-        <Icon className={`${disabled ? 'h-5 w-5' : 'h-6 w-6 md:h-5 md:w-5'}`} />
+        <Icon className="h-5 w-5" />
         <span>{label}</span>
         {badge}
       </>
@@ -96,7 +96,7 @@ function Navbar() {
   const NavLinks = () => (
     <>
       {/* Core Features Group */}
-      <NavGroup title="Core Features" className="md:pr-6 md:border-r border-brand-gray-200">
+      <NavGroup title="Core Features" className="md:pr-4 md:border-r border-brand-gray-200">
         <NavLink
           to="/my-games"
           icon={Library}
@@ -116,14 +116,7 @@ function Navbar() {
       </NavGroup>
 
       {/* Social Features Group */}
-      <NavGroup title="Social" className="border-t md:border-t-0 md:px-6 md:border-r border-brand-gray-200">
-        <NavLink
-          icon={Users}
-          label="Groups"
-          disabled={true}
-          badge={<span className="text-xs bg-brand-blue-100 text-brand-blue-600 px-2 py-0.5 rounded-full">Coming Soon!</span>}
-          data-tutorial="groups-link"
-        />
+      <NavGroup title="Social" className="border-t md:border-t-0 md:px-4 md:border-r border-brand-gray-200">
         <NavLink
           to="/friends"
           icon={UserPlus}
@@ -139,20 +132,24 @@ function Navbar() {
       </NavGroup>
 
       {/* User Features Group */}
-      <NavGroup title="User" className="border-t md:border-t-0 md:px-6 md:border-r border-brand-gray-200">
-        <NavLink
+      <NavGroup title="User" className="border-t md:border-t-0 md:px-4 md:border-r border-brand-gray-200">
+        <Link
           to="/profile"
-          icon={UserCircle}
-          label="Profile"
+          className="nav-link p-4 flex items-center md:px-2 md:py-2 relative transition-colors duration-150 hover:bg-brand-gray-50 md:hover:bg-transparent md:hover:text-brand-blue-600"
           onClick={() => setIsOpen(false)}
-        />
-        <div className="nav-link gap-3 p-4 flex items-center md:p-3 md:gap-2">
+          role="menuitem"
+          aria-label="Profile"
+        >
+          <UserCircle className="h-5 w-5" />
+          <span className="md:hidden">Profile</span>
+        </Link>
+        <div className="nav-link gap-3 p-4 flex items-center md:p-2 md:gap-2">
           <NotificationsDropdown />
         </div>
       </NavGroup>
 
       {/* System Features Group */}
-      <NavGroup title="System" className="border-t md:border-t-0 md:pl-6">
+      <NavGroup title="System" className="border-t md:border-t-0 md:pl-4">
         <NavLink
           to="/roadmap"
           icon={Trello}
@@ -193,7 +190,7 @@ function Navbar() {
 
   return (
     <nav className="bg-white border-b border-brand-gray-200 relative z-30">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-full overflow-x-hidden">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <Link to="/" className="flex items-center gap-2">
@@ -213,7 +210,7 @@ function Navbar() {
           {currentUser && (
             <>
               {/* Desktop Navigation */}
-              <div className="hidden md:flex md:flex-row items-center md:space-x-6">
+              <div className="hidden md:flex md:flex-row items-center md:space-x-4">
                 <NavLinks />
               </div>
 

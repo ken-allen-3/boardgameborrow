@@ -33,6 +33,12 @@
         ".read": "auth != null && (auth.token.email.replace('.', ',') === $userEmail || root.child('users').child(auth.token.email.replace('.', ',')).child('isAdmin').val() === true)",
         ".write": "auth != null && (auth.token.email.replace('.', ',') === $userEmail || root.child('users').child(auth.token.email.replace('.', ',')).child('isAdmin').val() === true)"
       }
+    },
+    "borrowRequests": {
+      ".read": "auth != null",
+      "$requestId": {
+        ".write": "auth != null && (newData.child('borrowerId').val() === auth.token.email || newData.child('ownerId').val() === auth.token.email || root.child('users').child(auth.token.email.replace('.', ',')).child('isAdmin').val() === true)"
+      }
     }
   }
 }

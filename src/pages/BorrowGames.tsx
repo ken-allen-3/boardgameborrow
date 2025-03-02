@@ -62,7 +62,15 @@ function BorrowGamesPage() {
       setError(null);
     } catch (err) {
       console.error('Error loading borrow requests:', err);
-      setError('Failed to load your borrow requests');
+      // Check if it's a permission error
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      if (errorMessage.includes('Permission denied')) {
+        // For permission errors, just set empty requests without showing an error
+        setBorrowRequests([]);
+        setError(null);
+      } else {
+        setError('Failed to load your borrow requests');
+      }
     }
   };
 
@@ -75,17 +83,36 @@ function BorrowGamesPage() {
     const usersRef = ref(db, 'users');
     
     try {
-      const [gamesSnapshot, usersSnapshot, friendsList, currentUserProfile] = await Promise.all([
+      // Get games and users data first
+      const [gamesSnapshot, usersSnapshot] = await Promise.all([
         get(gamesRef),
-        get(usersRef),
-        getFriendsList(currentUser.email.replace(/\./g, ',')),
-        getUserProfile(currentUser.email)
+        get(usersRef)
       ]);
+      
+      // Try to get friends list and user profile, but handle errors gracefully
+      let friendsList: any[] = [];
+      let currentUserProfile: any = {};
+      
+      try {
+        friendsList = await getFriendsList(currentUser.email.replace(/\./g, ','));
+      } catch (err) {
+        console.error('Error getting friends list:', err);
+        // Just use an empty friends list on error
+        friendsList = [];
+      }
+      
+      try {
+        currentUserProfile = await getUserProfile(currentUser.email);
+      } catch (err) {
+        console.error('Error getting user profile:', err);
+        // Use an empty profile on error
+        currentUserProfile = {};
+      }
 
       const allGames: Game[] = [];
       const users = usersSnapshot.val() || {};
       const friendEmails = new Set(friendsList.map(friend => friend.email));
-      const userCoordinates = currentUserProfile.coordinates;
+      const userCoordinates = currentUserProfile?.coordinates;
       
       if (gamesSnapshot.exists()) {
         // Convert the games object to an array of entries and iterate
@@ -146,7 +173,15 @@ function BorrowGamesPage() {
       setError(null);
     } catch (err) {
       console.error('Error loading games:', err);
-      setError('Failed to load available games. Please try again.');
+      // Check if it's a permission error
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      if (errorMessage.includes('Permission denied')) {
+        // For permission errors, just set empty games without showing an error
+        setGames([]);
+        setError(null);
+      } else {
+        setError('Failed to load available games. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

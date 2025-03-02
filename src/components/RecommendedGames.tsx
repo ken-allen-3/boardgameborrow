@@ -44,6 +44,8 @@ const RecommendedGames: React.FC<RecommendedGamesProps> = ({
       setRecommendations(games);
     } catch (error) {
       console.error('Failed to load recommendations:', error);
+      // Just set empty recommendations on error - don't show an error message
+      setRecommendations([]);
     } finally {
       setLoading(false);
     }

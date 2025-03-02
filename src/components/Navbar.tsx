@@ -133,18 +133,15 @@ function Navbar() {
 
       {/* User Features Group */}
       <NavGroup title="User" className="border-t md:border-t-0 md:px-4 md:border-r border-brand-gray-200">
-        <Link
+        <NavLink
           to="/profile"
-          className="nav-link p-4 flex items-center md:px-2 md:py-2 relative transition-colors duration-150 hover:bg-brand-gray-50 md:hover:bg-transparent md:hover:text-brand-blue-600"
+          icon={UserCircle}
+          label="Profile"
           onClick={() => setIsOpen(false)}
-          role="menuitem"
-          aria-label="Profile"
-        >
-          <UserCircle className="h-5 w-5" />
-          <span className="md:hidden">Profile</span>
-        </Link>
+        />
         <div className="nav-link gap-3 p-4 flex items-center md:p-2 md:gap-2">
           <NotificationsDropdown />
+          <span className="md:hidden">Notifications</span>
         </div>
       </NavGroup>
 

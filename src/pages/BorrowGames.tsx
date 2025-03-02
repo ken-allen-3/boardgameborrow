@@ -58,6 +58,8 @@ function BorrowGamesPage() {
     try {
       const requests = await getUserBorrowRequests(currentUser.email);
       setBorrowRequests(requests);
+      // Remove any existing error message if the requests loaded successfully
+      setError(null);
     } catch (err) {
       console.error('Error loading borrow requests:', err);
       setError('Failed to load your borrow requests');

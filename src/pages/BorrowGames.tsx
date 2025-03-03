@@ -109,7 +109,44 @@ function BorrowGamesPage() {
   const { currentUser } = useAuth();
 
   useEffect(() => {
-    if (!currentUser) return;
+    console.log('BorrowGamesPage useEffect - currentUser:', currentUser?.email);
+    if (!currentUser) {
+      console.log('No user is authenticated, cannot load games');
+      return;
+    }
+    
+    // Check if we can access the database directly
+    const testDatabaseAccess = async () => {
+      try {
+        const db = getDatabase();
+        console.log('Testing direct database access...');
+        
+        // Try to access the user's own games
+        if (!currentUser.email) {
+          console.log('User email is null, cannot access games');
+          return;
+        }
+        const userGamesRef = ref(db, `games/${currentUser.email.replace(/\./g, ',')}`);
+        const userGamesSnapshot = await get(userGamesRef);
+        console.log('User games access result:', {
+          exists: userGamesSnapshot.exists(),
+          data: userGamesSnapshot.exists() ? 'Data found' : 'No data'
+        });
+        
+        // Try to access all users
+        const usersRef = ref(db, 'users');
+        const usersSnapshot = await get(usersRef);
+        console.log('Users access result:', {
+          exists: usersSnapshot.exists(),
+          userCount: usersSnapshot.exists() ? Object.keys(usersSnapshot.val()).length : 0
+        });
+      } catch (err) {
+        console.error('Error testing database access:', err);
+      }
+    };
+    
+    testDatabaseAccess();
+    
     Promise.all([
       loadAllGames(),
       loadBorrowRequests(),
@@ -160,15 +197,41 @@ function BorrowGamesPage() {
     setLoading(true);
     
     const db = getDatabase();
-    const gamesRef = ref(db, 'games');
+    
+    // Check if we're connected to Firebase
+    console.log('Firebase database instance:', db);
+    
+    // Try to list all top-level paths in the database to see if 'games' exists
+    try {
+      const rootRef = ref(db, '/');
+      const rootSnapshot = await get(rootRef);
+      if (rootSnapshot.exists()) {
+        console.log('Database root paths:', Object.keys(rootSnapshot.val()));
+      } else {
+        console.log('Database root is empty or not accessible');
+      }
+    } catch (err) {
+      console.error('Error accessing database root:', err);
+    }
+    
+    // We can't read all games at once due to permission rules
+    // Instead, we need to read users first, then read each user's games individually
     const usersRef = ref(db, 'users');
     
     try {
-      // Get games and users data first
-      const [gamesSnapshot, usersSnapshot] = await Promise.all([
-        get(gamesRef),
-        get(usersRef)
-      ]);
+      console.log('Starting to load games from Firebase...');
+      
+      // Get users data first
+      const usersSnapshot = await get(usersRef);
+      
+      console.log('Users snapshot exists:', usersSnapshot.exists());
+      
+      if (!usersSnapshot.exists()) {
+        console.log('No users found in database');
+        setGames([]);
+        setLoading(false);
+        return;
+      }
       
       // Try to get friends list and user profile, but handle errors gracefully
       let friendsList: any[] = [];
@@ -207,18 +270,36 @@ function BorrowGamesPage() {
         console.log('User coordinates:', userCoordinates);
       }
       
-      if (gamesSnapshot.exists()) {
-        // Convert the games object to an array of entries and iterate
-        Object.entries(gamesSnapshot.val()).forEach(([userKey, userGames]) => {
+      // Process each user's games individually
+      let gameCount = 0;
+      const userKeys = Object.keys(users);
+      console.log(`Found ${userKeys.length} users to process`);
+      
+      // Process each user's games sequentially to avoid too many parallel requests
+      for (const userKey of userKeys) {
+        if (userKey === currentUser.email.replace(/\./g, ',')) continue; // Skip current user's games
+        
+        try {
+          // Get this user's games
+          const userGamesRef = ref(db, `games/${userKey}`);
+          const userGamesSnapshot = await get(userGamesRef);
+          
+          if (!userGamesSnapshot.exists()) {
+            console.log(`No games found for user ${userKey}`);
+            continue;
+          }
+          
+          const userGames = userGamesSnapshot.val();
+          console.log(`Processing games for user ${userKey.replace(/,/g, '.')}:`, 
+            Array.isArray(userGames) ? `${userGames.length} games` : 'Not an array');
           const userEmail = userKey.replace(/,/g, '.');
-          if (userEmail === currentUser.email) return; // Skip current user's games
-
-          const games = userGames as any[];
           const userInfo = users[userKey] || {};
           const isFriend = friendEmails.has(userEmail);
           
-          if (Array.isArray(games)) {
-            games.forEach((game, index) => {
+          if (Array.isArray(userGames)) {
+            console.log(`User ${userEmail} has ${userGames.length} games`);
+            userGames.forEach((game, index) => {
+              gameCount++;
               if (game.status === 'available') {
                 // Calculate distance if both user and owner have coordinates
                 let distance: number | undefined;
@@ -280,9 +361,12 @@ function BorrowGamesPage() {
               }
             });
           }
-        });
+        } catch (err) {
+          console.error(`Error loading games for user ${userKey}:`, err);
+        }
       }
       
+      console.log(`Processed ${gameCount} total games, added ${allGames.length} to display list`);
       setGames(allGames);
       setError(null);
     } catch (err) {

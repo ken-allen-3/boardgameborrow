@@ -36,7 +36,14 @@ function CoverImageSelector({ title, onImageSelect, selectedImage }: CoverImageS
     'https://images.unsplash.com/photo-1611371805429-8b5c1b2c34ba?auto=format&fit=crop&q=80&w=800&h=400'
   ];
 
-  const images = suggestedImages.length > 0 ? suggestedImages : defaultImages;
+  // Get 4 images to display at a time
+  const getImagesToDisplay = () => {
+    const allImages = suggestedImages.length > 0 ? suggestedImages : defaultImages;
+    // Return only the first 4 images
+    return allImages.slice(0, 4);
+  };
+
+  const images = getImagesToDisplay();
 
   return (
     <div>
@@ -44,7 +51,7 @@ function CoverImageSelector({ title, onImageSelect, selectedImage }: CoverImageS
         Cover Image
       </label>
       
-      <div className="grid grid-cols-3 gap-3 mb-3">
+      <div className="grid grid-cols-4 gap-3 mb-3">
         {images.map((imageUrl, index) => (
           <button
             key={index}

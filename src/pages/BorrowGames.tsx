@@ -573,28 +573,39 @@ function BorrowGamesPage() {
         hasFriends={hasFriends}
       />
 
-      {/* Active Requests Section */}
-      {borrowRequests.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">My Borrow Requests</h2>
-          <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory">
-            {borrowRequests.map((request) => {
-              const game = games.find(g => g.id === request.gameId);
-              if (!game) return null;
+  {/* Active Requests Section */}
+  {(() => {
+    // Filter requests to only include those with matching games
+    const validRequests = borrowRequests.filter(request => 
+      games.some(g => g.id === request.gameId)
+    );
+    
+    // Only render if there are valid requests
+    if (validRequests.length === 0) return null;
+    
+    return (
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">My Borrow Requests</h2>
+        <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory">
+          {validRequests.map((request) => {
+            const game = games.find(g => g.id === request.gameId);
+            // This check should always pass due to our filter above
+            if (!game) return null;
 
-              return (
-                <GameCard
-                  key={request.id}
-                  game={game}
-                  onSelect={handleGameSelect}
-                  requestStatus={request.status}
-                  onSendFriendRequest={handleSendFriendRequest}
-                />
-              );
-            })}
-          </div>
+            return (
+              <GameCard
+                key={request.id}
+                game={game}
+                onSelect={handleGameSelect}
+                requestStatus={request.status}
+                onSendFriendRequest={handleSendFriendRequest}
+              />
+            );
+          })}
         </div>
-      )}
+      </div>
+    );
+  })()}
 
       {/* Show different game sections based on view mode */}
       {viewMode === 'friends' ? (

@@ -13,6 +13,7 @@ import GameList from '../components/GameList';
 import AddGameButton from '../components/AddGameButton';
 import ErrorMessage from '../components/ErrorMessage';
 import SuccessMessage from '../components/SuccessMessage';
+import RecommendedGames from '../components/RecommendedGames';
 
 const MyGames = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -142,6 +143,15 @@ const MyGames = () => {
         {error && <ErrorMessage message={error} />}
         {successMessage && <SuccessMessage message={successMessage} />}
       </div>
+
+      {/* Recommended Games Section */}
+      {currentUser?.email && (
+        <RecommendedGames
+          userEmail={currentUser.email}
+          userGameCount={games.length}
+          onSelectGame={() => {}}
+        />
+      )}
 
       <GameList 
         games={games} 

@@ -168,14 +168,48 @@ interface Group {
 {
   "rules": {
     "borrowRequests": {
+      ".read": "auth != null",
       "$requestId": {
-        ".read": "auth != null && (data.child('borrowerId').val() === auth.uid || data.child('ownerId').val() === auth.uid)",
-        ".write": "auth != null && (!data.exists() || data.child('borrowerId').val() === auth.uid || data.child('ownerId').val() === auth.uid)"
+        ".write": "auth != null && (newData.child('borrowerId').val() === auth.token.email || newData.child('ownerId').val() === auth.token.email || root.child('users').child(auth.token.email.replace('.', ',')).child('isAdmin').val() === true)"
       }
     }
   }
 }
 ```
+
+> **Note**: The read rule allows any authenticated user to read all borrow requests, and then the application filters the requests to show only those relevant to the current user. This prevents permission errors when a user has 0 active borrow requests.
+
+### Ratings
+```javascript
+{
+  "rules": {
+    "ratings": {
+      ".read": "auth != null",
+      "$userEmail": {
+        ".write": "auth != null && auth.token.email.replace('.', ',') === $userEmail"
+      }
+    }
+  }
+}
+```
+
+> **Note**: The read rule allows any authenticated user to read all ratings, which is necessary for the recommendation system to function properly.
+
+### Friendships
+```javascript
+{
+  "rules": {
+    "friendships": {
+      ".read": "auth != null",
+      "$userEmail": {
+        ".write": "auth != null && (auth.token.email.replace('.', ',') === $userEmail || root.child('users').child(auth.token.email.replace('.', ',')).child('isAdmin').val() === true)"
+      }
+    }
+  }
+}
+```
+
+> **Note**: The read rule allows any authenticated user to read all friendships, which is necessary for the friend system to function properly. The application filters the data to show only relevant friendships to each user.
 
 ## Indexing
 

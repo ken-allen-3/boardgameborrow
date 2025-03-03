@@ -76,6 +76,7 @@ Board Game Borrow is a full-stack application built with:
    - Firebase Database rules
    - Role-based access control
    - Data validation
+   - Graceful error handling for permission issues (see [Error Handling](./error_handling.md))
 
 ## Performance Optimization
 

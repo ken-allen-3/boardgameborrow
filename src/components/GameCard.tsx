@@ -26,9 +26,10 @@ interface GameCardProps {
   game: Game;
   onSelect: (game: Game) => void;
   requestStatus?: string;
+  onSendFriendRequest?: (toUserEmail: string) => void;
 }
 
-const GameCard = ({ game, onSelect, requestStatus }: GameCardProps) => {
+const GameCard = ({ game, onSelect, requestStatus, onSendFriendRequest }: GameCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
 
@@ -81,9 +82,14 @@ const GameCard = ({ game, onSelect, requestStatus }: GameCardProps) => {
           />
           {game.isDemo ? (
             <SampleContentTag />
-          ) : game.isFriend && (
+          ) : game.isFriend ? (
             <div className="absolute top-2 right-2 bg-indigo-100 p-1 rounded-full">
               <Users className="h-5 w-5 text-indigo-600" />
+            </div>
+          ) : (
+            // Overlay banner for non-friend games
+            <div className="absolute top-2 left-2 right-2 bg-blue-100 px-2 py-1 rounded text-xs text-blue-800 font-medium text-center">
+              👥 Add {game.owner.firstName} to borrow this game!
             </div>
           )}
           {game.distance && (
@@ -170,13 +176,19 @@ const GameCard = ({ game, onSelect, requestStatus }: GameCardProps) => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                !game.isDemo && onSelect(game);
+                if (game.isDemo) return;
+                
+                if (!game.isFriend && onSendFriendRequest) {
+                  onSendFriendRequest(game.owner.email);
+                } else {
+                  onSelect(game);
+                }
               }}
               className={`w-full px-4 py-2 rounded-lg transition ${
                 game.isDemo 
                   ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
                   : !game.isFriend
-                  ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
                   : 'bg-indigo-600 text-white hover:bg-indigo-700'
               }`}
               disabled={game.isDemo}
@@ -184,14 +196,14 @@ const GameCard = ({ game, onSelect, requestStatus }: GameCardProps) => {
                 game.isDemo 
                   ? "Sample games cannot be borrowed" 
                   : !game.isFriend
-                  ? "You need to be friends with the owner to borrow this game"
+                  ? "Add friend to borrow this game"
                   : undefined
               }
             >
               {game.isDemo 
                 ? "Sample Game" 
                 : !game.isFriend
-                ? "Add Friend to Borrow"
+                ? "Add Friend"
                 : "Request to Borrow"}
             </button>
           )}

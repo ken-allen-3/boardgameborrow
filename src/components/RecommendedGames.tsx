@@ -6,12 +6,16 @@ import GameCard from './GameCard';
 
 interface RecommendedGamesProps {
   userEmail: string;
+  userGameCount?: number;
   onSelectGame: (game: Game) => void;
+  onSendFriendRequest?: (toUserEmail: string) => void;
 }
 
 const RecommendedGames: React.FC<RecommendedGamesProps> = ({
   userEmail,
-  onSelectGame
+  userGameCount = 0,
+  onSelectGame,
+  onSendFriendRequest
 }) => {
   const [recommendations, setRecommendations] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,14 +72,25 @@ const RecommendedGames: React.FC<RecommendedGamesProps> = ({
   }
 
   if (recommendations.length === 0) {
+    const progressPercentage = Math.min(100, (userGameCount / 10) * 100);
+    
     return (
       <div className="mb-8 bg-indigo-50 rounded-xl p-6">
         <h2 className="text-xl font-semibold mb-2 flex items-center gap-2 text-indigo-900">
           <Sparkles className="h-5 w-5" />
           Get Personalized Recommendations
         </h2>
-        <p className="text-indigo-700">
-          Rate more games in your collection to get personalized recommendations based on your taste!
+        <p className="text-indigo-700 mb-3">
+          Add {10 - userGameCount > 0 ? `${10 - userGameCount} more` : 'more'} games to your collection to unlock personalized recommendations!
+        </p>
+        <div className="w-full bg-indigo-100 rounded-full h-4">
+          <div 
+            className="bg-indigo-600 h-4 rounded-full transition-all duration-500 ease-in-out" 
+            style={{ width: `${progressPercentage}%` }}
+          ></div>
+        </div>
+        <p className="text-xs text-indigo-500 mt-1 text-right">
+          {userGameCount}/10 games
         </p>
       </div>
     );
@@ -96,6 +111,7 @@ const RecommendedGames: React.FC<RecommendedGamesProps> = ({
             <GameCard
               game={game}
               onSelect={onSelectGame}
+              onSendFriendRequest={onSendFriendRequest}
             />
           </div>
         ))}

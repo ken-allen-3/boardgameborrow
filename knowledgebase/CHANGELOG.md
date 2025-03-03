@@ -43,6 +43,8 @@
 - Better feedback for rejected game matches
 - Quick Add button styling and state management
 - Game selection visual feedback in Quick Add flow
+- Error message incorrectly displaying "failed to load your borrow requests" when a user has 0 active borrow requests
+- Firebase permission errors for ratings and friendships paths by updating database rules
 
 ## [Previous Versions]
 ...

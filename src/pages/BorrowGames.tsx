@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Users, MapPin, TrendingUp, Filter } from 'lucide-react';
+import { Search, Users, MapPin, TrendingUp, Filter, UserPlus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import RecommendedGames from '../components/RecommendedGames';
 import { getDatabase, ref, get } from 'firebase/database';
 import { useAuth } from '../contexts/AuthContext';
 import { createBorrowRequest, getUserBorrowRequests, BorrowRequest } from '../services/borrowRequestService';
 import { sendBorrowRequestEmail } from '../services/email';
-import { getFriendsList } from '../services/friendService';
+import { getFriendsList, sendFriendRequest } from '../services/friendService';
 import { getUserProfile } from '../services/userService';
+import { loadUserGames } from '../services/gameService';
 import BorrowRequestModal from '../components/BorrowRequestModal';
 import ErrorMessage from '../components/ErrorMessage';
 import SuccessMessage from '../components/SuccessMessage';
@@ -30,6 +32,66 @@ interface BorrowRequestInput {
   message: string;
 }
 
+// Empty state component for users with no friends
+const EmptyFriendsState = ({ onFindFriends }: { onFindFriends: () => void }) => (
+  <div className="mb-8 bg-blue-50 rounded-xl p-6">
+    <h2 className="text-xl font-semibold mb-2 flex items-center gap-2 text-blue-900">
+      <Users className="h-5 w-5" />
+      Your Friends' Games
+    </h2>
+    <p className="text-blue-700 mb-4">
+      📣 Your friends' games will appear here! Add friends to see what you can borrow.
+    </p>
+    <button
+      onClick={onFindFriends}
+      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+    >
+      <UserPlus size={18} />
+      Find Friends & Invite
+    </button>
+  </div>
+);
+
+// View toggle component
+const ViewToggle = ({ 
+  view, 
+  onViewChange,
+  hasFriends
+}: { 
+  view: 'friends' | 'public',
+  onViewChange: (view: 'friends' | 'public') => void,
+  hasFriends: boolean
+}) => (
+  <div className="flex items-center justify-end mb-4">
+    <span className="text-sm text-gray-600 mr-2">Showing:</span>
+    <div className="flex rounded-lg overflow-hidden border border-gray-200">
+      <button
+        onClick={() => onViewChange('friends')}
+        disabled={!hasFriends}
+        className={`px-3 py-1 text-sm ${
+          view === 'friends'
+            ? 'bg-indigo-600 text-white'
+            : hasFriends
+            ? 'bg-white text-gray-700 hover:bg-gray-100'
+            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+        }`}
+      >
+        Friends' Games
+      </button>
+      <button
+        onClick={() => onViewChange('public')}
+        className={`px-3 py-1 text-sm ${
+          view === 'public'
+            ? 'bg-indigo-600 text-white'
+            : 'bg-white text-gray-700 hover:bg-gray-100'
+        }`}
+      >
+        Public Games
+      </button>
+    </div>
+  </div>
+);
+
 function BorrowGamesPage() {
   const [games, setGames] = useState<Game[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,6 +100,8 @@ function BorrowGamesPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [hasFriends, setHasFriends] = useState(false);
+  const [viewMode, setViewMode] = useState<'friends' | 'public'>('public');
   const [filters, setFilters] = useState<Filters>({
     availability: 'available',
     sortBy: 'friends'
@@ -48,9 +112,26 @@ function BorrowGamesPage() {
     if (!currentUser) return;
     Promise.all([
       loadAllGames(),
-      loadBorrowRequests()
+      loadBorrowRequests(),
+      checkHasFriends()
     ]);
   }, [currentUser]);
+
+  const checkHasFriends = async () => {
+    if (!currentUser?.email) return;
+    
+    try {
+      const friendsList = await getFriendsList(currentUser.email.replace(/\./g, ','));
+      const hasFriends = friendsList.length > 0;
+      setHasFriends(hasFriends);
+      
+      // If user has friends, default to friends view, otherwise public
+      setViewMode(hasFriends ? 'friends' : 'public');
+    } catch (err) {
+      console.error('Error checking friends:', err);
+      setHasFriends(false);
+    }
+  };
 
   const loadBorrowRequests = async () => {
     if (!currentUser?.email) return;
@@ -95,10 +176,12 @@ function BorrowGamesPage() {
       
       try {
         friendsList = await getFriendsList(currentUser.email.replace(/\./g, ','));
+        setHasFriends(friendsList.length > 0);
       } catch (err) {
         console.error('Error getting friends list:', err);
         // Just use an empty friends list on error
         friendsList = [];
+        setHasFriends(false);
       }
       
       try {
@@ -112,7 +195,17 @@ function BorrowGamesPage() {
       const allGames: Game[] = [];
       const users = usersSnapshot.val() || {};
       const friendEmails = new Set(friendsList.map(friend => friend.email));
-      const userCoordinates = currentUserProfile?.coordinates;
+      // If user doesn't have coordinates, add mock coordinates for testing
+      let userCoordinates = currentUserProfile?.coordinates;
+      if (!userCoordinates) {
+        userCoordinates = {
+          latitude: 37.7749, // San Francisco coordinates
+          longitude: -122.4194
+        };
+        console.log('Added mock user coordinates for testing:', userCoordinates);
+      } else {
+        console.log('User coordinates:', userCoordinates);
+      }
       
       if (gamesSnapshot.exists()) {
         // Convert the games object to an array of entries and iterate
@@ -129,7 +222,21 @@ function BorrowGamesPage() {
               if (game.status === 'available') {
                 // Calculate distance if both user and owner have coordinates
                 let distance: number | undefined;
+                // If owner doesn't have coordinates, add mock coordinates for testing
+                if (!userInfo.coordinates) {
+                  // Generate random coordinates within ~30km of the user
+                  const randomLat = userCoordinates.latitude + (Math.random() - 0.5) * 0.5;
+                  const randomLng = userCoordinates.longitude + (Math.random() - 0.5) * 0.5;
+                  userInfo.coordinates = {
+                    latitude: randomLat,
+                    longitude: randomLng
+                  };
+                  console.log('Added mock owner coordinates for testing:', userInfo.coordinates);
+                }
+                
                 if (userCoordinates && userInfo.coordinates) {
+                  console.log('Owner coordinates for', userEmail, ':', userInfo.coordinates);
+                  
                   const R = 6371; // Earth's radius in km
                   const lat1 = userCoordinates.latitude * Math.PI / 180;
                   const lat2 = userInfo.coordinates.latitude * Math.PI / 180;
@@ -141,6 +248,13 @@ function BorrowGamesPage() {
                     Math.sin(dLon/2) * Math.sin(dLon/2);
                   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
                   distance = R * c;
+                  
+                  // Debug calculated distance
+                  console.log('Calculated distance for', game.title, ':', distance, 'km');
+                } else {
+                  console.log('Missing coordinates for distance calculation:', 
+                    userCoordinates ? 'User has coordinates' : 'User missing coordinates',
+                    userInfo.coordinates ? 'Owner has coordinates' : 'Owner missing coordinates');
                 }
 
                 allGames.push({
@@ -195,7 +309,8 @@ function BorrowGamesPage() {
     }
 
     if (!game.isFriend) {
-      setError('You can only borrow games from friends. Send a friend request first!');
+      // Instead of showing an error, we'll handle this in the UI by showing an "Add Friend" button
+      handleSendFriendRequest(game.owner.email);
       return;
     }
     
@@ -241,11 +356,38 @@ function BorrowGamesPage() {
   };
 
   const handleGameSelect = (game: Game) => {
-    if (!game.isFriend) {
-      setError('You can only borrow games from friends. Send a friend request first!');
+    if (!game.isFriend && !game.isDemo) {
+      // Instead of showing an error, we'll handle this in the UI by showing an "Add Friend" button
+      handleSendFriendRequest(game.owner.email);
       return;
     }
     setSelectedGame(game);
+  };
+
+  const handleSendFriendRequest = async (toUserEmail: string) => {
+    if (!currentUser?.email) {
+      setError('You must be logged in to send friend requests.');
+      return;
+    }
+
+    try {
+      const fromUserId = currentUser.email.replace(/\./g, ',');
+      const toUserId = toUserEmail.replace(/\./g, ',');
+      
+      await sendFriendRequest(fromUserId, toUserId);
+      setSuccess(`Friend request sent to ${toUserEmail.split('@')[0]}!`);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      console.error('Failed to send friend request:', err);
+      setError('Failed to send friend request. Please try again.');
+    }
+  };
+
+  const handleFindFriends = () => {
+    // Navigate to the Friends page
+    window.location.href = '/friends';
   };
 
   const applyFilters = (games: Game[]) => {
@@ -301,9 +443,30 @@ function BorrowGamesPage() {
 
   const filteredGames = sortGames(applyFilters(games));
 
+  // Categorize games based on friendship status and distance
   const friendsGames = filteredGames.filter(game => game.isFriend);
-  const nearbyGames = filteredGames.filter(game => game.distance && game.distance <= 10); // Games within 10km
-  const allGames = filteredGames.filter(game => !game.isFriend && (!game.distance || game.distance > 10));
+  const nearbyGames = filteredGames.filter(game => !game.isFriend && game.distance !== undefined && game.distance <= 50); // Games within 50km (increased from 10km)
+  const featuredGames = filteredGames.filter(game => !game.isFriend && (!game.distance || game.distance > 50));
+  
+  // Debug game categorization
+  console.log('Total games:', filteredGames.length);
+  console.log('Friends games:', friendsGames.length);
+  console.log('Nearby games:', nearbyGames.length);
+  console.log('Featured games:', featuredGames.length);
+  
+  // Debug nearby games
+  if (nearbyGames.length > 0) {
+    console.log('Nearby games details:', nearbyGames.map(game => ({
+      title: game.title,
+      distance: game.distance,
+      owner: game.owner.email
+    })));
+  } else {
+    console.log('No nearby games found. Checking all games distances:');
+    console.log('Games with distance:', filteredGames.filter(game => game.distance !== undefined).length);
+    console.log('Games with distance <= 10km:', filteredGames.filter(game => game.distance !== undefined && game.distance <= 10).length);
+    console.log('Games that are not from friends:', filteredGames.filter(game => !game.isFriend).length);
+  }
 
   const getGameRequestStatus = (gameId: string) => {
     return borrowRequests.find(req => req.gameId === gameId)?.status;
@@ -314,13 +477,17 @@ function BorrowGamesPage() {
       {error && <ErrorMessage message={error} />}
       {success && <SuccessMessage message={success} />}
 
-      {/* Recommended Games Section */}
-      {currentUser?.email && (
-        <RecommendedGames
-          userEmail={currentUser.email}
-          onSelectGame={handleGameSelect}
-        />
+      {/* Empty State for Users with No Friends */}
+      {!hasFriends && (
+        <EmptyFriendsState onFindFriends={handleFindFriends} />
       )}
+
+      {/* View Toggle */}
+      <ViewToggle 
+        view={viewMode} 
+        onViewChange={setViewMode}
+        hasFriends={hasFriends}
+      />
 
       {/* Active Requests Section */}
       {borrowRequests.length > 0 && (
@@ -337,6 +504,7 @@ function BorrowGamesPage() {
                   game={game}
                   onSelect={handleGameSelect}
                   requestStatus={request.status}
+                  onSendFriendRequest={handleSendFriendRequest}
                 />
               );
             })}
@@ -344,10 +512,33 @@ function BorrowGamesPage() {
         </div>
       )}
 
-      <BorrowGames 
-        userGames={filteredGames}
-        onSelectGame={handleGameSelect}
-      />
+      {/* Show different game sections based on view mode */}
+      {viewMode === 'friends' ? (
+        // Friends' Games View
+        hasFriends ? (
+          <BorrowGames 
+            userGames={friendsGames}
+            onSelectGame={handleGameSelect}
+            onSendFriendRequest={handleSendFriendRequest}
+            viewMode={viewMode}
+          />
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <p>You don't have any friends yet. Add friends to see their games here!</p>
+          </div>
+        )
+      ) : (
+        // Public Games View
+        <BorrowGames 
+          userGames={filteredGames}
+          friendsGames={friendsGames}
+          nearbyGames={nearbyGames}
+          featuredGames={featuredGames}
+          onSelectGame={handleGameSelect}
+          onSendFriendRequest={handleSendFriendRequest}
+          viewMode={viewMode}
+        />
+      )}
 
       {selectedGame && (
         <BorrowRequestModal

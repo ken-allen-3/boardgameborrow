@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { MapPin, TrendingUp } from 'lucide-react';
 import GameCard from './GameCard';
 import { seedDataService } from '../services/seedDataService';
 
@@ -7,6 +8,11 @@ import { Game } from './GameCard';
 interface BorrowGamesProps {
   userGames: Game[];
   onSelectGame: (game: Game) => void;
+  onSendFriendRequest?: (toUserEmail: string) => void;
+  viewMode?: 'friends' | 'public';
+  friendsGames?: Game[];
+  nearbyGames?: Game[];
+  featuredGames?: Game[];
 }
 
 const GAME_CATEGORIES = [
@@ -23,33 +29,35 @@ const GAME_CATEGORIES = [
   'Cooperative'
 ];
 
-const BorrowGames: React.FC<BorrowGamesProps> = ({ userGames, onSelectGame }) => {
+// Section header component
+const SectionHeader = ({ 
+  title, 
+  icon 
+}: { 
+  title: string, 
+  icon?: React.ReactNode 
+}) => (
+  <div className="flex items-center gap-2 mb-4">
+    {icon}
+    <h2 className="text-2xl font-bold">{title}</h2>
+  </div>
+);
+
+const BorrowGames: React.FC<BorrowGamesProps> = ({ 
+  userGames, 
+  onSelectGame, 
+  onSendFriendRequest,
+  viewMode = 'public',
+  friendsGames = [],
+  nearbyGames = [],
+  featuredGames = []
+}) => {
   const [seededGames, setSeededGames] = useState<Game[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   useEffect(() => {
-      // Transform seeded games to match Game interface
-      const transformedGames = seedDataService.getSeededGames().map(game => ({
-        id: game.id,
-        title: game.name,
-        image: game.thumb_url,
-      owner: {
-        email: 'demo@example.com',
-        firstName: 'Demo',
-        lastName: 'User',
-        photoUrl: `/profile-placeholder-${(Math.floor(Math.random() * 3) + 1)}.png`
-      },
-      description: game.description,
-      available: true,
-      minPlayers: game.min_players,
-      maxPlayers: game.max_players,
-      minPlaytime: game.min_playtime,
-      maxPlaytime: game.max_playtime,
-      category: game.categories[0],
-      isDemo: true,
-      isFriend: false
-    }));
-    setSeededGames(transformedGames);
+    // Turn off demo game data as requested
+    setSeededGames([]);
   }, []);
 
   const filteredSeededGames = useMemo(() => {
@@ -65,6 +73,9 @@ const BorrowGames: React.FC<BorrowGamesProps> = ({ userGames, onSelectGame }) =>
       game.category && game.category === selectedCategory
     );
   }, [userGames, selectedCategory]);
+
+  // Determine which games to show based on view mode
+  const gamesToShow = viewMode === 'friends' ? filteredUserGames : filteredUserGames;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -87,37 +98,81 @@ const BorrowGames: React.FC<BorrowGamesProps> = ({ userGames, onSelectGame }) =>
           ))}
         </div>
       </div>
-      {/* Popular Games Section */}
-      {filteredSeededGames.length > 0 && (
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-6">Popular Games</h2>
-          <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory">
-            {filteredSeededGames.map(game => (
-              <div key={game.id} className="w-72 shrink-0 snap-start">
-                <GameCard
-                  game={game}
-                  onSelect={onSelectGame}
-                />
+
+      {viewMode === 'public' ? (
+        // Public Games View
+        <>
+
+          {/* Nearby Games Section */}
+          <div className="mb-12">
+            <SectionHeader 
+              title="Nearby Games" 
+              icon={<MapPin className="h-6 w-6 text-green-500" />} 
+            />
+            {nearbyGames && nearbyGames.length > 0 ? (
+              <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory">
+                {nearbyGames
+                  .filter(game => selectedCategory === 'All' || game.category === selectedCategory)
+                  .map(game => (
+                    <div key={game.id} className="w-72 shrink-0 snap-start">
+                      <GameCard
+                        game={game}
+                        onSelect={onSelectGame}
+                        onSendFriendRequest={onSendFriendRequest}
+                      />
+                    </div>
+                  ))}
               </div>
-            ))}
+            ) : (
+              <p className="text-center py-4 text-gray-500">
+                No nearby games found. Try expanding your search area or check back later.
+              </p>
+            )}
           </div>
+
+          {/* Featured Games Section */}
+          {featuredGames && featuredGames.length > 0 && (
+            <div className="mb-12">
+              <SectionHeader title="Featured Games" />
+              <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory">
+                {featuredGames
+                  .filter(game => selectedCategory === 'All' || game.category === selectedCategory)
+                  .map(game => (
+                    <div key={game.id} className="w-72 shrink-0 snap-start">
+                      <GameCard
+                        game={game}
+                        onSelect={onSelectGame}
+                        onSendFriendRequest={onSendFriendRequest}
+                      />
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        // Friends' Games View
+        <div>
+          <SectionHeader title="Friends' Games" />
+          {filteredUserGames.length > 0 ? (
+            <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory">
+              {filteredUserGames.map(game => (
+                <div key={game.id} className="w-72 shrink-0 snap-start">
+                  <GameCard
+                    game={game}
+                    onSelect={onSelectGame}
+                    onSendFriendRequest={onSendFriendRequest}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center py-8 text-gray-500">
+              No games available from your friends matching the selected filters.
+            </p>
+          )}
         </div>
       )}
-
-      {/* Available Games Section */}
-      <div>
-        <h2 className="text-2xl font-bold mb-6">Available Games</h2>
-          <div className="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory">
-          {filteredUserGames.map(game => (
-              <div key={game.id} className="w-72 shrink-0 snap-start">
-                <GameCard
-                  game={game}
-                  onSelect={onSelectGame}
-                />
-              </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 };
